@@ -281,12 +281,13 @@ void MuseScore::loadFiles(bool switchTab, bool singleFile)
       {
       QStringList files = getOpenScoreNames(
 #ifdef OMR
-         tr("All Supported Files") + " (*.mscz *.mscx *.mxl *.musicxml *.xml *.mid *.midi *.kar *.md *.mgu *.sgu *.cap *.capx *.pdf *.ove *.scw *.bww *.gtp *.gp3 *.gp4 *.gp5 *.gpx);;" +
+         tr("All Supported Files") + " (*.mscz *.mscx *.mxl *.musicxml *.xml *.mnx *.mid *.midi *.kar *.md *.mgu *.sgu *.cap *.capx *.pdf *.ove *.scw *.bww *.gtp *.gp3 *.gp4 *.gp5 *.gpx);;" +
 #else
-         tr("All Supported Files") + " (*.mscz *.mscx *.mxl *.musicxml *.xml *.mid *.midi *.kar *.md *.mgu *.sgu *.cap *.capx *.ove *.scw *.bww *.gtp *.gp3 *.gp4 *.gp5 *.gpx);;" +
+         tr("All Supported Files") + " (*.mscz *.mscx *.mxl *.musicxml *.xml *.mnx *.mid *.midi *.kar *.md *.mgu *.sgu *.cap *.capx *.ove *.scw *.bww *.gtp *.gp3 *.gp4 *.gp5 *.gpx);;" +
 #endif
          tr("MuseScore Files") + " (*.mscz *.mscx);;" +
          tr("MusicXML Files") + " (*.mxl *.musicxml *.xml);;" +
+         tr("MNX Files <experimental>") + " (*.mnx);;" +
          tr("MIDI Files") + " (*.mid *.midi *.kar);;" +
          tr("MuseData Files") + " (*.md);;" +
          tr("Capella Files") + " (*.cap *.capx);;" +
@@ -2284,6 +2285,7 @@ Score::FileError readScore(MasterScore* score, QString name, bool ignoreVersionE
                   { "xml",  &importMusicXml           },
                   { "musicxml", &importMusicXml       },
                   { "mxl",  &importCompressedMusicXml },
+                  { "mnx",  &importMnx               },
                   { "mid",  &importMidi               },
                   { "midi", &importMidi               },
                   { "kar",  &importMidi               },
