@@ -343,7 +343,7 @@ add_library(mscoreapp STATIC
       stringutils.h stringutils.cpp
       scoreview.cpp editharmony.cpp editfiguredbass.cpp events.cpp
       editinstrument.cpp editstyle.cpp
-      icons.cpp importbww.cpp
+      icons.cpp importbww.cpp importmnx.cpp
       importmxmllogger.cpp importmxmlnoteduration.cpp importmxmlnotepitch.cpp
       importmxml.cpp importmxmlpass1.cpp importmxmlpass2.cpp
       instrdialog.cpp instrwidget.cpp
