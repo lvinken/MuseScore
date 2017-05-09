@@ -31,9 +31,12 @@ public:
 
 private:
       // functions
+      void attributes();
       void beam();
+      void clef();
       void event();
       void head();
+      void identification();
       void logDebugTrace(const QString& info);
       void logDebugInfo(const QString& info);
       void logError(const QString& error);
@@ -43,9 +46,15 @@ private:
       void note();
       Score::FileError parse();
       void part();
+      void rest();
       void score();
       void sequence();
       void skipLogCurrElem();
+      void staff();
+      void system();
+      void tempo();
+      void time();
+      void title();
 
       // data
       QXmlStreamReader _e;
@@ -64,6 +73,33 @@ MnxParser::MnxParser(Score* score)
       }
 
 //---------------------------------------------------------
+//   attributes
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/part/measure/attributes node.
+ */
+
+void MnxParser::attributes()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "attributes");
+      logDebugTrace("MnxParser::attributes");
+
+      while (_e.readNextStartElement()) {
+            if (_e.name() == "staff")
+                  staff();
+            else if (_e.name() == "tempo") {
+                  skipLogCurrElem();
+                  }
+            else if (_e.name() == "time") {
+                  time();
+                  }
+            else
+                  skipLogCurrElem();
+            }
+      }
+
+//---------------------------------------------------------
 //   beam
 //---------------------------------------------------------
 
@@ -76,14 +112,50 @@ void MnxParser::beam()
       Q_ASSERT(_e.isStartElement() && _e.name() == "beam");
       logDebugTrace("MnxParser::beam");
 
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "measure")
-                  measure();
-            else if (_e.name() == "part-name") {
-                  logDebugTrace(QString("part-name '%1'").arg(_e.readElementText()));
-                  }
+      int beamNo = _e.attributes().value("number").toInt();
+
+      if (beamNo == 1) {
+            QString s = _e.readElementText();
+            if (s == "begin")
+                  ;       // TODOD beamMode = Beam::Mode::BEGIN;
+            else if (s == "end")
+                  ;       // TODOD beamMode = Beam::Mode::END;
+            else if (s == "continue")
+                  ;       // TODOD beamMode = Beam::Mode::MID;
+            else if (s == "backward hook")
+                  ;
+            else if (s == "forward hook")
+                  ;
             else
-                  skipLogCurrElem();
+                  logError(QString("unknown beam keyword '%1'").arg(s));
+            }
+      else
+            _e.skipCurrentElement();
+      }
+
+//---------------------------------------------------------
+//   clef
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/part/measure/attributes/staff/clef node.
+ */
+
+void MnxParser::clef()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "clef");
+      logDebugTrace("MnxParser::clef");
+
+      while (_e.readNextStartElement()) {
+            /*
+             if (_e.name() == "measure")
+             measure();
+             else if (_e.name() == "part-name") {
+             logDebugTrace(QString("part-name '%1'").arg(_e.readElementText()));
+             }
+             else
+             */
+            skipLogCurrElem();
             }
       }
 
@@ -107,7 +179,7 @@ void MnxParser::event()
                   note();
                   }
             else if (_e.name() == "rest") {
-                  // TODO
+                  rest();
                   }
             else
                   skipLogCurrElem();
@@ -130,10 +202,32 @@ void MnxParser::head()
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "identification")
-                  skipLogCurrElem();
+                  identification();
             else if (_e.name() == "style") {
                   skipLogCurrElem();
                   }
+            else
+                  skipLogCurrElem();
+            }
+      }
+
+//---------------------------------------------------------
+//   identification
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/head/identification node.
+ */
+
+void MnxParser::identification()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "identification");
+      logDebugTrace("MnxParser::identification");
+
+
+      while (_e.readNextStartElement()) {
+            if (_e.name() == "title")
+                  title();
             else
                   skipLogCurrElem();
             }
@@ -196,13 +290,15 @@ void MnxParser::lyric()
       logDebugTrace("MnxParser::lyric");
 
       while (_e.readNextStartElement()) {
+            /* TODO
             if (_e.name() == "measure")
                   measure();
             else if (_e.name() == "part-name") {
                   logDebugTrace(QString("part-name '%1'").arg(_e.readElementText()));
                   }
             else
-                  skipLogCurrElem();
+             */
+            skipLogCurrElem();
             }
       }
 
@@ -221,7 +317,7 @@ void MnxParser::measure()
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "attributes")
-                  skipLogCurrElem();
+                  attributes();
             /*
             else if (_e.name() == "sequence") {
                   skipLogCurrElem();
@@ -274,13 +370,15 @@ void MnxParser::note()
       logDebugTrace("MnxParser::note");
 
       while (_e.readNextStartElement()) {
+            /*
             if (_e.name() == "measure")
                   measure();
             else if (_e.name() == "part-name") {
                   logDebugTrace(QString("part-name '%1'").arg(_e.readElementText()));
                   }
             else
-                  skipLogCurrElem();
+             */
+            skipLogCurrElem();
             }
       }
 
@@ -309,6 +407,32 @@ void MnxParser::part()
       }
 
 //---------------------------------------------------------
+//   rest
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/part/measure/sequence/event/rest node.
+ */
+
+void MnxParser::rest()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "rest");
+      logDebugTrace("MnxParser::rest");
+
+      while (_e.readNextStartElement()) {
+            /*
+             if (_e.name() == "measure")
+             measure();
+             else if (_e.name() == "part-name") {
+             logDebugTrace(QString("part-name '%1'").arg(_e.readElementText()));
+             }
+             else
+             */
+            skipLogCurrElem();
+            }
+      }
+
+//---------------------------------------------------------
 //   score
 //---------------------------------------------------------
 
@@ -323,7 +447,7 @@ void MnxParser::score()
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "system")
-                  skipLogCurrElem();
+                  system();
             else if (_e.name() == "part") {
                   part();
                   }
@@ -433,6 +557,100 @@ Score::FileError MnxParser::parse()
             }
 
       return Score::FileError::FILE_NO_ERROR;
+      }
+
+//---------------------------------------------------------
+//   staff
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/part/measure/attributes/staff node.
+ */
+
+void MnxParser::staff()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "staff");
+      logDebugTrace("MnxParser::staff");
+
+      while (_e.readNextStartElement()) {
+            if (_e.name() == "clef")
+                  clef();
+            else
+                  skipLogCurrElem();
+            }
+      }
+
+//---------------------------------------------------------
+//   system
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/system node.
+ */
+
+void MnxParser::system()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "system");
+      logDebugTrace("MnxParser::system");
+
+      while (_e.readNextStartElement()) {
+            if (_e.name() == "measure")
+                  measure();
+            else
+                  skipLogCurrElem();
+            }
+      }
+
+//---------------------------------------------------------
+//   time
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/part/measure/attributes/time node.
+ */
+
+void MnxParser::time()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "time");
+      logDebugTrace("MnxParser::time");
+
+      while (_e.readNextStartElement()) {
+            /*
+             if (_e.name() == "measure")
+             measure();
+             else if (_e.name() == "part-name") {
+             logDebugTrace(QString("part-name '%1'").arg(_e.readElementText()));
+             }
+             else
+             */
+            skipLogCurrElem();
+            }
+      }
+
+//---------------------------------------------------------
+//   title
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/head/identification/title node.
+ */
+
+void MnxParser::title()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "title");
+      logDebugTrace("MnxParser::title");
+
+      while (_e.readNextStartElement()) {
+            /*
+             if (_e.name() == "measure")
+             measure();
+             else if (_e.name() == "part-name") {
+             logDebugTrace(QString("part-name '%1'").arg(_e.readElementText()));
+             }
+             else
+             */
+            skipLogCurrElem();
+            }
       }
 
 //---------------------------------------------------------
