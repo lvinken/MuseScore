@@ -146,17 +146,10 @@ void MnxParser::clef()
       Q_ASSERT(_e.isStartElement() && _e.name() == "clef");
       logDebugTrace("MnxParser::clef");
 
-      while (_e.readNextStartElement()) {
-            /*
-             if (_e.name() == "measure")
-             measure();
-             else if (_e.name() == "part-name") {
-             logDebugTrace(QString("part-name '%1'").arg(_e.readElementText()));
-             }
-             else
-             */
-            skipLogCurrElem();
-            }
+      QString sign = _e.attributes().value("sign").toString();
+      QString line = _e.attributes().value("line").toString();
+      logDebugTrace(QString("clef sign '%1' line '%2'").arg(sign).arg(line));
+      _e.skipCurrentElement();
       }
 
 //---------------------------------------------------------
@@ -171,6 +164,9 @@ void MnxParser::event()
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "event");
       logDebugTrace("MnxParser::event");
+
+      QString value = _e.attributes().value("value").toString();
+      logDebugTrace(QString("event value '%1'").arg(value));
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "lyric")
@@ -198,7 +194,6 @@ void MnxParser::head()
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "head");
       logDebugTrace("MnxParser::head");
-
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "identification")
@@ -369,17 +364,11 @@ void MnxParser::note()
       Q_ASSERT(_e.isStartElement() && _e.name() == "note");
       logDebugTrace("MnxParser::note");
 
-      while (_e.readNextStartElement()) {
-            /*
-            if (_e.name() == "measure")
-                  measure();
-            else if (_e.name() == "part-name") {
-                  logDebugTrace(QString("part-name '%1'").arg(_e.readElementText()));
-                  }
-            else
-             */
-            skipLogCurrElem();
-            }
+      QString pitch = _e.attributes().value("pitch").toString();
+      logDebugTrace(QString("- note pitch '%1'").arg(pitch));
+
+      // TODO _e.readNext();
+      _e.skipCurrentElement();
       }
 
 //---------------------------------------------------------
@@ -419,17 +408,11 @@ void MnxParser::rest()
       Q_ASSERT(_e.isStartElement() && _e.name() == "rest");
       logDebugTrace("MnxParser::rest");
 
-      while (_e.readNextStartElement()) {
-            /*
-             if (_e.name() == "measure")
-             measure();
-             else if (_e.name() == "part-name") {
-             logDebugTrace(QString("part-name '%1'").arg(_e.readElementText()));
-             }
-             else
-             */
-            skipLogCurrElem();
-            }
+      logDebugTrace(QString("- rest"));
+
+      // TODO _e.readNext();
+      _e.skipCurrentElement();
+
       }
 
 //---------------------------------------------------------
@@ -614,17 +597,9 @@ void MnxParser::time()
       Q_ASSERT(_e.isStartElement() && _e.name() == "time");
       logDebugTrace("MnxParser::time");
 
-      while (_e.readNextStartElement()) {
-            /*
-             if (_e.name() == "measure")
-             measure();
-             else if (_e.name() == "part-name") {
-             logDebugTrace(QString("part-name '%1'").arg(_e.readElementText()));
-             }
-             else
-             */
-            skipLogCurrElem();
-            }
+      QString signature = _e.attributes().value("signature").toString();
+      logDebugTrace(QString("time-sig '%1'").arg(signature));
+      _e.skipCurrentElement();
       }
 
 //---------------------------------------------------------
@@ -640,17 +615,7 @@ void MnxParser::title()
       Q_ASSERT(_e.isStartElement() && _e.name() == "title");
       logDebugTrace("MnxParser::title");
 
-      while (_e.readNextStartElement()) {
-            /*
-             if (_e.name() == "measure")
-             measure();
-             else if (_e.name() == "part-name") {
-             logDebugTrace(QString("part-name '%1'").arg(_e.readElementText()));
-             }
-             else
-             */
-            skipLogCurrElem();
-            }
+      logDebugTrace(QString("title '%1'").arg(_e.readElementText()));
       }
 
 //---------------------------------------------------------
