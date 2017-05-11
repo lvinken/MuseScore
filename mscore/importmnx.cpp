@@ -20,6 +20,7 @@
 #include "libmscore/part.h"
 #include "libmscore/staff.h"
 #include "musescore.h"
+#include "importmnx.h"
 
 namespace Ms {
 
@@ -619,6 +620,25 @@ void MnxParser::title()
       }
 
 //---------------------------------------------------------
+//   importMnxFromBuffer
+//---------------------------------------------------------
+
+Score::FileError importMnxFromBuffer(Score* score, const QString& /*name*/, QIODevice* dev)
+      {
+      //qDebug("importMnxFromBuffer(score %p, name '%s', dev %p)",
+      //       score, qPrintable(name), dev);
+
+      MnxParser p(score);
+      p.parse(dev);
+
+      score->setSaved(false);
+      score->setCreated(true);
+      score->connectTies();
+      qDebug("done");
+      return Score::FileError::FILE_NO_ERROR;                  // OK
+      }
+
+//---------------------------------------------------------
 //   importMnx
 //---------------------------------------------------------
 
@@ -632,6 +652,7 @@ Score::FileError importMnx(MasterScore* score, const QString& path)
       if (!fp.open(QIODevice::ReadOnly))
             return Score::FileError::FILE_OPEN_ERROR;
 
+      return importMnxFromBuffer(score, path, &fp);
       /*
       QString id("importMnx");
       Part* part = new Part(score);
@@ -651,15 +672,6 @@ Score::FileError importMnx(MasterScore* score, const QString& path)
       Bww::Parser p(lex, wrt);
       p.parse();
        */
-
-      MnxParser p(score);
-      p.parse(&fp);
-
-      score->setSaved(false);
-      score->setCreated(true);
-      score->connectTies();
-      qDebug("Score::importMnx() done");
-      return Score::FileError::FILE_NO_ERROR;            // OK
       }
 
 } // namespace Ms
