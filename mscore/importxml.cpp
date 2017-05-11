@@ -22,6 +22,7 @@
  */
 
 #include "thirdparty/qzip/qzipreader_p.h"
+#include "importmnx.h"
 #include "importmxml.h"
 
 namespace Ms {
@@ -237,6 +238,23 @@ static Score::FileError doValidateAndImport(Score* score, const QString& name, Q
 
 
 //---------------------------------------------------------
+//---------------------------------------------------------
+
+static QString xmlFileType(QIODevice* dev)
+      {
+      QString res;
+      QXmlStreamReader e(dev);
+      //e.setDevice(dev);
+
+      if (e.readNextStartElement())
+            res = e.name().toString();
+
+      dev->seek(0);
+      return res;
+      }
+
+
+//---------------------------------------------------------
 //   importMusicXml
 //    return Score::FileError::FILE_* errors
 //---------------------------------------------------------
@@ -261,8 +279,14 @@ Score::FileError importMusicXml(MasterScore* score, const QString& name)
             return Score::FileError::FILE_OPEN_ERROR;
             }
 
+      QString type = xmlFileType(&xmlFile);
+      qDebug("file type '%s'", qPrintable(type));
+
       // and import it
-      return doValidateAndImport(score, name, &xmlFile);
+      if (type == "mnx")
+            return importMnxFromBuffer(score, name, &xmlFile);
+      else
+            return doValidateAndImport(score, name, &xmlFile);
       }
 
 
