@@ -24,6 +24,10 @@
 
 namespace Ms {
 
+//---------------------------------------------------------
+//   MnxParser definition
+//---------------------------------------------------------
+
 class MnxParser
       {
 public:
@@ -64,13 +68,96 @@ private:
       };
 
 //---------------------------------------------------------
-//   MusicXMLParserPass1
+//   MnxParser constructor
 //---------------------------------------------------------
 
 MnxParser::MnxParser(Score* score)
       : _score(score)
       {
       // nothing
+      }
+
+//---------------------------------------------------------
+//   importMnxFromBuffer
+//---------------------------------------------------------
+
+/**
+ The public interface of this module: import the MNX document dev into score
+ */
+
+Score::FileError importMnxFromBuffer(Score* score, const QString& /*name*/, QIODevice* dev)
+      {
+      //qDebug("importMnxFromBuffer(score %p, name '%s', dev %p)",
+      //       score, qPrintable(name), dev);
+
+      MnxParser p(score);
+      p.parse(dev);
+
+      score->setSaved(false);
+      score->setCreated(true);
+      score->connectTies();
+      qDebug("done");
+      return Score::FileError::FILE_NO_ERROR;                        // OK
+      }
+
+//---------------------------------------------------------
+//   parse
+//---------------------------------------------------------
+
+/**
+ Parse MNX in \a device and extract pass 1 data.
+ */
+
+Score::FileError MnxParser::parse(QIODevice* device)
+      {
+      logDebugTrace("MnxParser::parse device");
+      //_parts.clear();
+      _e.setDevice(device);
+      Score::FileError res = parse();
+      if (res != Score::FileError::FILE_NO_ERROR)
+            return res;
+
+      // Determine the start tick of each measure in the part
+      /*
+       determineMeasureLength(_measureLength);
+       determineMeasureStart(_measureLength, _measureStart);
+       createMeasures(_score, _measureLength, _measureStart);
+       */
+      return res;
+      }
+
+//---------------------------------------------------------
+//   parse
+//---------------------------------------------------------
+
+/**
+ Start the parsing process, after verifying the top-level node is mnx
+ */
+
+Score::FileError MnxParser::parse()
+      {
+      logDebugTrace("MnxParser::parse");
+
+      bool found = false;
+      while (_e.readNextStartElement()) {
+            if (_e.name() == "mnx") {
+                  found = true;
+                  mnx();
+                  }
+            else {
+                  logError(QString("this is not an MNX file (top-level node '%1')")
+                           .arg(_e.name().toString()));
+                  _e.skipCurrentElement();
+                  return Score::FileError::FILE_BAD_FORMAT;
+                  }
+            }
+
+      if (!found) {
+            logError("this is not an MNX file, node <mnx> not found");
+            return Score::FileError::FILE_BAD_FORMAT;
+            }
+
+      return Score::FileError::FILE_NO_ERROR;
       }
 
 //---------------------------------------------------------
@@ -227,49 +314,6 @@ void MnxParser::identification()
             else
                   skipLogCurrElem();
             }
-      }
-
-//---------------------------------------------------------
-//   logDebugTrace
-//---------------------------------------------------------
-
-/**
- Log debug (function) trace.
- */
-
-void MnxParser::logDebugTrace(const QString& info)
-      {
-      qDebug("Trace %s", qPrintable(info));
-      }
-
-//---------------------------------------------------------
-//   logDebugInfo
-//---------------------------------------------------------
-
-/**
- Log debug \a info (non-fatal events relevant for debugging).
- */
-
-void MnxParser::logDebugInfo(const QString& info)
-      {
-      qDebug("Info at line %lld col %lld: %s",
-             _e.lineNumber(), _e.columnNumber(), qPrintable(info));
-      }
-
-//---------------------------------------------------------
-//   logError
-//---------------------------------------------------------
-
-/**
- Log \a error (possibly non-fatal but to be reported to the user anyway).
- */
-
-void MnxParser::logError(const QString& error)
-      {
-      QString err;
-      err = QString("Error at line %1 col %2: %3").arg(_e.lineNumber()).arg(_e.columnNumber()).arg(error);
-      qDebug("%s", qPrintable(err));
-      _parseStatus += err;
       }
 
 //---------------------------------------------------------
@@ -470,80 +514,6 @@ void MnxParser::sequence()
       }
 
 //---------------------------------------------------------
-//   skipLogCurrElem
-//---------------------------------------------------------
-
-/**
- Skip the current element, log debug as info.
- */
-
-void MnxParser::skipLogCurrElem()
-      {
-      logDebugInfo(QString("skipping '%1'").arg(_e.name().toString()));
-      _e.skipCurrentElement();
-      }
-
-//---------------------------------------------------------
-//   parse
-//---------------------------------------------------------
-
-/**
- Parse MNX in \a device and extract pass 1 data.
- */
-
-Score::FileError MnxParser::parse(QIODevice* device)
-      {
-      logDebugTrace("MnxParser::parse device");
-      //_parts.clear();
-      _e.setDevice(device);
-      Score::FileError res = parse();
-      if (res != Score::FileError::FILE_NO_ERROR)
-            return res;
-
-      // Determine the start tick of each measure in the part
-      /*
-      determineMeasureLength(_measureLength);
-      determineMeasureStart(_measureLength, _measureStart);
-      createMeasures(_score, _measureLength, _measureStart);
-       */
-      return res;
-      }
-
-//---------------------------------------------------------
-//   parse
-//---------------------------------------------------------
-
-/**
- Start the parsing process, after verifying the top-level node is mnx
- */
-
-Score::FileError MnxParser::parse()
-      {
-      logDebugTrace("MnxParser::parse");
-
-      bool found = false;
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "mnx") {
-                  found = true;
-                  mnx();
-                  }
-            else {
-                  logError(QString("this is not an MNX file (top-level node '%1')")
-                           .arg(_e.name().toString()));
-                  _e.skipCurrentElement();
-                  return Score::FileError::FILE_BAD_FORMAT;
-                  }
-            }
-
-      if (!found) {
-            logError("this is not an MNX file, node <mnx> not found");
-            return Score::FileError::FILE_BAD_FORMAT;
-            }
-
-      return Score::FileError::FILE_NO_ERROR;
-      }
-
-//---------------------------------------------------------
 //   staff
 //---------------------------------------------------------
 
@@ -620,58 +590,60 @@ void MnxParser::title()
       }
 
 //---------------------------------------------------------
-//   importMnxFromBuffer
+//   logDebugTrace
 //---------------------------------------------------------
 
-Score::FileError importMnxFromBuffer(Score* score, const QString& /*name*/, QIODevice* dev)
+/**
+ Log debug (function) trace.
+ */
+
+void MnxParser::logDebugTrace(const QString& /* info */)
       {
-      //qDebug("importMnxFromBuffer(score %p, name '%s', dev %p)",
-      //       score, qPrintable(name), dev);
-
-      MnxParser p(score);
-      p.parse(dev);
-
-      score->setSaved(false);
-      score->setCreated(true);
-      score->connectTies();
-      qDebug("done");
-      return Score::FileError::FILE_NO_ERROR;                  // OK
+      //qDebug("Trace %s", qPrintable(info));
       }
 
 //---------------------------------------------------------
-//   importMnx
+//   logDebugInfo
 //---------------------------------------------------------
 
-Score::FileError importMnx(MasterScore* score, const QString& path)
+/**
+ Log debug \a info (non-fatal events relevant for debugging).
+ */
+
+void MnxParser::logDebugInfo(const QString& info)
       {
-      qDebug("Score::importMnx(%s)", qPrintable(path));
+      qDebug("Info at line %lld col %lld: %s",
+             _e.lineNumber(), _e.columnNumber(), qPrintable(info));
+      }
 
-      QFile fp(path);
-      if (!fp.exists())
-            return Score::FileError::FILE_NOT_FOUND;
-      if (!fp.open(QIODevice::ReadOnly))
-            return Score::FileError::FILE_OPEN_ERROR;
+//---------------------------------------------------------
+//   logError
+//---------------------------------------------------------
 
-      return importMnxFromBuffer(score, path, &fp);
-      /*
-      QString id("importMnx");
-      Part* part = new Part(score);
-      part->setId(id);
-      score->appendPart(part);
-      Staff* staff = new Staff(score);
-      staff->setPart(part);
-      part->staves()->push_back(staff);
-      score->staves().push_back(staff);
-       */
+/**
+ Log \a error (possibly non-fatal but to be reported to the user anyway).
+ */
 
-      /*
-      Bww::Lexer lex(&fp);
-      Bww::MsScWriter wrt;
-      wrt.setScore(score);
-      score->style().set(StyleIdx::measureSpacing, 1.0);
-      Bww::Parser p(lex, wrt);
-      p.parse();
-       */
+void MnxParser::logError(const QString& error)
+      {
+      QString err;
+      err = QString("Error at line %1 col %2: %3").arg(_e.lineNumber()).arg(_e.columnNumber()).arg(error);
+      qDebug("%s", qPrintable(err));
+      _parseStatus += err;
+      }
+
+//---------------------------------------------------------
+//   skipLogCurrElem
+//---------------------------------------------------------
+
+/**
+ Skip the current element, log debug as info.
+ */
+
+void MnxParser::skipLogCurrElem()
+      {
+      logDebugInfo(QString("skipping '%1'").arg(_e.name().toString()));
+      _e.skipCurrentElement();
       }
 
 } // namespace Ms
