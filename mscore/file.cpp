@@ -2333,7 +2333,6 @@ Score::FileError readScore(MasterScore* score, QString name, bool ignoreVersionE
                   { "xml",  &importMusicXml           },
                   { "musicxml", &importMusicXml       },
                   { "mxl",  &importCompressedMusicXml },
-                  { "mnx",  &importMnx               },
                   { "mid",  &importMidi               },
                   { "midi", &importMidi               },
                   { "kar",  &importMidi               },

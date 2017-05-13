@@ -238,24 +238,27 @@ static Score::FileError doValidateAndImport(Score* score, const QString& name, Q
 
 
 //---------------------------------------------------------
+//   topLevelElement
+//    return the top level element of the XML document dev
 //---------------------------------------------------------
 
-static QString xmlFileType(QIODevice* dev)
+static QString topLevelElement(QIODevice* dev)
       {
       QString res;
       QXmlStreamReader e(dev);
-      //e.setDevice(dev);
 
       if (e.readNextStartElement())
             res = e.name().toString();
 
-      dev->seek(0);
+      dev->seek(0);      // move back for later parsing
+
       return res;
       }
 
 
 //---------------------------------------------------------
 //   importMusicXml
+//    import a MusicXML or MNX file (which share the .xml extension)
 //    return Score::FileError::FILE_* errors
 //---------------------------------------------------------
 
@@ -293,9 +296,8 @@ Score::FileError importMusicXml(MasterScore* score, const QString& name) {
           return Score::FileError::FILE_OPEN_ERROR;
           }
 
-      QString type = xmlFileType(&xmlFile);
-      qDebug("file type '%s'", qPrintable(type));
-      
+      QString type = topLevelElement(&xmlFile);
+
       // and import it
       if (type == "mnx")
             return importMnxFromBuffer(score, name, &xmlFile);
