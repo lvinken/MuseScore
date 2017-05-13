@@ -899,7 +899,6 @@ extern Score::FileError importGTP(MasterScore*, const QString& name);
 extern Score::FileError importBww(MasterScore*, const QString& path);
 extern Score::FileError importMusicXml(MasterScore*, const QString&);
 extern Score::FileError importCompressedMusicXml(MasterScore*, const QString&);
-extern Score::FileError importMnx(MasterScore*, const QString& path);
 extern Score::FileError importMuseData(MasterScore*, const QString& name);
 extern Score::FileError importLilypond(MasterScore*, const QString& name);
 extern Score::FileError importBB(MasterScore*, const QString& name);
