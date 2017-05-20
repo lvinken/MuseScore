@@ -17,6 +17,10 @@
 //  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //=============================================================================
 
+#include "libmscore/box.h"
+#include "libmscore/chord.h"
+#include "libmscore/durationtype.h"
+#include "libmscore/measure.h"
 #include "libmscore/part.h"
 #include "libmscore/staff.h"
 #include "musescore.h"
@@ -48,7 +52,7 @@ private:
       void lyric();
       void measure();
       void mnx();
-      void note();
+      Note* note();
       Score::FileError parse();
       void part();
       void rest();
@@ -65,6 +69,9 @@ private:
       QXmlStreamReader _e;
       QString _parseStatus;                           ///< Parse status (typicallay a short error message)
       Score* _score;                                  ///< MuseScore score
+      int _beats;       ///< number of beats
+      int _beatType;       ///< beat type
+      QString _title;
       };
 
 //---------------------------------------------------------
@@ -72,7 +79,9 @@ private:
 //---------------------------------------------------------
 
 MnxParser::MnxParser(Score* score)
-      : _score(score)
+      : _score(score),
+      _beats(4),
+      _beatType(4)
       {
       // nothing
       }
@@ -89,6 +98,17 @@ Score::FileError importMnxFromBuffer(Score* score, const QString& /*name*/, QIOD
       {
       //qDebug("importMnxFromBuffer(score %p, name '%s', dev %p)",
       //       score, qPrintable(name), dev);
+
+      // TODO move temporary part / staff creation
+      QString id("importMnx");
+      auto part = new Part(score);
+      part->setId(id);
+      score->appendPart(part);
+      auto staff = new Staff(score);
+      staff->setPart(part);
+      part->staves()->push_back(staff);
+      score->staves().push_back(staff);
+      // end TODO
 
       MnxParser p(score);
       p.parse(dev);
@@ -158,6 +178,176 @@ Score::FileError MnxParser::parse()
             }
 
       return Score::FileError::FILE_NO_ERROR;
+      }
+
+//---------------------------------------------------------
+//   forward references
+//---------------------------------------------------------
+
+static TDuration mnxEventValueToTDuration(const QString& value);
+static int mnxToMidiPitch(const QString& value);
+
+//---------------------------------------------------------
+//   addVBoxWithTitle
+//---------------------------------------------------------
+
+/**
+ Add a vbox containing the title to the score.
+ */
+
+static void addVBoxWithTitle(Score* score, const QString& title)
+      {
+      VBox* vbox = new VBox(score);
+      Text* text = new Text(SubStyle::TITLE, score);
+      text->setPlainText(title);
+      vbox->add(text);
+      vbox->setTick(0);
+      score->measures()->add(vbox);
+      }
+
+//---------------------------------------------------------
+//   addFirstMeasure
+//---------------------------------------------------------
+
+/**
+ Add the first measure to the score.
+ */
+
+static void addFirstMeasure(Score* score, const int bts, const int bttp)
+      {
+      auto m = new Measure(score);
+      m->setTick(0);
+      m->setTimesig(Fraction(bts, bttp));
+      m->setNo(1);
+      m->setLen(Fraction(bts, bttp));
+      score->measures()->add(m);
+      // clef (TODO remove temporary code)
+      // note that this results in a double clef
+      /*
+      auto clef = new Clef(score);
+      clef->setClefType(ClefType::G);
+      clef->setTrack(0);
+      auto s = m->getSegment(SegmentType::Clef, 0);
+      s->add(clef);
+       */
+      // timesig
+      auto timesig = new TimeSig(score);
+      timesig->setSig(Fraction(bts, bttp));
+      timesig->setTrack(0);
+      auto s = m->getSegment(SegmentType::TimeSig, 0);
+      s->add(timesig);
+      }
+
+//---------------------------------------------------------
+//   createChord
+//---------------------------------------------------------
+
+Chord* createChord(Score* score, const QString& value)
+      {
+      auto dur = mnxEventValueToTDuration(value);
+      auto chord = new Chord(score);
+      chord->setTrack(0);       // TODO
+      chord->setDurationType(dur);
+      chord->setDuration(dur.fraction());
+      chord->setDots(dur.dots());
+      //return nullptr;
+      return chord;
+      }
+
+//---------------------------------------------------------
+//   createNote
+//---------------------------------------------------------
+
+Note* createNote(Score* score, const QString& pitch)
+      {
+      auto note = new Note(score);
+      note->setTrack(0);       // TODO
+      note->setPitch(mnxToMidiPitch(pitch));       // TODO
+      note->setTpcFromPitch();       // TODO
+      //return nullptr;
+      return note;
+      }
+
+//---------------------------------------------------------
+//   setType
+//---------------------------------------------------------
+
+static TDuration::DurationType mnxValueUnitToDurationType(const QString& s)
+      {
+      if (s == "4")
+            return TDuration::DurationType::V_QUARTER;
+      else if (s == "8")
+            return TDuration::DurationType::V_EIGHTH;
+      else if (s == "1024")
+            return TDuration::DurationType::V_1024TH;
+      else if (s == "512")
+            return TDuration::DurationType::V_512TH;
+      else if (s == "256")
+            return TDuration::DurationType::V_256TH;
+      else if (s == "128")
+            return TDuration::DurationType::V_128TH;
+      else if (s == "64")
+            return TDuration::DurationType::V_64TH;
+      else if (s == "32")
+            return TDuration::DurationType::V_32ND;
+      else if (s == "16")
+            return TDuration::DurationType::V_16TH;
+      else if (s == "2")
+            return TDuration::DurationType::V_HALF;
+      else if (s == "1")
+            return TDuration::DurationType::V_WHOLE;
+      else if (s == "breve")
+            return TDuration::DurationType::V_BREVE;
+      else if (s == "long")
+            return TDuration::DurationType::V_LONG;
+      /*
+      else if (s == "measure")
+            return TDuration::DurationType::V_MEASURE;
+       */
+      else {
+            qDebug("mnxValueUnitToDurationType(%s): unknown", qPrintable(s));
+            return TDuration::DurationType::V_INVALID;
+            // _val = DurationType::V_QUARTER;
+            }
+      }
+
+static TDuration mnxEventValueToTDuration(const QString& value)
+      {
+      int dots = 0;
+      QString valueWithoutDots = value;
+
+      while (valueWithoutDots.endsWith('*')) {
+            ++dots;
+            valueWithoutDots.resize(valueWithoutDots.size() - 1);
+            }
+
+      auto val = mnxValueUnitToDurationType(valueWithoutDots);
+
+      TDuration res(val);
+      res.setDots(dots);
+
+      return res;
+      }
+
+static int mnxToMidiPitch(const QString& value)
+      {
+      if (value.size() < 2) {
+            qDebug("mnxToMidiPitch invalid value '%s'", qPrintable(value));
+            return -1;
+            }
+
+      QString steps("C_D_EF_G_A_B");
+      auto stepChar = value.at(0);
+      auto step = steps.indexOf(stepChar);
+
+      auto altOct = value.right(value.length() - 1);
+      bool ok = false;
+      auto oct = altOct.toInt(&ok);
+
+      if (stepChar != '_' && step > -1 && ok)
+            return step + (oct + 1) * 12;
+
+      return -1;
       }
 
 //---------------------------------------------------------
@@ -256,11 +446,13 @@ void MnxParser::event()
       QString value = _e.attributes().value("value").toString();
       logDebugTrace(QString("event value '%1'").arg(value));
 
+      ChordRest* cr = createChord(_score, value);
+
       while (_e.readNextStartElement()) {
             if (_e.name() == "lyric")
                   lyric();
             else if (_e.name() == "note") {
-                  note();
+                  cr->add(note());
                   }
             else if (_e.name() == "rest") {
                   rest();
@@ -268,6 +460,10 @@ void MnxParser::event()
             else
                   skipLogCurrElem();
             }
+
+      auto s = _score->firstMeasure()->getSegment(SegmentType::ChordRest, 0);
+      s->add(cr);
+
       }
 
 //---------------------------------------------------------
@@ -404,7 +600,7 @@ void MnxParser::mnx()
  Parse the /mnx/score/part/measure/sequence/event/note node.
  */
 
-void MnxParser::note()
+Note* MnxParser::note()
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "note");
       logDebugTrace("MnxParser::note");
@@ -414,6 +610,8 @@ void MnxParser::note()
 
       // TODO _e.readNext();
       _e.skipCurrentElement();
+
+      return createNote(_score, pitch);
       }
 
 //---------------------------------------------------------
@@ -553,6 +751,8 @@ void MnxParser::system()
             else
                   skipLogCurrElem();
             }
+
+      addFirstMeasure(_score, _beats, _beatType);
       }
 
 //---------------------------------------------------------
@@ -586,7 +786,10 @@ void MnxParser::title()
       Q_ASSERT(_e.isStartElement() && _e.name() == "title");
       logDebugTrace("MnxParser::title");
 
-      logDebugTrace(QString("title '%1'").arg(_e.readElementText()));
+      _title = _e.readElementText();
+      logDebugTrace(QString("title '%1'").arg(_title));
+      if (_title != "")
+            addVBoxWithTitle(_score, _title);
       }
 
 //---------------------------------------------------------
