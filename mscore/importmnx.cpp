@@ -631,7 +631,11 @@ void MnxParser::part()
             if (_e.name() == "measure")
                   measure();
             else if (_e.name() == "part-name") {
-                  logDebugTrace(QString("part-name '%1'").arg(_e.readElementText()));
+                  auto partName = _e.readElementText();
+                  logDebugTrace(QString("part-name '%1'").arg(partName));
+                  auto part = _score->staff(0)->part(); // TODO
+                  part->setPlainLongName(partName);
+                  part->setPartName(partName);
                   }
             else
                   skipLogCurrElem();
