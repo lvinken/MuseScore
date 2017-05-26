@@ -43,7 +43,7 @@ private:
       void attributes();
       void beam();
       void clef();
-      void event();
+      Fraction event(Measure* measure, const Fraction sTime);
       void head();
       void identification();
       void logDebugTrace(const QString& info);
@@ -57,7 +57,7 @@ private:
       void part();
       void rest();
       void score();
-      void sequence();
+      void sequence(Measure* measure, const Fraction sTime);
       void skipLogCurrElem();
       void staff();
       void system();
@@ -438,7 +438,7 @@ void MnxParser::clef()
  Parse the /mnx/score/part/measure/sequence/event node.
  */
 
-void MnxParser::event()
+Fraction MnxParser::event(Measure* measure, const Fraction sTime)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "event");
       logDebugTrace("MnxParser::event");
@@ -461,9 +461,10 @@ void MnxParser::event()
                   skipLogCurrElem();
             }
 
-      auto s = _score->firstMeasure()->getSegment(SegmentType::ChordRest, 0);
+      auto s = _score->firstMeasure()->getSegment(SegmentType::ChordRest, sTime.ticks());
       s->add(cr);
 
+            return cr->actualFraction();
       }
 
 //---------------------------------------------------------
@@ -554,13 +555,8 @@ void MnxParser::measure()
       while (_e.readNextStartElement()) {
             if (_e.name() == "attributes")
                   attributes();
-            /*
             else if (_e.name() == "sequence") {
-                  skipLogCurrElem();
-            }
-             */
-            else if (_e.name() == "sequence") {
-                  sequence();
+                  sequence(_score->firstMeasure() /* TODO */, Fraction(0, 1));
                   }
             else
                   skipLogCurrElem();
@@ -694,14 +690,16 @@ void MnxParser::score()
  Parse the /mnx/score/part/measure/sequence node.
  */
 
-void MnxParser::sequence()
+void MnxParser::sequence(Measure* measure, const Fraction sTime)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "sequence");
       logDebugTrace("MnxParser::sequence");
 
+            Fraction seqTime(0, 1); // time in this sequence
+            
       while (_e.readNextStartElement()) {
             if (_e.name() == "event")
-                  event();
+                  seqTime += event(measure, sTime + seqTime);
             /*
              else if (_e.name() == "sequence") {
              skipLogCurrElem();
