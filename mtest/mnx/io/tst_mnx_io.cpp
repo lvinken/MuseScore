@@ -53,6 +53,7 @@ private slots:
       void initTestCase();
 
       void hello() { mnxIoTest("testHello"); }
+      void notesRests1() { mnxIoTest("testNotesRests1"); }
       };
 
 //---------------------------------------------------------
