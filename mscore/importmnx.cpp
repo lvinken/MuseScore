@@ -43,7 +43,7 @@ private:
       void attributes();
       void beam();
       void clef();
-      Fraction event(Measure* measure, const Fraction sTime);
+      Fraction event(Measure* measure, const Fraction sTime, const int seqNr);
       void head();
       void identification();
       void logDebugTrace(const QString& info);
@@ -52,12 +52,12 @@ private:
       void lyric();
       void measure();
       void mnx();
-      Note* note();
+      Note* note(const int seqNr);
       Score::FileError parse();
       void part();
       void rest();
       void score();
-      void sequence(Measure* measure, const Fraction sTime);
+      void sequence(Measure* measure, const Fraction sTime, const int seqNr);
       void skipLogCurrElem();
       void staff();
       void system();
@@ -242,11 +242,11 @@ static void addFirstMeasure(Score* score, const int bts, const int bttp)
 //   createChord
 //---------------------------------------------------------
 
-Chord* createChord(Score* score, const QString& value)
+Chord* createChord(Score* score, const QString& value, const int track)
       {
       auto dur = mnxEventValueToTDuration(value);
       auto chord = new Chord(score);
-      chord->setTrack(0);       // TODO
+      chord->setTrack(track);
       chord->setDurationType(dur);
       chord->setDuration(dur.fraction());
       chord->setDots(dur.dots());
@@ -258,10 +258,10 @@ Chord* createChord(Score* score, const QString& value)
 //   createNote
 //---------------------------------------------------------
 
-Note* createNote(Score* score, const QString& pitch)
+Note* createNote(Score* score, const QString& pitch, const int track)
       {
       auto note = new Note(score);
-      note->setTrack(0);       // TODO
+      note->setTrack(track);
       note->setPitch(mnxToMidiPitch(pitch));       // TODO
       note->setTpcFromPitch();       // TODO
       //return nullptr;
@@ -438,7 +438,7 @@ void MnxParser::clef()
  Parse the /mnx/score/part/measure/sequence/event node.
  */
 
-Fraction MnxParser::event(Measure* measure, const Fraction sTime)
+Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqNr)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "event");
       logDebugTrace("MnxParser::event");
@@ -446,13 +446,13 @@ Fraction MnxParser::event(Measure* measure, const Fraction sTime)
       QString value = _e.attributes().value("value").toString();
       logDebugTrace(QString("event value '%1'").arg(value));
 
-      ChordRest* cr = createChord(_score, value);
+      ChordRest* cr = createChord(_score, value, seqNr);
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "lyric")
                   lyric();
             else if (_e.name() == "note") {
-                  cr->add(note());
+                  cr->add(note(seqNr));
                   }
             else if (_e.name() == "rest") {
                   rest();
@@ -552,11 +552,13 @@ void MnxParser::measure()
       Q_ASSERT(_e.isStartElement() && _e.name() == "measure");
       logDebugTrace("MnxParser::measure");
 
+            auto seqNr = 0; // sequence number
       while (_e.readNextStartElement()) {
             if (_e.name() == "attributes")
                   attributes();
             else if (_e.name() == "sequence") {
-                  sequence(_score->firstMeasure() /* TODO */, Fraction(0, 1));
+                  sequence(_score->firstMeasure() /* TODO */, Fraction(0, 1), seqNr);
+                  seqNr++;
                   }
             else
                   skipLogCurrElem();
@@ -596,7 +598,7 @@ void MnxParser::mnx()
  Parse the /mnx/score/part/measure/sequence/event/note node.
  */
 
-Note* MnxParser::note()
+Note* MnxParser::note(const int seqNr)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "note");
       logDebugTrace("MnxParser::note");
@@ -607,7 +609,7 @@ Note* MnxParser::note()
       // TODO _e.readNext();
       _e.skipCurrentElement();
 
-      return createNote(_score, pitch);
+      return createNote(_score, pitch, seqNr);
       }
 
 //---------------------------------------------------------
@@ -690,7 +692,7 @@ void MnxParser::score()
  Parse the /mnx/score/part/measure/sequence node.
  */
 
-void MnxParser::sequence(Measure* measure, const Fraction sTime)
+void MnxParser::sequence(Measure* measure, const Fraction sTime, const int seqNr)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "sequence");
       logDebugTrace("MnxParser::sequence");
@@ -699,15 +701,7 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime)
             
       while (_e.readNextStartElement()) {
             if (_e.name() == "event")
-                  seqTime += event(measure, sTime + seqTime);
-            /*
-             else if (_e.name() == "sequence") {
-             skipLogCurrElem();
-             }
-            else if (_e.name() == "sequence") {
-                  skipLogCurrElem();
-            }
-             */
+                  seqTime += event(measure, sTime + seqTime, seqNr);
             else
                   skipLogCurrElem();
             }
