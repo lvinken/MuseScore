@@ -3,6 +3,8 @@
     <head>
         <identification>
             <title>Notes/Rests 1</title>
+            <subtitle>MuseScore testfile</subtitle>
+            <creator type="composer">Leon Vinken</creator>
         </identification>
     </head>
     <score content="cwmn">
