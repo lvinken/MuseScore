@@ -22,6 +22,7 @@
 #include "libmscore/durationtype.h"
 #include "libmscore/measure.h"
 #include "libmscore/part.h"
+#include "libmscore/rest.h"
 #include "libmscore/staff.h"
 #include "musescore.h"
 #include "importmnx.h"
@@ -57,7 +58,7 @@ private:
       Note* note(const int seqNr);
       Score::FileError parse();
       void part();
-      void rest();
+      Rest* rest(Score* score, const QString& value, const int seqNr);
       void score();
       void sequence(Measure* measure, const Fraction sTime, const int seqNr);
       void setInRealPart() { _inRealPart = true; }
@@ -330,6 +331,18 @@ Note* createNote(Score* score, const QString& pitch, const int track)
       }
 
 //---------------------------------------------------------
+//   createRest
+//---------------------------------------------------------
+
+Rest* createRest(Score* score, const QString& value, const int track)
+      {
+      auto dur = mnxEventValueToTDuration(value);
+      auto rest = new Rest(score, dur);
+      rest->setTrack(track);
+      return rest;
+      }
+
+//---------------------------------------------------------
 //   setType
 //---------------------------------------------------------
 
@@ -536,16 +549,19 @@ Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqN
       QString value = _e.attributes().value("value").toString();
       logDebugTrace(QString("event value '%1'").arg(value));
 
-      ChordRest* cr = createChord(_score, value, seqNr);
+      ChordRest* cr = nullptr;
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "lyric")
                   lyric();
             else if (_e.name() == "note") {
+                  if (!cr)
+                        cr = createChord(_score, value, seqNr);
                   cr->add(note(seqNr));
                   }
             else if (_e.name() == "rest") {
-                  rest();
+                  if (!cr)
+                        cr = rest(_score, value, seqNr);
                   }
             else
                   skipLogCurrElem();
@@ -761,7 +777,7 @@ void MnxParser::part()
  Parse the /mnx/score/part/measure/sequence/event/rest node.
  */
 
-void MnxParser::rest()
+Rest* MnxParser::rest(Score* score, const QString& value, const int seqNr)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "rest");
       logDebugTrace("MnxParser::rest");
@@ -771,6 +787,7 @@ void MnxParser::rest()
       // TODO _e.readNext();
       _e.skipCurrentElement();
 
+      return createRest(_score, value, seqNr);
       }
 
 //---------------------------------------------------------
