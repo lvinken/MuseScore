@@ -43,6 +43,7 @@ private:
       void attributes();
       void beam();
       void clef();
+      void creator();
       Fraction event(Measure* measure, const Fraction sTime, const int seqNr);
       void head();
       void identification();
@@ -62,6 +63,7 @@ private:
       void setInRealPart() { _inRealPart = true; }
       void skipLogCurrElem();
       void staff();
+      void subtitle();
       void system();
       void tempo();
       void time();
@@ -71,9 +73,11 @@ private:
       QXmlStreamReader _e;
       QString _parseStatus;                           ///< Parse status (typicallay a short error message)
       Score* _score;                                  ///< MuseScore score
-      int _beats;       ///< number of beats
-      int _beatType;       ///< beat type
-      QString _title;
+      int _beats;                                     ///< number of beats
+      int _beatType;                                  ///< beat type
+      QString _composer;                              ///< metadata: composer
+      QString _subtitle;                              ///< metadata: subtitle
+      QString _title;                                 ///< metadata: title
       bool _inRealPart;
       };
 
@@ -193,21 +197,50 @@ static TDuration mnxEventValueToTDuration(const QString& value);
 static int mnxToMidiPitch(const QString& value);
 
 //---------------------------------------------------------
-//   addVBoxWithTitle
+//   addMetaData
 //---------------------------------------------------------
 
 /**
- Add a vbox containing the title to the score.
+ Add (part of) the metadata to the score.
  */
 
-static void addVBoxWithTitle(Score* score, const QString& title)
+static void addMetaData(Score* score, const QString& composer, const QString& subtitle, const QString& title)
       {
-      VBox* vbox = new VBox(score);
-      Text* text = new Text(SubStyle::TITLE, score);
-      text->setPlainText(title);
-      vbox->add(text);
-      vbox->setTick(0);
-      score->measures()->add(vbox);
+      if (!title.isEmpty()) score->setMetaTag("workTitle", title);
+      if (!subtitle.isEmpty()) score->setMetaTag("workNumber", subtitle);
+      if (!composer.isEmpty()) score->setMetaTag("composer", composer);
+      }
+
+//---------------------------------------------------------
+//   addVBoxWithMetaData
+//---------------------------------------------------------
+
+/**
+ Add a vbox containing (part of) the metadata to the score.
+ */
+
+static void addVBoxWithMetaData(Score* score, const QString& composer, const QString& subtitle, const QString& title)
+      {
+      if (!composer.isEmpty() || !subtitle.isEmpty() || !title.isEmpty()) {
+            VBox* vbox = new VBox(score);
+            if (!composer.isEmpty()) {
+                  Text* text = new Text(SubStyle::COMPOSER, score);
+                  text->setPlainText(composer);
+                  vbox->add(text);
+                  }
+            if (!subtitle.isEmpty()) {
+                  Text* text = new Text(SubStyle::SUBTITLE, score);
+                  text->setPlainText(subtitle);
+                  vbox->add(text);
+                  }
+            if (!title.isEmpty()) {
+                  Text* text = new Text(SubStyle::TITLE, score);
+                  text->setPlainText(title);
+                  vbox->add(text);
+                  }
+            vbox->setTick(0);
+            score->measures()->add(vbox);
+            }
       }
 
 //---------------------------------------------------------
@@ -467,6 +500,27 @@ void MnxParser::clef()
       }
 
 //---------------------------------------------------------
+//   creator
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/head/identification/creator node.
+ */
+
+void MnxParser::creator()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "creator");
+      logDebugTrace("MnxParser::creator");
+
+      auto creatorType = _e.attributes().value("type").toString();
+      auto creatorValue = _e.readElementText();
+      logDebugTrace(QString("creator '%1' '%2'").arg(creatorType).arg(creatorValue));
+
+      if (creatorType == "composer" && !creatorValue.isEmpty())
+            _composer = creatorValue;
+      }
+
+//---------------------------------------------------------
 //   event
 //---------------------------------------------------------
 
@@ -542,11 +596,18 @@ void MnxParser::identification()
 
 
       while (_e.readNextStartElement()) {
-            if (_e.name() == "title")
+            if (_e.name() == "creator")
+                  creator();
+            else if (_e.name() == "subtitle")
+                  subtitle();
+            else if (_e.name() == "title")
                   title();
             else
                   skipLogCurrElem();
             }
+
+      addVBoxWithMetaData(_score, _composer, _subtitle, _title);
+      addMetaData(_score, _composer, _subtitle, _title);
       }
 
 //---------------------------------------------------------
@@ -653,7 +714,7 @@ Note* MnxParser::note(const int seqNr)
       QString pitch = _e.attributes().value("pitch").toString();
       logDebugTrace(QString("- note pitch '%1'").arg(pitch));
 
-      // TODO _e.readNext();
+      // TODO which is correct ? _e.readNext();
       _e.skipCurrentElement();
 
       return createNote(_score, pitch, seqNr);
@@ -781,6 +842,23 @@ void MnxParser::staff()
       }
 
 //---------------------------------------------------------
+//   subtitle
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/head/identification/subtitle node.
+ */
+
+void MnxParser::subtitle()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "subtitle");
+      logDebugTrace("MnxParser::subtitle");
+
+      _subtitle = _e.readElementText();
+      logDebugTrace(QString("subtitle '%1'").arg(_title));
+      }
+
+//---------------------------------------------------------
 //   system
 //---------------------------------------------------------
 
@@ -837,8 +915,6 @@ void MnxParser::title()
 
       _title = _e.readElementText();
       logDebugTrace(QString("title '%1'").arg(_title));
-      if (_title != "")
-            addVBoxWithTitle(_score, _title);
       }
 
 //---------------------------------------------------------
