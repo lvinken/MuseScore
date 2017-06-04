@@ -46,11 +46,12 @@ private:
       Fraction event(Measure* measure, const Fraction sTime, const int seqNr);
       void head();
       void identification();
+      bool inRealPart() const { return _inRealPart; }
       void logDebugTrace(const QString& info);
       void logDebugInfo(const QString& info);
       void logError(const QString& error);
       void lyric();
-      void measure();
+      void measure(const int measureNr);
       void mnx();
       Note* note(const int seqNr);
       Score::FileError parse();
@@ -58,6 +59,7 @@ private:
       void rest();
       void score();
       void sequence(Measure* measure, const Fraction sTime, const int seqNr);
+      void setInRealPart() { _inRealPart = true; }
       void skipLogCurrElem();
       void staff();
       void system();
@@ -72,6 +74,7 @@ private:
       int _beats;       ///< number of beats
       int _beatType;       ///< beat type
       QString _title;
+      bool _inRealPart;
       };
 
 //---------------------------------------------------------
@@ -81,7 +84,8 @@ private:
 MnxParser::MnxParser(Score* score)
       : _score(score),
       _beats(4),
-      _beatType(4)
+      _beatType(4),
+      _inRealPart(false)
       {
       // nothing
       }
@@ -184,6 +188,7 @@ Score::FileError MnxParser::parse()
 //   forward references
 //---------------------------------------------------------
 
+static Measure* addMeasure(Score* score, const int tick, const int bts, const int bttp, const int no);
 static TDuration mnxEventValueToTDuration(const QString& value);
 static int mnxToMidiPitch(const QString& value);
 
@@ -213,14 +218,9 @@ static void addVBoxWithTitle(Score* score, const QString& title)
  Add the first measure to the score.
  */
 
-static void addFirstMeasure(Score* score, const int bts, const int bttp)
+static Measure* addFirstMeasure(Score* score, const int bts, const int bttp)
       {
-      auto m = new Measure(score);
-      m->setTick(0);
-      m->setTimesig(Fraction(bts, bttp));
-      m->setNo(1);
-      m->setLen(Fraction(bts, bttp));
-      score->measures()->add(m);
+      auto m = addMeasure(score, 0, bts, bttp, 1);
       // clef (TODO remove temporary code)
       // note that this results in a double clef
       /*
@@ -236,6 +236,36 @@ static void addFirstMeasure(Score* score, const int bts, const int bttp)
       timesig->setTrack(0);
       auto s = m->getSegment(SegmentType::TimeSig, 0);
       s->add(timesig);
+      return m;
+      }
+
+//---------------------------------------------------------
+//   addMeasure
+//---------------------------------------------------------
+
+/**
+ Add a measure to the score.
+ */
+
+static Measure* addMeasure(Score* score, const int tick, const int bts, const int bttp, const int no)
+      {
+      auto m = new Measure(score);
+      m->setTick(tick);
+      m->setTimesig(Fraction(bts, bttp));
+      m->setNo(no);
+      m->setLen(Fraction(bts, bttp));
+      score->measures()->add(m);
+      return m;
+      }
+
+//---------------------------------------------------------
+//   calculateMeasureStartTick
+//---------------------------------------------------------
+
+static int calculateMeasureStartTick(const int bts, const int bttp, const int no)
+      {
+      Fraction f(bts, bttp);
+      return no * f.ticks();  // TODO: assumes no timesig changes
       }
 
 //---------------------------------------------------------
@@ -250,7 +280,6 @@ Chord* createChord(Score* score, const QString& value, const int track)
       chord->setDurationType(dur);
       chord->setDuration(dur.fraction());
       chord->setDots(dur.dots());
-      //return nullptr;
       return chord;
       }
 
@@ -264,7 +293,6 @@ Note* createNote(Score* score, const QString& pitch, const int track)
       note->setTrack(track);
       note->setPitch(mnxToMidiPitch(pitch));       // TODO
       note->setTpcFromPitch();       // TODO
-      //return nullptr;
       return note;
       }
 
@@ -311,6 +339,10 @@ static TDuration::DurationType mnxValueUnitToDurationType(const QString& s)
             }
       }
 
+//---------------------------------------------------------
+//   mnxEventValueToTDuration
+//---------------------------------------------------------
+
 static TDuration mnxEventValueToTDuration(const QString& value)
       {
       int dots = 0;
@@ -328,6 +360,10 @@ static TDuration mnxEventValueToTDuration(const QString& value)
 
       return res;
       }
+
+//---------------------------------------------------------
+//   mnxToMidiPitch
+//---------------------------------------------------------
 
 static int mnxToMidiPitch(const QString& value)
       {
@@ -461,10 +497,10 @@ Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqN
                   skipLogCurrElem();
             }
 
-      auto s = _score->firstMeasure()->getSegment(SegmentType::ChordRest, sTime.ticks());
+      auto s = measure->getSegment(SegmentType::ChordRest, sTime.ticks());
       s->add(cr);
 
-            return cr->actualFraction();
+      return cr->actualFraction();
       }
 
 //---------------------------------------------------------
@@ -547,18 +583,29 @@ void MnxParser::lyric()
  Parse the /mnx/score/part/measure node.
  */
 
-void MnxParser::measure()
+void MnxParser::measure(const int measureNr)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "measure");
       logDebugTrace("MnxParser::measure");
 
-            auto seqNr = 0; // sequence number
+      Measure* currMeasure = nullptr;
+
+      if (inRealPart()) {
+            auto startTick = calculateMeasureStartTick(_beats, _beatType, measureNr);
+            currMeasure = measureNr
+                  ? addMeasure(_score, startTick, _beats, _beatType, measureNr + 1)
+                  : addFirstMeasure(_score, _beats, _beatType);
+            }
+
+      auto sequenceNr = 0;
+
       while (_e.readNextStartElement()) {
             if (_e.name() == "attributes")
                   attributes();
             else if (_e.name() == "sequence") {
-                  sequence(_score->firstMeasure() /* TODO */, Fraction(0, 1), seqNr);
-                  seqNr++;
+                  auto sequenceStartTick = Fraction(measureNr * _beats, _beatType); // TODO: assumes no timesig changes
+                  sequence(currMeasure, sequenceStartTick, sequenceNr);
+                  sequenceNr++;
                   }
             else
                   skipLogCurrElem();
@@ -625,9 +672,14 @@ void MnxParser::part()
       Q_ASSERT(_e.isStartElement() && _e.name() == "part");
       logDebugTrace("MnxParser::part");
 
+      setInRealPart();
+      auto measureNr = 0;
+
       while (_e.readNextStartElement()) {
-            if (_e.name() == "measure")
-                  measure();
+            if (_e.name() == "measure") {
+                  measure(measureNr);
+                  measureNr++;
+                  }
             else if (_e.name() == "part-name") {
                   auto partName = _e.readElementText();
                   logDebugTrace(QString("part-name '%1'").arg(partName));
@@ -697,8 +749,8 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime, const int seqNr
       Q_ASSERT(_e.isStartElement() && _e.name() == "sequence");
       logDebugTrace("MnxParser::sequence");
 
-            Fraction seqTime(0, 1); // time in this sequence
-            
+      Fraction seqTime(0, 1);       // time in this sequence
+
       while (_e.readNextStartElement()) {
             if (_e.name() == "event")
                   seqTime += event(measure, sTime + seqTime, seqNr);
@@ -741,14 +793,15 @@ void MnxParser::system()
       Q_ASSERT(_e.isStartElement() && _e.name() == "system");
       logDebugTrace("MnxParser::system");
 
+      auto measureNr = 0;
+
       while (_e.readNextStartElement()) {
-            if (_e.name() == "measure")
-                  measure();
-            else
+            if (_e.name() == "measure") {
+                  measure(measureNr);
+                  measureNr++;
+                  } else
                   skipLogCurrElem();
             }
-
-      addFirstMeasure(_score, _beats, _beatType);
       }
 
 //---------------------------------------------------------
