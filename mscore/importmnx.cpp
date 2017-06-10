@@ -195,7 +195,7 @@ Score::FileError MnxParser::parse()
 
 static Measure* addMeasure(Score* score, const int tick, const int bts, const int bttp, const int no);
 static TDuration mnxEventValueToTDuration(const QString& value);
-static int mnxToMidiPitch(const QString& value);
+static int mnxToMidiPitch(const QString& value, int& tpc);
 
 //---------------------------------------------------------
 //   addMetaData
@@ -325,8 +325,11 @@ Note* createNote(Score* score, const QString& pitch, const int track)
       {
       auto note = new Note(score);
       note->setTrack(track);
-      note->setPitch(mnxToMidiPitch(pitch));       // TODO
-      note->setTpcFromPitch();       // TODO
+      auto tpc2 = 0;
+      auto msPitch = mnxToMidiPitch(pitch, tpc2);
+      //note->setTpcFromPitch();       // TODO
+      //int tpc1 = Ms::transposeTpc(tpc2, Interval(), true);
+      note->setPitch(msPitch, tpc2, tpc2);
       return note;
       }
 
@@ -343,7 +346,7 @@ Rest* createRest(Score* score, const QString& value, const int track)
       }
 
 //---------------------------------------------------------
-//   setType
+//   mnxValueUnitToDurationType
 //---------------------------------------------------------
 
 static TDuration::DurationType mnxValueUnitToDurationType(const QString& s)
@@ -411,23 +414,57 @@ static TDuration mnxEventValueToTDuration(const QString& value)
 //   mnxToMidiPitch
 //---------------------------------------------------------
 
-static int mnxToMidiPitch(const QString& value)
+/**
+ Convert MNX pitch to MIDI note number and TPC.
+ Does not (yet) support non-integer alteration.
+ */
+
+static int mnxToMidiPitch(const QString& value, int& tpc)
       {
+      tpc = Tpc::TPC_INVALID;
+
       if (value.size() < 2) {
             qDebug("mnxToMidiPitch invalid value '%s'", qPrintable(value));
             return -1;
             }
 
-      QString steps("C_D_EF_G_A_B");
+      // handle step
+      QString steps("CDEFGAB");
       auto stepChar = value.at(0);
       auto step = steps.indexOf(stepChar);
 
+      if (step < 0 || 6 < step) {
+            qDebug("mnxToMidiPitch invalid value '%s'", qPrintable(value));
+            return -1;
+            }
+
       auto altOct = value.right(value.length() - 1);
+
+      // handle alt
+      auto alt = 0;
+      while (altOct.startsWith('#')) {
+            altOct.remove(0, 1);
+            alt++;
+            }
+      while (altOct.startsWith('b')) {
+            altOct.remove(0, 1);
+            alt--;
+            }
+
+      // handle oct
       bool ok = false;
       auto oct = altOct.toInt(&ok);
 
-      if (stepChar != '_' && step > -1 && ok)
-            return step + (oct + 1) * 12;
+      // calculate TPC
+      tpc = step2tpc(step, AccidentalVal(alt));
+
+      //                       c  d  e  f  g  a   b
+      static int table[7]  = { 0, 2, 4, 5, 7, 9, 11 };
+
+      // if all is well, return result
+      qDebug("value %s step %d alt %d oct %d tpc %d", qPrintable(value), step, alt, oct, tpc);
+      if (ok)
+            return table[step] + alt + (oct + 1) * 12;
 
       return -1;
       }
@@ -727,13 +764,14 @@ Note* MnxParser::note(const int seqNr)
       Q_ASSERT(_e.isStartElement() && _e.name() == "note");
       logDebugTrace("MnxParser::note");
 
-      QString pitch = _e.attributes().value("pitch").toString();
-      logDebugTrace(QString("- note pitch '%1'").arg(pitch));
+      auto accidental = _e.attributes().value("accidental").toString();
+      auto pitch = _e.attributes().value("pitch").toString();
+      logDebugTrace(QString("- note pitch '%1' accidental '%2'").arg(pitch).arg(accidental));
 
       // TODO which is correct ? _e.readNext();
       _e.skipCurrentElement();
 
-      return createNote(_score, pitch, seqNr);
+      return createNote(_score, pitch, seqNr /*, accidental*/);
       }
 
 //---------------------------------------------------------
