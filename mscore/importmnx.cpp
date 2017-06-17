@@ -346,6 +346,22 @@ Rest* createRest(Score* score, const QString& value, const int track)
       }
 
 //---------------------------------------------------------
+//   mnxTSigToBtsBtp
+//---------------------------------------------------------
+
+static void mnxTSigToBtsBtp(const QString& tsig, int& beats, int& beattp)
+      {
+      if (tsig == "3/4") {
+            beats = 3; beattp = 4;
+            }
+      else if (tsig == "4/4") {
+            beats = 4; beattp = 4;
+            }
+      else
+            qDebug("mnxTSigToBtsBtp: unknown '%s'", qPrintable(tsig));
+      }
+
+//---------------------------------------------------------
 //   mnxValueUnitToDurationType
 //---------------------------------------------------------
 
@@ -953,6 +969,8 @@ void MnxParser::time()
       QString signature = _e.attributes().value("signature").toString();
       logDebugTrace(QString("time-sig '%1'").arg(signature));
       _e.skipCurrentElement();
+
+      mnxTSigToBtsBtp(signature, _beats, _beatType);
       }
 
 //---------------------------------------------------------
