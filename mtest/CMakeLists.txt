@@ -86,6 +86,7 @@ set (SOURCE_LIB
       ${PROJECT_SOURCE_DIR}/mscore/importmidi/importmidi_instrument.cpp
       ${PROJECT_SOURCE_DIR}/mscore/importmidi/importmidi_chordname.cpp
       ${PROJECT_SOURCE_DIR}/mscore/exportmidi.cpp
+      ${PROJECT_SOURCE_DIR}/mscore/importmnx.cpp                # Required by importxml.cpp
       ${PROJECT_SOURCE_DIR}/mscore/importmxml.cpp               # Required by importxml.cpp
       ${PROJECT_SOURCE_DIR}/mscore/importmxmllogger.cpp         # Required by importxml.cpp
       ${PROJECT_SOURCE_DIR}/mscore/importmxmlnoteduration.cpp   # Required by importxml.cpp
