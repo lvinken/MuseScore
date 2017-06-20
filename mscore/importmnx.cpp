@@ -195,6 +195,7 @@ Score::FileError MnxParser::parse()
 //---------------------------------------------------------
 
 static Measure* addMeasure(Score* score, const int tick, const int bts, const int bttp, const int no);
+static void addTimeSig(Score* score, const int tick, const int track, const int bts, const int bttp);
 static TDuration mnxEventValueToTDuration(const QString& value);
 static int mnxToMidiPitch(const QString& value, int& tpc);
 
@@ -273,13 +274,12 @@ static void addVBoxWithMetaData(Score* score, const QString& composer, const QSt
 
 static Measure* addFirstMeasure(Score* score, const int bts, const int bttp)
       {
-      auto m = addMeasure(score, 0, bts, bttp, 1);
+      const auto tick = 0;
+      const auto nr = 1;
+      auto m = addMeasure(score, tick, bts, bttp, nr);
       // timesig
-      auto timesig = new TimeSig(score);
-      timesig->setSig(Fraction(bts, bttp));
-      timesig->setTrack(0);
-      auto s = m->getSegment(SegmentType::TimeSig, 0);
-      s->add(timesig);
+      const int track = 0;
+      addTimeSig(score, tick, track, bts, bttp);
       return m;
       }
 
@@ -300,6 +300,25 @@ static Measure* addMeasure(Score* score, const int tick, const int bts, const in
       m->setLen(Fraction(bts, bttp));
       score->measures()->add(m);
       return m;
+      }
+
+//---------------------------------------------------------
+//   addTimeSig
+//---------------------------------------------------------
+
+/**
+ Add a time signature to a track.
+ */
+
+static void addTimeSig(Score* score, const int tick, const int track, const int bts, const int bttp)
+      {
+      // timesig
+      auto timesig = new TimeSig(score);
+      timesig->setSig(Fraction(bts, bttp));
+      timesig->setTrack(track);
+      auto measure = score->tick2measure(tick);
+      auto s = measure->getSegment(SegmentType::TimeSig, tick);
+      s->add(timesig);
       }
 
 //---------------------------------------------------------
@@ -988,6 +1007,11 @@ void MnxParser::staff(const int staffNr)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "staff");
       logDebugTrace("MnxParser::staff");
+
+      if (staffNr > 0) {
+            const int tick = 0;
+            addTimeSig(_score, tick, staffNr * MAX_STAVES, _beats, _beatType);  // TODO part
+            }
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "clef")
