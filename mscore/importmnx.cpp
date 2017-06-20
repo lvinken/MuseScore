@@ -60,7 +60,7 @@ private:
       void part();
       Rest* rest(Score* score, const QString& value, const int seqNr);
       void score();
-      void sequence(Measure* measure, const Fraction sTime, const int seqNr);
+      void sequence(Measure* measure, const Fraction sTime, QVector<int>& staffSeqCount);
       void setInRealPart() { _inRealPart = true; }
       void skipLogCurrElem();
       void staff();
@@ -74,6 +74,7 @@ private:
       QXmlStreamReader _e;
       QString _parseStatus;                           ///< Parse status (typicallay a short error message)
       Score* _score;                                  ///< MuseScore score
+      Part* _part;                                    ///< current part (TODO: remove ?)
       int _beats;                                     ///< number of beats
       int _beatType;                                  ///< beat type
       QString _composer;                              ///< metadata: composer
@@ -93,6 +94,17 @@ MnxParser::MnxParser(Score* score)
       _inRealPart(false)
       {
       // nothing
+
+      // TODO move temporary part / staff creation
+      QString id("importMnx");
+      _part = new Part(score);
+      _part->setId(id);
+      score->appendPart(_part);
+      auto staff = new Staff(score);
+      staff->setPart(_part);
+      _part->staves()->push_back(staff);
+      score->staves().push_back(staff);
+      // end TODO
       }
 
 //---------------------------------------------------------
@@ -107,17 +119,6 @@ Score::FileError importMnxFromBuffer(Score* score, const QString& /*name*/, QIOD
       {
       //qDebug("importMnxFromBuffer(score %p, name '%s', dev %p)",
       //       score, qPrintable(name), dev);
-
-      // TODO move temporary part / staff creation
-      QString id("importMnx");
-      auto part = new Part(score);
-      part->setId(id);
-      score->appendPart(part);
-      auto staff = new Staff(score);
-      staff->setPart(part);
-      part->staves()->push_back(staff);
-      score->staves().push_back(staff);
-      // end TODO
 
       MnxParser p(score);
       p.parse(dev);
@@ -346,6 +347,27 @@ Rest* createRest(Score* score, const QString& value, const int track)
       }
 
 //---------------------------------------------------------
+//   setStavesForPart
+//---------------------------------------------------------
+
+/**
+ Set number of staves for part \a part to the max value of the current value
+ and the value in \a staves.
+ */
+
+static void setStavesForPart(Part* part, const int staves)
+      {
+      if (!(staves > 0 && staves <= MAX_STAVES)) {
+            qDebug("illegal number of staves: %d", staves);
+            return;
+            }
+
+      Q_ASSERT(part);
+      if (staves > part->nstaves())
+            part->setStaves(staves);
+      }
+
+//---------------------------------------------------------
 //   mnxTSigToBtsBtp
 //---------------------------------------------------------
 
@@ -498,9 +520,14 @@ void MnxParser::attributes()
       Q_ASSERT(_e.isStartElement() && _e.name() == "attributes");
       logDebugTrace("MnxParser::attributes");
 
+      auto nStaves = 0;
+
       while (_e.readNextStartElement()) {
-            if (_e.name() == "staff")
+            if (_e.name() == "staff") {
+                  ++nStaves;
+                  setStavesForPart(_part, nStaves);
                   staff();
+                  }
             else if (_e.name() == "tempo") {
                   skipLogCurrElem();
                   }
@@ -727,15 +754,14 @@ void MnxParser::measure(const int measureNr)
                   : addFirstMeasure(_score, _beats, _beatType);
             }
 
-      auto sequenceNr = 0;
+      QVector<int> staffSeqCount(MAX_STAVES);       // sequence count per staff
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "attributes")
                   attributes();
             else if (_e.name() == "sequence") {
                   auto sequenceStartTick = Fraction(measureNr * _beats, _beatType); // TODO: assumes no timesig changes
-                  sequence(currMeasure, sequenceStartTick, sequenceNr);
-                  sequenceNr++;
+                  sequence(currMeasure, sequenceStartTick, staffSeqCount);
                   }
             else
                   skipLogCurrElem();
@@ -876,18 +902,31 @@ void MnxParser::score()
  Parse the /mnx/score/part/measure/sequence node.
  */
 
-void MnxParser::sequence(Measure* measure, const Fraction sTime, const int seqNr)
+void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& staffSeqCount)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "sequence");
       logDebugTrace("MnxParser::sequence");
 
-      Fraction seqTime(0, 1);       // time in this sequence
+      // read staff attribute, not distinguishing between missing and invalid
+      auto ok = false;
+      auto staff = _e.attributes().value("staff").toString().toInt(&ok);
+      logDebugTrace(QString("staff '%1'").arg(staff));
+      staff = ok ? (staff - 1) : 0;       // convert to zero-based or set default
 
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "event")
-                  seqTime += event(measure, sTime + seqTime, seqNr);
-            else
-                  skipLogCurrElem();
+      if (staff < 0 || staff >= MAX_STAVES) {
+            logError("invalid staff");
+            skipLogCurrElem();
+            }
+      else {
+            Fraction seqTime(0, 1); // time in this sequence
+
+            while (_e.readNextStartElement()) {
+                  if (_e.name() == "event")
+                        seqTime += event(measure, sTime + seqTime, staffSeqCount.at(staff) + staff * MAX_STAVES);
+                  else
+                        skipLogCurrElem();
+                  }
+            staffSeqCount[staff]++;
             }
       }
 
