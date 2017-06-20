@@ -43,7 +43,7 @@ private:
       // functions
       void attributes();
       void beam();
-      void clef();
+      void clef(const int track);
       void creator();
       Fraction event(Measure* measure, const Fraction sTime, const int seqNr);
       void head();
@@ -63,7 +63,7 @@ private:
       void sequence(Measure* measure, const Fraction sTime, QVector<int>& staffSeqCount);
       void setInRealPart() { _inRealPart = true; }
       void skipLogCurrElem();
-      void staff();
+      void staff(const int staffNr);
       void subtitle();
       void system();
       void tempo();
@@ -199,6 +199,24 @@ static TDuration mnxEventValueToTDuration(const QString& value);
 static int mnxToMidiPitch(const QString& value, int& tpc);
 
 //---------------------------------------------------------
+//   score creation
+//---------------------------------------------------------
+
+//---------------------------------------------------------
+//   addClef
+//---------------------------------------------------------
+
+static void addClef(Score* score, const int tick, const int track, const ClefType ct)
+      {
+      auto clef = new Clef(score);
+      clef->setClefType(ct);
+      clef->setTrack(track);
+      auto measure = score->tick2measure(tick);
+      auto s = measure->getSegment(tick ? SegmentType::Clef : SegmentType::HeaderClef, tick);
+      s->add(clef);
+      }
+
+//---------------------------------------------------------
 //   addMetaData
 //---------------------------------------------------------
 
@@ -256,15 +274,6 @@ static void addVBoxWithMetaData(Score* score, const QString& composer, const QSt
 static Measure* addFirstMeasure(Score* score, const int bts, const int bttp)
       {
       auto m = addMeasure(score, 0, bts, bttp, 1);
-      // clef (TODO remove temporary code)
-      // note that this results in a double clef
-      /*
-      auto clef = new Clef(score);
-      clef->setClefType(ClefType::G);
-      clef->setTrack(0);
-      auto s = m->getSegment(SegmentType::Clef, 0);
-      s->add(clef);
-       */
       // timesig
       auto timesig = new TimeSig(score);
       timesig->setSig(Fraction(bts, bttp));
@@ -365,6 +374,29 @@ static void setStavesForPart(Part* part, const int staves)
       Q_ASSERT(part);
       if (staves > part->nstaves())
             part->setStaves(staves);
+      }
+
+//---------------------------------------------------------
+//   type conversions
+//---------------------------------------------------------
+
+//---------------------------------------------------------
+//   mnxClefToClefType
+//---------------------------------------------------------
+
+static ClefType mnxClefToClefType(const QString& sign, const QString& line)
+      {
+      ClefType res = ClefType::INVALID;
+
+      if (sign == "G" && line == "2")
+            res = ClefType::G;
+      else if (sign == "F" && line == "4")
+            res = ClefType::F;
+      else
+            qDebug("unknown clef sign: '%s' line: '%s' oct ch=%d>",
+                   qPrintable(sign), qPrintable(line), 0);
+
+      return res;
       }
 
 //---------------------------------------------------------
@@ -508,6 +540,10 @@ static int mnxToMidiPitch(const QString& value, int& tpc)
       }
 
 //---------------------------------------------------------
+//   parser: node handlers
+//---------------------------------------------------------
+
+//---------------------------------------------------------
 //   attributes
 //---------------------------------------------------------
 
@@ -524,9 +560,9 @@ void MnxParser::attributes()
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "staff") {
+                  setStavesForPart(_part, nStaves + 1);
+                  staff(nStaves); // note orde: staff createdby setStavesForPart()
                   ++nStaves;
-                  setStavesForPart(_part, nStaves);
-                  staff();
                   }
             else if (_e.name() == "tempo") {
                   skipLogCurrElem();
@@ -581,15 +617,25 @@ void MnxParser::beam()
  Parse the /mnx/score/part/measure/attributes/staff/clef node.
  */
 
-void MnxParser::clef()
+void MnxParser::clef(const int track)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "clef");
       logDebugTrace("MnxParser::clef");
 
-      QString sign = _e.attributes().value("sign").toString();
-      QString line = _e.attributes().value("line").toString();
+      auto sign = _e.attributes().value("sign").toString();
+      auto line = _e.attributes().value("line").toString();
       logDebugTrace(QString("clef sign '%1' line '%2'").arg(sign).arg(line));
+
+      auto ct = mnxClefToClefType(sign, line);
+
+      if (ct != ClefType::INVALID) {
+            const int tick = 0;       // TODO
+            addClef(_score, tick, track, ct);
+            }
+
       _e.skipCurrentElement();
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "clef");
       }
 
 //---------------------------------------------------------
@@ -938,14 +984,14 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& s
  Parse the /mnx/score/part/measure/attributes/staff node.
  */
 
-void MnxParser::staff()
+void MnxParser::staff(const int staffNr)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "staff");
       logDebugTrace("MnxParser::staff");
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "clef")
-                  clef();
+                  clef(staffNr * MAX_STAVES);  // TODO part
             else
                   skipLogCurrElem();
             }
