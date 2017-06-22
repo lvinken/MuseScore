@@ -94,17 +94,6 @@ MnxParser::MnxParser(Score* score)
       _inRealPart(false)
       {
       // nothing
-
-      // TODO move temporary part / staff creation
-      QString id("importMnx");
-      _part = new Part(score);
-      _part->setId(id);
-      score->appendPart(_part);
-      auto staff = new Staff(score);
-      staff->setPart(_part);
-      _part->staves()->push_back(staff);
-      score->staves().push_back(staff);
-      // end TODO
       }
 
 //---------------------------------------------------------
@@ -196,6 +185,7 @@ Score::FileError MnxParser::parse()
 
 static Measure* addMeasure(Score* score, const int tick, const int bts, const int bttp, const int no);
 static void addTimeSig(Score* score, const int tick, const int track, const int bts, const int bttp);
+static int determineTrack(const Part* const part, const int staff, const int voice);
 static TDuration mnxEventValueToTDuration(const QString& value);
 static int mnxToMidiPitch(const QString& value, int& tpc);
 
@@ -322,6 +312,35 @@ static void addTimeSig(Score* score, const int tick, const int track, const int 
       }
 
 //---------------------------------------------------------
+//   appendPart
+//---------------------------------------------------------
+
+/**
+ Append a new (single staff) part to the score.
+ */
+
+static Part* appendPart(Score* score, const int bts, const int bttp)
+      {
+      // create part and first staff
+      QString id("importMnx");
+      auto part = new Part(score);
+      part->setId(id);
+      score->appendPart(part);
+      part->setStaves(1);
+
+      // if not the first part, add the time signature
+      const auto staff { 0 };
+      const auto voice { 0 };
+      auto track = determineTrack(part, staff, voice);
+      if (track > 0) {
+            const auto tick { 0 };
+            addTimeSig(score, tick, track, bts, bttp);
+            }
+
+      return part;
+      }
+
+//---------------------------------------------------------
 //   calculateMeasureStartTick
 //---------------------------------------------------------
 
@@ -372,6 +391,37 @@ Rest* createRest(Score* score, const QString& value, const int track)
       auto rest = new Rest(score, dur);
       rest->setTrack(track);
       return rest;
+      }
+
+//---------------------------------------------------------
+//   determineTrack
+//---------------------------------------------------------
+
+static int determineTrack(const Part* const part, const int staff, const int voice)
+      {
+      // make score-relative instead on part-relative
+      Q_ASSERT(part);
+      Q_ASSERT(part->score());
+      auto scoreRelStaff = part->score()->staffIdx(part); // zero-based number of part's first staff in the score
+      auto res = (scoreRelStaff + staff) * VOICES + voice;
+      return res;
+      }
+
+//---------------------------------------------------------
+//   findMeasure
+//---------------------------------------------------------
+
+/**
+ In Score \a score find the measure starting at \a tick.
+ */
+
+static Measure* findMeasure(const Score* const score, const int tick)
+      {
+      for (Measure* m = score->firstMeasure();; m = m->nextMeasure()) {
+            if (m && m->tick() == tick)
+                  return m;
+            }
+      return 0;
       }
 
 //---------------------------------------------------------
@@ -551,7 +601,6 @@ static int mnxToMidiPitch(const QString& value, int& tpc)
       static int table[7]  = { 0, 2, 4, 5, 7, 9, 11 };
 
       // if all is well, return result
-      qDebug("value %s step %d alt %d oct %d tpc %d", qPrintable(value), step, alt, oct, tpc);
       if (ok)
             return table[step] + alt + (oct + 1) * 12;
 
@@ -814,9 +863,22 @@ void MnxParser::measure(const int measureNr)
 
       if (inRealPart()) {
             auto startTick = calculateMeasureStartTick(_beats, _beatType, measureNr);
-            currMeasure = measureNr
-                  ? addMeasure(_score, startTick, _beats, _beatType, measureNr + 1)
-                  : addFirstMeasure(_score, _beats, _beatType);
+            if (_score->staffIdx(_part) == 0) {
+                  // for first part only: create a measure
+                  currMeasure = measureNr
+                        ? addMeasure(_score, startTick, _beats, _beatType, measureNr + 1)
+                        : addFirstMeasure(_score, _beats, _beatType);
+                  }
+            else {
+                  // for the other parts, just find the measure
+                  // TODO: also support the first part having less measures than the others
+                  currMeasure = findMeasure(_score, startTick);
+                  if (!currMeasure) {
+                        logError(QString("measure at tick %1 not found!").arg(startTick));
+                        skipLogCurrElem();
+                        }
+
+                  }
             }
 
       QVector<int> staffSeqCount(MAX_STAVES);       // sequence count per staff
@@ -894,6 +956,8 @@ void MnxParser::part()
       Q_ASSERT(_e.isStartElement() && _e.name() == "part");
       logDebugTrace("MnxParser::part");
 
+      _part = appendPart(_score, _beats, _beatType);
+
       setInRealPart();
       auto measureNr = 0;
 
@@ -905,9 +969,8 @@ void MnxParser::part()
             else if (_e.name() == "part-name") {
                   auto partName = _e.readElementText();
                   logDebugTrace(QString("part-name '%1'").arg(partName));
-                  auto part = _score->staff(0)->part(); // TODO
-                  part->setPlainLongName(partName);
-                  part->setPartName(partName);
+                  _part->setPlainLongName(partName);
+                  _part->setPartName(partName);
                   }
             else
                   skipLogCurrElem();
@@ -986,8 +1049,10 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& s
             Fraction seqTime(0, 1); // time in this sequence
 
             while (_e.readNextStartElement()) {
-                  if (_e.name() == "event")
-                        seqTime += event(measure, sTime + seqTime, staffSeqCount.at(staff) + staff * MAX_STAVES);
+                  if (_e.name() == "event") {
+                        auto track = determineTrack(_part, staff, staffSeqCount.at(staff));
+                        seqTime += event(measure, sTime + seqTime, track);
+                        }
                   else
                         skipLogCurrElem();
                   }
@@ -1008,14 +1073,17 @@ void MnxParser::staff(const int staffNr)
       Q_ASSERT(_e.isStartElement() && _e.name() == "staff");
       logDebugTrace("MnxParser::staff");
 
+      auto voice { 0 };
+      auto track = determineTrack(_part, staffNr, voice);
+
       if (staffNr > 0) {
             const int tick = 0;
-            addTimeSig(_score, tick, staffNr * MAX_STAVES, _beats, _beatType);  // TODO part
+            addTimeSig(_score, tick, track, _beats, _beatType);
             }
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "clef")
-                  clef(staffNr * MAX_STAVES);  // TODO part
+                  clef(track);
             else
                   skipLogCurrElem();
             }
