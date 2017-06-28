@@ -676,6 +676,8 @@ void MnxParser::attributes()
             else
                   skipLogCurrElem();
             }
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "attributes");
       }
 
 //---------------------------------------------------------
@@ -710,6 +712,8 @@ void MnxParser::beam()
             }
       else
             _e.skipCurrentElement();
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "beam");
       }
 
 //---------------------------------------------------------
@@ -760,6 +764,8 @@ void MnxParser::creator()
 
       if (creatorType == "composer" && !creatorValue.isEmpty())
             _composer = creatorValue;
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "creator");
       }
 
 //---------------------------------------------------------
@@ -799,6 +805,8 @@ Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqN
       auto s = measure->getSegment(SegmentType::ChordRest, sTime.ticks());
       s->add(cr);
 
+      Q_ASSERT(_e.isEndElement() && _e.name() == "event");
+
       return cr->actualFraction();
       }
 
@@ -824,6 +832,8 @@ void MnxParser::head()
             else
                   skipLogCurrElem();
             }
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "head");
       }
 
 //---------------------------------------------------------
@@ -853,6 +863,8 @@ void MnxParser::identification()
 
       addVBoxWithMetaData(_score, _composer, _subtitle, _title);
       addMetaData(_score, _composer, _subtitle, _title);
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "identification");
       }
 
 //---------------------------------------------------------
@@ -879,6 +891,8 @@ void MnxParser::lyric()
              */
             skipLogCurrElem();
             }
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "lyric");
       }
 
 //---------------------------------------------------------
@@ -928,6 +942,8 @@ void MnxParser::measure(const int measureNr)
             else
                   skipLogCurrElem();
             }
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "measure");
       }
 
 //---------------------------------------------------------
@@ -953,6 +969,8 @@ void MnxParser::mnx()
             else
                   skipLogCurrElem();
             }
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "mnx");
       }
 
 //---------------------------------------------------------
@@ -974,6 +992,8 @@ Note* MnxParser::note(const int seqNr)
 
       // TODO which is correct ? _e.readNext();
       _e.skipCurrentElement();
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "note");
 
       return createNote(_score, pitch, seqNr /*, accidental*/);
       }
@@ -1010,6 +1030,8 @@ void MnxParser::part()
             else
                   skipLogCurrElem();
             }
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "part");
       }
 
 //---------------------------------------------------------
@@ -1029,6 +1051,8 @@ Rest* MnxParser::rest(Score* score, const QString& value, const int seqNr)
 
       // TODO _e.readNext();
       _e.skipCurrentElement();
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "rest");
 
       return createRest(_score, value, seqNr);
       }
@@ -1055,6 +1079,8 @@ void MnxParser::score()
             else
                   skipLogCurrElem();
             }
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "score");
       }
 
 //---------------------------------------------------------
@@ -1093,6 +1119,8 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& s
                   }
             staffSeqCount[staff]++;
             }
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "sequence");
       }
 
 //---------------------------------------------------------
@@ -1122,6 +1150,8 @@ void MnxParser::staff(const int staffNr)
             else
                   skipLogCurrElem();
             }
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "staff");
       }
 
 //---------------------------------------------------------
@@ -1139,6 +1169,8 @@ void MnxParser::subtitle()
 
       _subtitle = _e.readElementText();
       logDebugTrace(QString("subtitle '%1'").arg(_title));
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "subtitle");
       }
 
 //---------------------------------------------------------
@@ -1163,6 +1195,8 @@ void MnxParser::system()
                   } else
                   skipLogCurrElem();
             }
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "system");
       }
 
 //---------------------------------------------------------
@@ -1183,6 +1217,8 @@ void MnxParser::time()
       _e.skipCurrentElement();
 
       mnxTSigToBtsBtp(signature, _beats, _beatType);
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "time");
       }
 
 //---------------------------------------------------------
@@ -1200,6 +1236,8 @@ void MnxParser::title()
 
       _title = _e.readElementText();
       logDebugTrace(QString("title '%1'").arg(_title));
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "title");
       }
 
 //---------------------------------------------------------
