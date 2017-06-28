@@ -124,24 +124,18 @@ Score::FileError importMnxFromBuffer(Score* score, const QString& /*name*/, QIOD
 //---------------------------------------------------------
 
 /**
- Parse MNX in \a device and extract pass 1 data.
+ Parse MNX in \a device.
  */
 
 Score::FileError MnxParser::parse(QIODevice* device)
       {
       logDebugTrace("MnxParser::parse device");
-      //_parts.clear();
       _e.setDevice(device);
       Score::FileError res = parse();
       if (res != Score::FileError::FILE_NO_ERROR)
             return res;
 
-      // Determine the start tick of each measure in the part
-      /*
-       determineMeasureLength(_measureLength);
-       determineMeasureStart(_measureLength, _measureStart);
-       createMeasures(_score, _measureLength, _measureStart);
-       */
+      // Do post-parse fixups (none at this time)
       return res;
       }
 
@@ -196,6 +190,10 @@ static int mnxToMidiPitch(const QString& value, int& tpc);
 //---------------------------------------------------------
 //   addClef
 //---------------------------------------------------------
+
+/**
+ Add a clef of type \a ct to the score.
+ */
 
 static void addClef(Score* score, const int tick, const int track, const ClefType ct)
       {
@@ -344,15 +342,24 @@ static Part* appendPart(Score* score, const int bts, const int bttp)
 //   calculateMeasureStartTick
 //---------------------------------------------------------
 
+/**
+ Calculate the start tick of measure \a no.
+ TODO: assumes no timesig changes
+ */
+
 static int calculateMeasureStartTick(const int bts, const int bttp, const int no)
       {
       Fraction f(bts, bttp);
-      return no * f.ticks();  // TODO: assumes no timesig changes
+      return no * f.ticks();
       }
 
 //---------------------------------------------------------
 //   createChord
 //---------------------------------------------------------
+
+/*
+ * Create a chord with duration \a value in track \a track.
+ */
 
 Chord* createChord(Score* score, const QString& value, const int track)
       {
@@ -368,6 +375,10 @@ Chord* createChord(Score* score, const QString& value, const int track)
 //---------------------------------------------------------
 //   createNote
 //---------------------------------------------------------
+
+/*
+ * Create a note with pitch \a pitch in track \a track.
+ */
 
 Note* createNote(Score* score, const QString& pitch, const int track)
       {
@@ -385,6 +396,10 @@ Note* createNote(Score* score, const QString& pitch, const int track)
 //   createRest
 //---------------------------------------------------------
 
+/*
+ * Create a rest with duration \a value in track \a track.
+ */
+
 Rest* createRest(Score* score, const QString& value, const int track)
       {
       auto dur = mnxEventValueToTDuration(value);
@@ -396,6 +411,10 @@ Rest* createRest(Score* score, const QString& value, const int track)
 //---------------------------------------------------------
 //   determineTrack
 //---------------------------------------------------------
+
+/*
+ * Calculate track from \a part, \a staff and \a voice.
+ */
 
 static int determineTrack(const Part* const part, const int staff, const int voice)
       {
@@ -453,6 +472,10 @@ static void setStavesForPart(Part* part, const int staves)
 //   mnxClefToClefType
 //---------------------------------------------------------
 
+/*
+ * Convert MNX clef type to MuseScore ClefType.
+ */
+
 static ClefType mnxClefToClefType(const QString& sign, const QString& line)
       {
       ClefType res = ClefType::INVALID;
@@ -472,6 +495,10 @@ static ClefType mnxClefToClefType(const QString& sign, const QString& line)
 //   mnxTSigToBtsBtp
 //---------------------------------------------------------
 
+/*
+ * Convert MNX time signature to beats and beat type.
+ */
+
 static void mnxTSigToBtsBtp(const QString& tsig, int& beats, int& beattp)
       {
       if (tsig == "3/4") {
@@ -487,6 +514,10 @@ static void mnxTSigToBtsBtp(const QString& tsig, int& beats, int& beattp)
 //---------------------------------------------------------
 //   mnxValueUnitToDurationType
 //---------------------------------------------------------
+
+/*
+ * Convert MNX note value unit to MuseScore DurationType.
+ */
 
 static TDuration::DurationType mnxValueUnitToDurationType(const QString& s)
       {
@@ -530,6 +561,10 @@ static TDuration::DurationType mnxValueUnitToDurationType(const QString& s)
 //---------------------------------------------------------
 //   mnxEventValueToTDuration
 //---------------------------------------------------------
+
+/*
+ * Convert MNX note value (unit plus optional dots) to MuseScore TDuration.
+ */
 
 static TDuration mnxEventValueToTDuration(const QString& value)
       {
