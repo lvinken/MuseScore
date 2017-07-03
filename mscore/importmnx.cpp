@@ -20,6 +20,7 @@
 #include "libmscore/box.h"
 #include "libmscore/chord.h"
 #include "libmscore/durationtype.h"
+#include "libmscore/keysig.h"
 #include "libmscore/measure.h"
 #include "libmscore/part.h"
 #include "libmscore/rest.h"
@@ -49,6 +50,7 @@ private:
       void head();
       void identification();
       bool inRealPart() const { return _inRealPart; }
+      void key();
       void logDebugTrace(const QString& info);
       void logDebugInfo(const QString& info);
       void logError(const QString& error);
@@ -75,8 +77,9 @@ private:
       QString _parseStatus;                           ///< Parse status (typicallay a short error message)
       Score* _score;                                  ///< MuseScore score
       Part* _part;                                    ///< current part (TODO: remove ?)
-      int _beats;                                     ///< number of beats
-      int _beatType;                                  ///< beat type
+      int _beats;                                     ///< initial number of beats
+      int _beatType;                                  ///< initial beat type
+      KeySigEvent _key;                               ///< initial key signature
       QString _composer;                              ///< metadata: composer
       QString _subtitle;                              ///< metadata: subtitle
       QString _title;                                 ///< metadata: title
@@ -177,6 +180,7 @@ Score::FileError MnxParser::parse()
 //   forward references
 //---------------------------------------------------------
 
+static void addKeySig(Score* score, const int tick, const int track, const KeySigEvent key);
 static Measure* addMeasure(Score* score, const int tick, const int bts, const int bttp, const int no);
 static void addTimeSig(Score* score, const int tick, const int track, const int bts, const int bttp);
 static int determineTrack(const Part* const part, const int staff, const int voice);
@@ -260,15 +264,36 @@ static void addVBoxWithMetaData(Score* score, const QString& composer, const QSt
  Add the first measure to the score.
  */
 
-static Measure* addFirstMeasure(Score* score, const int bts, const int bttp)
+static Measure* addFirstMeasure(Score* score, const KeySigEvent key, const int bts, const int bttp)
       {
       const auto tick = 0;
       const auto nr = 1;
       auto m = addMeasure(score, tick, bts, bttp, nr);
       // timesig
       const int track = 0;
+      addKeySig(score, tick, track, key);
       addTimeSig(score, tick, track, bts, bttp);
       return m;
+      }
+
+//---------------------------------------------------------
+//   addKeySig
+//---------------------------------------------------------
+
+/**
+ Add a key signature to the score.
+ */
+
+static void addKeySig(Score* score, const int tick, const int track, const KeySigEvent key)
+      {
+      if (key.isValid()) {
+            auto keysig = new KeySig(score);
+            keysig->setTrack(track);
+            keysig->setKeySigEvent(key);
+            auto measure = score->tick2measure(tick);
+            auto s = measure->getSegment(SegmentType::KeySig, tick);
+            s->add(keysig);
+            }
       }
 
 //---------------------------------------------------------
@@ -300,7 +325,6 @@ static Measure* addMeasure(Score* score, const int tick, const int bts, const in
 
 static void addTimeSig(Score* score, const int tick, const int track, const int bts, const int bttp)
       {
-      // timesig
       auto timesig = new TimeSig(score);
       timesig->setSig(Fraction(bts, bttp));
       timesig->setTrack(track);
@@ -492,6 +516,35 @@ static ClefType mnxClefToClefType(const QString& sign, const QString& line)
       }
 
 //---------------------------------------------------------
+//   mnxKeyToKeySigEvent
+//---------------------------------------------------------
+
+/*
+ * Convert MNX key type to MuseScore KeySigEvent.
+ */
+
+static KeySigEvent mnxKeyToKeySigEvent(const QString& fifths, const QString& mode)
+      {
+      KeySigEvent res;
+
+      res.setKey(Key(fifths.toInt()));       // TODO: move toInt to caller
+
+      if (mode == "major") {
+            res.setMode(KeyMode::MAJOR);
+            }
+      else if (mode == "minor") {
+            res.setMode(KeyMode::MINOR);
+            }
+
+      if (!res.isValid()) {
+            qDebug("unknown key signature: fifths '%s' mode '%s'",
+                   qPrintable(fifths), qPrintable(mode));
+            }
+
+      return res;
+      }
+
+//---------------------------------------------------------
 //   mnxTSigToBtsBtp
 //---------------------------------------------------------
 
@@ -662,7 +715,10 @@ void MnxParser::attributes()
       auto nStaves = 0;
 
       while (_e.readNextStartElement()) {
-            if (_e.name() == "staff") {
+            if (_e.name() == "key") {
+                  key();
+                  }
+            else if (_e.name() == "staff") {
                   setStavesForPart(_part, nStaves + 1);
                   staff(nStaves); // note orde: staff createdby setStavesForPart()
                   ++nStaves;
@@ -868,6 +924,29 @@ void MnxParser::identification()
       }
 
 //---------------------------------------------------------
+//   key
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/part/measure/attributes/key node.
+ */
+
+void MnxParser::key()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "key");
+      logDebugTrace("MnxParser::key");
+
+      auto mode = _e.attributes().value("mode").toString();
+      auto fifths = _e.attributes().value("fifths").toString();
+      logDebugTrace(QString("key-sig '%1' '%2'").arg(fifths).arg(mode));
+      _e.skipCurrentElement();
+
+      _key = mnxKeyToKeySigEvent(fifths, mode);
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "key");
+      }
+
+//---------------------------------------------------------
 //   lyric
 //---------------------------------------------------------
 
@@ -916,7 +995,7 @@ void MnxParser::measure(const int measureNr)
                   // for first part only: create a measure
                   currMeasure = measureNr
                         ? addMeasure(_score, startTick, _beats, _beatType, measureNr + 1)
-                        : addFirstMeasure(_score, _beats, _beatType);
+                        : addFirstMeasure(_score, _key, _beats, _beatType);
                   }
             else {
                   // for the other parts, just find the measure
