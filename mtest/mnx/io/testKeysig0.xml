@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mnx>
+    <head>
+        <identification>
+            <title>Key Signature 0</title>
+            <subtitle>MuseScore testfile</subtitle>
+            <creator type="composer">Leon Vinken</creator>
+        </identification>
+    </head>
+    <score content="cwmn">
+        <system>
+            <measure>
+                <attributes>
+                    <time signature="3/4"/>
+                    <key fifths="1" mode="minor"/>
+                </attributes>
+            </measure>
+        </system>
+        <part>
+            <part-name>Music</part-name>
+            <measure>
+                <attributes>
+                    <staff>
+                        <clef sign="G" line="2"/>
+                    </staff>
+                </attributes>
+                <sequence>
+                    <event value="4"><note pitch="E4"/></event>
+                    <event value="4"><note pitch="F#4"/></event>
+                    <event value="4"><note pitch="G4"/></event>
+                </sequence>
+            </measure>
+        </part>
+    </score>
+</mnx>
