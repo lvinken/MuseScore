@@ -61,6 +61,7 @@ private slots:
       void multiStaff() { mnxIoTest("testMultiStaff"); }
       void notesRests1() { mnxIoTest("testNotesRests1"); }
       void voicePiano1() { mnxIoTest("testVoicePiano1"); }
+      void voicePiano2() { mnxIoTest("testVoicePiano2"); }
       };
 
 //---------------------------------------------------------
