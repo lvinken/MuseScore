@@ -269,7 +269,7 @@ static Measure* addFirstMeasure(Score* score, const KeySigEvent key, const int b
       const auto tick = 0;
       const auto nr = 1;
       auto m = addMeasure(score, tick, bts, bttp, nr);
-      // timesig
+      // keysig and timesig
       const int track = 0;
       addKeySig(score, tick, track, key);
       addTimeSig(score, tick, track, bts, bttp);
@@ -341,7 +341,7 @@ static void addTimeSig(Score* score, const int tick, const int track, const int 
  Append a new (single staff) part to the score.
  */
 
-static Part* appendPart(Score* score, const int bts, const int bttp)
+static Part* appendPart(Score* score, const KeySigEvent key, const int bts, const int bttp)
       {
       // create part and first staff
       QString id("importMnx");
@@ -350,12 +350,13 @@ static Part* appendPart(Score* score, const int bts, const int bttp)
       score->appendPart(part);
       part->setStaves(1);
 
-      // if not the first part, add the time signature
+      // if not the first part, add the key and time signature
       const auto staff { 0 };
       const auto voice { 0 };
       auto track = determineTrack(part, staff, voice);
       if (track > 0) {
             const auto tick { 0 };
+            addKeySig(score, tick, track, key);
             addTimeSig(score, tick, track, bts, bttp);
             }
 
@@ -1090,7 +1091,7 @@ void MnxParser::part()
       Q_ASSERT(_e.isStartElement() && _e.name() == "part");
       logDebugTrace("MnxParser::part");
 
-      _part = appendPart(_score, _beats, _beatType);
+      _part = appendPart(_score, _key, _beats, _beatType);
 
       setInRealPart();
       auto measureNr = 0;
@@ -1220,6 +1221,7 @@ void MnxParser::staff(const int staffNr)
 
       if (staffNr > 0) {
             const int tick = 0;
+            addKeySig(_score, tick, track, _key);
             addTimeSig(_score, tick, track, _beats, _beatType);
             }
 
