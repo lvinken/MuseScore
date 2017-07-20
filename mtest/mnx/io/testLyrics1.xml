@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mnx>
+    <head>
+        <identification>
+            <title>Lyrics 1</title>
+            <subtitle>MuseScore testfile</subtitle>
+            <creator type="composer">Leon Vinken</creator>
+        </identification>
+    </head>
+    <score content="cwmn">
+        <system>
+            <measure>
+                <attributes>
+                    <time signature="4/4"/>
+                </attributes>
+            </measure>
+        </system>
+        <part>
+            <part-name>Voice</part-name>
+            <measure>
+                <attributes>
+                    <staff>
+                        <clef sign="G" line="2"/>
+                    </staff>
+                </attributes>
+                <sequence>
+                    <event value="2">
+                        <note pitch="G4"/>
+                        <lyric>
+                            <syllabic>single</syllabic>
+                            <text>lyric1</text>
+                        </lyric>
+                    </event>
+                    <event value="2">
+                        <note pitch="A4"/>
+                        <lyric>
+                            <syllabic>single</syllabic>
+                            <text>lyric2</text>
+                        </lyric>
+                    </event>
+                </sequence>
+            </measure>
+        </part>
+    </score>
+</mnx>

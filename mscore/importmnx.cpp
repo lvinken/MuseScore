@@ -21,6 +21,7 @@
 #include "libmscore/chord.h"
 #include "libmscore/durationtype.h"
 #include "libmscore/keysig.h"
+#include "libmscore/lyrics.h"
 #include "libmscore/measure.h"
 #include "libmscore/part.h"
 #include "libmscore/rest.h"
@@ -29,6 +30,12 @@
 #include "importmnx.h"
 
 namespace Ms {
+
+//---------------------------------------------------------
+//   Constants
+//---------------------------------------------------------
+
+const int MAX_LYRICS       = 16;
 
 //---------------------------------------------------------
 //   MnxParser definition
@@ -54,7 +61,7 @@ private:
       void logDebugTrace(const QString& info);
       void logDebugInfo(const QString& info);
       void logError(const QString& error);
-      void lyric();
+      void lyric(ChordRest* cr);
       void measure(const int measureNr);
       void mnx();
       Note* note(const int seqNr);
@@ -294,6 +301,34 @@ static void addKeySig(Score* score, const int tick, const int track, const KeySi
             auto s = measure->getSegment(SegmentType::KeySig, tick);
             s->add(keysig);
             }
+      }
+
+//---------------------------------------------------------
+//   addLyric
+//---------------------------------------------------------
+
+/**
+ Add a single lyric to the score (unless the number is too high)
+ */
+
+static void addLyric(ChordRest* cr, int lyricNo, const QString& text)
+      {
+      if (!cr) {
+            qDebug("no chord for lyric");
+            return;
+            }
+
+      if (lyricNo > MAX_LYRICS) {
+            qDebug("too much lyrics (>%d)", MAX_LYRICS);       // TODO
+            return;
+            }
+
+      auto l = new Lyrics(cr->score());
+      // TODO in addlyrics: l->setTrack(trk);
+
+      l->setNo(lyricNo);
+      l->setPlainText(text);
+      cr->add(l);
       }
 
 //---------------------------------------------------------
@@ -845,7 +880,7 @@ Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqN
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "lyric")
-                  lyric();
+                  lyric(cr);
             else if (_e.name() == "note") {
                   if (!cr)
                         cr = createChord(_score, value, seqNr);
@@ -955,21 +990,19 @@ void MnxParser::key()
  Parse the /mnx/score/part/measure/sequence/event/lyric node.
  */
 
-void MnxParser::lyric()
+void MnxParser::lyric(ChordRest* cr)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "lyric");
       logDebugTrace("MnxParser::lyric");
 
       while (_e.readNextStartElement()) {
-            /* TODO
-            if (_e.name() == "measure")
-                  measure();
-            else if (_e.name() == "part-name") {
-                  logDebugTrace(QString("part-name '%1'").arg(_e.readElementText()));
+            if (_e.name() == "text") {
+                  auto lyricText = _e.readElementText();
+                  qDebug("lyric text '%s'", qPrintable(lyricText));
+                  addLyric(cr, 0, lyricText);
                   }
             else
-             */
-            skipLogCurrElem();
+                  skipLogCurrElem();
             }
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "lyric");

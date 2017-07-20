@@ -57,6 +57,7 @@ private slots:
       void chords() { mnxIoTest("testChords"); }
       void hello() { mnxIoTest("testHello"); }
       void keysig0() { mnxIoTest("testKeysig0"); }
+      void lyrics1() { mnxIoTest("testLyrics1"); }
       void multiPart() { mnxIoTest("testMultiPart"); }
       void multiStaff() { mnxIoTest("testMultiStaff"); }
       void notesRests1() { mnxIoTest("testNotesRests1"); }
