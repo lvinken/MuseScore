@@ -996,9 +996,12 @@ void MnxParser::lyric(ChordRest* cr)
       logDebugTrace("MnxParser::lyric");
 
       while (_e.readNextStartElement()) {
-            if (_e.name() == "text") {
+            if (_e.name() == "syllabic") {
+                  // ignore for now
+                  _e.skipCurrentElement();
+                  }
+            else if (_e.name() == "text") {
                   auto lyricText = _e.readElementText();
-                  qDebug("lyric text '%s'", qPrintable(lyricText));
                   addLyric(cr, 0, lyricText);
                   }
             else
