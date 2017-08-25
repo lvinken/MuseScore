@@ -26,6 +26,7 @@
 #include "libmscore/part.h"
 #include "libmscore/rest.h"
 #include "libmscore/staff.h"
+#include "libmscore/tuplet.h"
 #include "musescore.h"
 #include "importmnx.h"
 
@@ -53,7 +54,7 @@ private:
       void beam();
       void clef(const int track);
       void creator();
-      Fraction event(Measure* measure, const Fraction sTime, const int seqNr);
+      Fraction event(Measure* measure, const Fraction sTime, const int seqNr, Tuplet* tuplet);
       void head();
       void identification();
       bool inRealPart() const { return _inRealPart; }
@@ -78,6 +79,7 @@ private:
       void tempo();
       void time();
       void title();
+      Fraction tuplet(Measure* measure, const Fraction sTime, const int seqNr);
 
       // data
       QXmlStreamReader _e;
@@ -469,6 +471,21 @@ Rest* createRest(Score* score, const QString& value, const int track)
       }
 
 //---------------------------------------------------------
+//   createTuplet
+//---------------------------------------------------------
+
+/*
+ * Create a tuplet in measure \a measure and track \a track.
+ */
+
+Tuplet* createTuplet(Measure* measure, const int track)
+      {
+      auto tuplet = new Tuplet(measure->score());
+      tuplet->setTrack(track);
+      return tuplet;
+      }
+
+//---------------------------------------------------------
 //   determineTrack
 //---------------------------------------------------------
 
@@ -732,6 +749,35 @@ static int mnxToMidiPitch(const QString& value, int& tpc)
       }
 
 //---------------------------------------------------------
+//   setTupletParameters (TODO: enhance too trivial implementation)
+//---------------------------------------------------------
+
+static void setTupletParameters(Tuplet* tuplet, const QString& actual, const QString& normal)
+      {
+      Q_ASSERT(tuplet);
+
+      auto actualNotes { 3 };
+      auto normalNotes { 2 };
+      auto td { TDuration::DurationType::V_INVALID };
+
+      if (actual == "3/4" && normal == "2/4") {
+            actualNotes = 3; normalNotes = 2; td = TDuration::DurationType::V_QUARTER;
+            }
+      else
+      if (actual == "3/8" && normal == "2/8") {
+            actualNotes = 3; normalNotes = 2; td = TDuration::DurationType::V_EIGHTH;
+            }
+      else
+            {
+            qDebug("invalid actual '%s' and/or normal '%s'", qPrintable(actual), qPrintable(normal));
+            return;
+            }
+
+      tuplet->setRatio(Fraction(actualNotes, normalNotes));
+      tuplet->setBaseLen(td);
+      }
+
+//---------------------------------------------------------
 //   parser: node handlers
 //---------------------------------------------------------
 
@@ -868,7 +914,7 @@ void MnxParser::creator()
  Parse the /mnx/score/part/measure/sequence/event node.
  */
 
-Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqNr)
+Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqNr, Tuplet* tuplet)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "event");
       logDebugTrace("MnxParser::event");
@@ -896,6 +942,11 @@ Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqN
 
       auto s = measure->getSegment(SegmentType::ChordRest, sTime.ticks());
       s->add(cr);
+
+      if (tuplet) {
+            cr->setTuplet(tuplet);
+            tuplet->add(cr);
+            }
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "event");
 
@@ -1224,11 +1275,14 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& s
             }
       else {
             Fraction seqTime(0, 1); // time in this sequence
+            auto track = determineTrack(_part, staff, staffSeqCount.at(staff));
 
             while (_e.readNextStartElement()) {
                   if (_e.name() == "event") {
-                        auto track = determineTrack(_part, staff, staffSeqCount.at(staff));
-                        seqTime += event(measure, sTime + seqTime, track);
+                        seqTime += event(measure, sTime + seqTime, track, nullptr);
+                        }
+                  else if (_e.name() == "tuplet") {
+                        seqTime += tuplet(measure, sTime + seqTime, track);
                         }
                   else
                         skipLogCurrElem();
@@ -1355,6 +1409,43 @@ void MnxParser::title()
       logDebugTrace(QString("title '%1'").arg(_title));
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "title");
+      }
+
+//---------------------------------------------------------
+//   tuplet
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/part/measure/sequence/tuplet node.
+ */
+
+Fraction MnxParser::tuplet(Measure* measure, const Fraction sTime, const int seqNr)
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "tuplet");
+      logDebugTrace("MnxParser::tuplet");
+
+      auto actual = _e.attributes().value("actual").toString();
+      auto normal = _e.attributes().value("normal").toString();
+      logDebugTrace(QString("tuplet actual '%1' normal '%2'").arg(actual).arg(normal));
+
+      Fraction tupTime(0, 1);       // time in this tuplet
+
+      // create the tuplet
+      auto tuplet = createTuplet(measure, seqNr);
+      tuplet->setParent(measure);
+      setTupletParameters(tuplet, actual, normal);
+
+      while (_e.readNextStartElement()) {
+            if (_e.name() == "event") {
+                  tupTime += event(measure, sTime + tupTime, seqNr, tuplet);
+                  }
+            else
+                  skipLogCurrElem();
+            }
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "tuplet");
+
+      return tupTime;
       }
 
 //---------------------------------------------------------
