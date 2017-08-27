@@ -68,7 +68,7 @@ private:
       Note* note(const int seqNr);
       Score::FileError parse();
       void part();
-      Rest* rest(Score* score, const QString& value, const int seqNr);
+      Rest* rest(Measure* measure, const QString& type, const QString& value, const int seqNr);
       void score();
       void sequence(Measure* measure, const Fraction sTime, QVector<int>& staffSeqCount);
       void setInRealPart() { _inRealPart = true; }
@@ -435,6 +435,23 @@ Chord* createChord(Score* score, const QString& value, const int track)
       }
 
 //---------------------------------------------------------
+//   createCompleteMeasureRest
+//---------------------------------------------------------
+
+/*
+ * Create a complete measure rest for measure \a measure in track \a track.
+ */
+
+Rest* createCompleteMeasureRest(Measure* measure, const int track)
+      {
+      auto rest = new Rest(measure->score());
+      rest->setDurationType(TDuration::DurationType::V_MEASURE);
+      rest->setDuration(measure->len());
+      rest->setTrack(track);
+      return rest;
+      }
+
+//---------------------------------------------------------
 //   createNote
 //---------------------------------------------------------
 
@@ -653,10 +670,6 @@ static TDuration::DurationType mnxValueUnitToDurationType(const QString& s)
             return TDuration::DurationType::V_BREVE;
       else if (s == "long")
             return TDuration::DurationType::V_LONG;
-      /*
-      else if (s == "measure")
-            return TDuration::DurationType::V_MEASURE;
-       */
       else {
             qDebug("mnxValueUnitToDurationType(%s): unknown", qPrintable(s));
             return TDuration::DurationType::V_INVALID;
@@ -919,8 +932,9 @@ Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqN
       Q_ASSERT(_e.isStartElement() && _e.name() == "event");
       logDebugTrace("MnxParser::event");
 
-      QString value = _e.attributes().value("value").toString();
-      logDebugTrace(QString("event value '%1'").arg(value));
+      auto type = _e.attributes().value("type").toString();
+      auto value = _e.attributes().value("value").toString();
+      logDebugTrace(QString("event type '%1' value '%2'").arg(type).arg(value));
 
       ChordRest* cr = nullptr;
 
@@ -934,7 +948,7 @@ Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqN
                   }
             else if (_e.name() == "rest") {
                   if (!cr)
-                        cr = rest(_score, value, seqNr);
+                        cr = rest(measure, type, value, seqNr);
                   }
             else
                   skipLogCurrElem();
@@ -1209,7 +1223,7 @@ void MnxParser::part()
  Parse the /mnx/score/part/measure/sequence/event/rest node.
  */
 
-Rest* MnxParser::rest(Score* score, const QString& value, const int seqNr)
+Rest* MnxParser::rest(Measure* measure, const QString& type, const QString& value, const int seqNr)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "rest");
       logDebugTrace("MnxParser::rest");
@@ -1221,7 +1235,9 @@ Rest* MnxParser::rest(Score* score, const QString& value, const int seqNr)
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "rest");
 
-      return createRest(_score, value, seqNr);
+      return type == "measure"
+             ? createCompleteMeasureRest(measure, seqNr)
+             : createRest(measure->score(), value, seqNr);
       }
 
 //---------------------------------------------------------
