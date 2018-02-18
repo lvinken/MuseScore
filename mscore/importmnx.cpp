@@ -125,7 +125,9 @@ Score::FileError importMnxFromBuffer(Score* score, const QString& /*name*/, QIOD
       //logger.setLoggingLevel(MxmlLogger::Level::MXML_TRACE); // also include tracing
 
       MnxParser p(score, &logger);
-      p.parse(dev);
+      auto res = p.parse(dev);
+      if (res != Score::FileError::FILE_NO_ERROR)
+            return res;
 
       score->setSaved(false);
       score->setCreated(true);
