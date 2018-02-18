@@ -17,6 +17,14 @@
 //  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //=============================================================================
 
+/*
+ Issue list
+ - check for valid staff number before putting anything on the staff
+ - other sanity checks are mostly missing
+ - make all pointers passed to functions const where possible (to const or non-const as required)
+ - have factory functions return unique_ptr
+ */
+
 #include "libmscore/box.h"
 #include "libmscore/chord.h"
 #include "libmscore/durationtype.h"
@@ -51,7 +59,7 @@ public:
 
 private:
       // functions
-      void beam();
+      Fraction beamed(Measure* measure, const Fraction sTime, const int track);
       void clef(const int track);
       void creator();
       void cwmnx();
@@ -72,6 +80,7 @@ private:
       void sequence(Measure* measure, const Fraction sTime, QVector<int>& staffSeqCount);
       void setInRealPart() { _inRealPart = true; }
       void skipLogCurrElem();
+      int staves();
       void subtitle();
       void tempo();
       void time();
@@ -549,7 +558,7 @@ static Measure* findMeasure(const Score* const score, const int tick)
  Set number of staves for part \a part to the max value of the current value
  and the value in \a staves.
  */
-/* TODO
+/* TODO */
 static void setStavesForPart(Part* part, const int staves)
       {
       if (!(staves > 0 && staves <= MAX_STAVES)) {
@@ -561,7 +570,7 @@ static void setStavesForPart(Part* part, const int staves)
       if (staves > part->nstaves())
             part->setStaves(staves);
       }
-*/
+/**/
 //---------------------------------------------------------
 //   type conversions
 //---------------------------------------------------------
@@ -694,7 +703,7 @@ static TDuration mnxEventValueToTDuration(const QString& value)
       int dots = 0;
       QString valueWithoutDots = value;
 
-      while (valueWithoutDots.endsWith('*')) {
+      while (valueWithoutDots.endsWith('d')) {
             ++dots;
             valueWithoutDots.resize(valueWithoutDots.size() - 1);
             }
@@ -799,39 +808,36 @@ static void setTupletParameters(Tuplet* tuplet, const QString& actual, const QSt
 //---------------------------------------------------------
 
 //---------------------------------------------------------
-//   beam
+//   beamed
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/score/part/measure/sequence/event/beam node.
+ Parse the /mnx/score/cwmnx/part/measure/sequence/beamed node.
  */
 
-void MnxParser::beam()
+// TODO: actually set the beam (currently the notes are read, but beam handling is still automatic)
+
+Fraction MnxParser::beamed(Measure* measure, const Fraction sTime, const int track)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "beam");
-      _logger->logDebugTrace("MnxParser::beam");
+      Q_ASSERT(_e.isStartElement() && _e.name() == "beamed");
+      _logger->logDebugTrace("MnxParser::beamed");
 
-      int beamNo = _e.attributes().value("number").toInt();
+      Fraction seqTime(0, 1);       // time in this sequence
 
-      if (beamNo == 1) {
-            QString s = _e.readElementText();
-            if (s == "begin")
-                  ;       // TODOD beamMode = Beam::Mode::BEGIN;
-            else if (s == "end")
-                  ;       // TODOD beamMode = Beam::Mode::END;
-            else if (s == "continue")
-                  ;       // TODOD beamMode = Beam::Mode::MID;
-            else if (s == "backward hook")
-                  ;
-            else if (s == "forward hook")
-                  ;
+      while (_e.readNextStartElement()) {
+            if (_e.name() == "event") {
+                  seqTime += event(measure, sTime + seqTime, track, nullptr);
+                  }
+            else if (_e.name() == "tuplet") {
+                  seqTime += tuplet(measure, sTime + seqTime, track);
+                  }
             else
-                  _logger->logError(QString("unknown beam keyword '%1'").arg(s));
+                  skipLogCurrElem();
             }
-      else
-            _e.skipCurrentElement();
 
-      Q_ASSERT(_e.isEndElement() && _e.name() == "beam");
+      Q_ASSERT(_e.isEndElement() && _e.name() == "beamed");
+
+      return seqTime;
       }
 
 //---------------------------------------------------------
@@ -925,19 +931,14 @@ void MnxParser::directions()
       Q_ASSERT(_e.isStartElement() && _e.name() == "directions");
       _logger->logDebugTrace("MnxParser::directions");
 
-      //auto nStaves = 0;
-
       while (_e.readNextStartElement()) {
             if (_e.name() == "key") {
                   key();
                   }
-            /*
-            else if (_e.name() == "staff") {
-                  setStavesForPart(_part, nStaves + 1);
-                  staff(nStaves); // note orde: staff createdby setStavesForPart()
-                  ++nStaves;
-            }
-             */
+            else if (_e.name() == "staves") {
+                  auto nStaves = staves();
+                  setStavesForPart(_part, nStaves);
+                  }
             else if (_e.name() == "tempo") {
                   skipLogCurrElem();
                   }
@@ -1323,7 +1324,10 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& s
             auto track = determineTrack(_part, staff, staffSeqCount.at(staff));
 
             while (_e.readNextStartElement()) {
-                  if (_e.name() == "clef") {
+                  if (_e.name() == "beamed") {
+                        seqTime += beamed(measure, sTime + seqTime, track);
+                        }
+                  else if (_e.name() == "clef") {
                         clef(track);
                         }
                   else if (_e.name() == "event") {
@@ -1339,6 +1343,33 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& s
             }
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "sequence");
+      }
+
+//---------------------------------------------------------
+//   staves
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/cwmnx/part/measure/directions/staves node.
+ */
+
+int MnxParser::staves()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "staves");
+      _logger->logDebugTrace("MnxParser::staves");
+
+      auto number = _e.attributes().value("number").toString();
+
+      _e.skipCurrentElement();
+
+      bool ok = false;
+      auto res = number.toInt(&ok);
+      if (!ok)
+            _logger->logError(QString("invalid number of staves '%1'").arg(number));
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "staves");
+
+      return res;
       }
 
 //---------------------------------------------------------
