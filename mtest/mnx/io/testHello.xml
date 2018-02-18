@@ -1,32 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mnx>
     <head>
-        <identification>
-            <title>Hello</title>
-            <subtitle>MuseScore testfile</subtitle>
-            <creator type="composer">Leon Vinken</creator>
-        </identification>
+        <title>Hello</title>
+        <subtitle>MuseScore testfile</subtitle>
+        <creator type="composer">Leon Vinken</creator>
     </head>
-    <score content="cwmn">
-        <system>
-            <measure>
-                <attributes>
-                    <time signature="4/4"/>
-                </attributes>
-            </measure>
-        </system>
-        <part>
-            <part-name>Music</part-name>
-            <measure>
-                <attributes>
-                    <staff>
+    <score>
+        <cwmnx profile="standard">
+            <global>
+                <measure>
+                    <directions>
+                        <time signature="4/4"/>
+                    </directions>
+                </measure>
+            </global>
+            <part>
+                <part-name>Music</part-name>
+                <measure>
+                    <sequence>
                         <clef sign="G" line="2"/>
-                    </staff>
-                </attributes>
-                <sequence>
-                    <event value="1"><note pitch="C4"/></event>
-                </sequence>
-            </measure>
-        </part>
+                        <event value="/1"><note pitch="C4"/></event>
+                    </sequence>
+                </measure>
+            </part>
+        </cwmnx>
     </score>
 </mnx>
