@@ -51,13 +51,14 @@ public:
 
 private:
       // functions
-      void attributes();
       void beam();
       void clef(const int track);
       void creator();
+      void cwmnx();
+      void directions();
       Fraction event(Measure* measure, const Fraction sTime, const int seqNr, Tuplet* tuplet);
+      void global();
       void head();
-      void identification();
       bool inRealPart() const { return _inRealPart; }
       void key();
       void lyric(ChordRest* cr);
@@ -71,9 +72,7 @@ private:
       void sequence(Measure* measure, const Fraction sTime, QVector<int>& staffSeqCount);
       void setInRealPart() { _inRealPart = true; }
       void skipLogCurrElem();
-      void staff(const int staffNr);
       void subtitle();
-      void system();
       void tempo();
       void time();
       void title();
@@ -550,7 +549,7 @@ static Measure* findMeasure(const Score* const score, const int tick)
  Set number of staves for part \a part to the max value of the current value
  and the value in \a staves.
  */
-
+/* TODO
 static void setStavesForPart(Part* part, const int staves)
       {
       if (!(staves > 0 && staves <= MAX_STAVES)) {
@@ -562,7 +561,7 @@ static void setStavesForPart(Part* part, const int staves)
       if (staves > part->nstaves())
             part->setStaves(staves);
       }
-
+*/
 //---------------------------------------------------------
 //   type conversions
 //---------------------------------------------------------
@@ -649,36 +648,36 @@ static void mnxTSigToBtsBtp(const QString& tsig, int& beats, int& beattp)
 
 static TDuration::DurationType mnxValueUnitToDurationType(const QString& s)
       {
-      if (s == "4")
+      if (s == "/4")
             return TDuration::DurationType::V_QUARTER;
-      else if (s == "8")
+      else if (s == "/8")
             return TDuration::DurationType::V_EIGHTH;
-      else if (s == "1024")
+      else if (s == "/1024")
             return TDuration::DurationType::V_1024TH;
-      else if (s == "512")
+      else if (s == "/512")
             return TDuration::DurationType::V_512TH;
-      else if (s == "256")
+      else if (s == "/256")
             return TDuration::DurationType::V_256TH;
-      else if (s == "128")
+      else if (s == "/128")
             return TDuration::DurationType::V_128TH;
-      else if (s == "64")
+      else if (s == "/64")
             return TDuration::DurationType::V_64TH;
-      else if (s == "32")
+      else if (s == "/32")
             return TDuration::DurationType::V_32ND;
-      else if (s == "16")
+      else if (s == "/16")
             return TDuration::DurationType::V_16TH;
-      else if (s == "2")
+      else if (s == "/2")
             return TDuration::DurationType::V_HALF;
-      else if (s == "1")
+      else if (s == "/1")
             return TDuration::DurationType::V_WHOLE;
-      else if (s == "breve")
+      else if (s == "*2")
             return TDuration::DurationType::V_BREVE;
-      else if (s == "long")
+      else if (s == "*4")
             return TDuration::DurationType::V_LONG;
       else {
             qDebug("mnxValueUnitToDurationType(%s): unknown", qPrintable(s));
-            return TDuration::DurationType::V_INVALID;
-            // _val = DurationType::V_QUARTER;
+            //return TDuration::DurationType::V_INVALID;
+            return TDuration::DurationType::V_QUARTER;
             }
       }
 
@@ -800,43 +799,6 @@ static void setTupletParameters(Tuplet* tuplet, const QString& actual, const QSt
 //---------------------------------------------------------
 
 //---------------------------------------------------------
-//   attributes
-//---------------------------------------------------------
-
-/**
- Parse the /mnx/score/part/measure/attributes node.
- */
-
-void MnxParser::attributes()
-      {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "attributes");
-      _logger->logDebugTrace("MnxParser::attributes");
-
-      auto nStaves = 0;
-
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "key") {
-                  key();
-                  }
-            else if (_e.name() == "staff") {
-                  setStavesForPart(_part, nStaves + 1);
-                  staff(nStaves); // note orde: staff createdby setStavesForPart()
-                  ++nStaves;
-                  }
-            else if (_e.name() == "tempo") {
-                  skipLogCurrElem();
-                  }
-            else if (_e.name() == "time") {
-                  time();
-                  }
-            else
-                  skipLogCurrElem();
-            }
-
-      Q_ASSERT(_e.isEndElement() && _e.name() == "attributes");
-      }
-
-//---------------------------------------------------------
 //   beam
 //---------------------------------------------------------
 
@@ -877,7 +839,7 @@ void MnxParser::beam()
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/score/part/measure/attributes/staff/clef node.
+ Parse the /mnx/score/cwmnx/part/measure/directions/clef node.
  */
 
 void MnxParser::clef(const int track)
@@ -906,7 +868,7 @@ void MnxParser::clef(const int track)
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/head/identification/creator node.
+ Parse the /mnx/head/creator node.
  */
 
 void MnxParser::creator()
@@ -925,11 +887,76 @@ void MnxParser::creator()
       }
 
 //---------------------------------------------------------
+//   cwmnx
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/cwmnx node.
+ */
+
+void MnxParser::cwmnx()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "cwmnx");
+      _logger->logDebugTrace("MnxParser::cwmnx");
+
+      while (_e.readNextStartElement()) {
+            if (_e.name() == "global")
+                  global();
+            else if (_e.name() == "part") {
+                  part();
+                  }
+            else
+                  skipLogCurrElem();
+            }
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "cwmnx");
+      }
+
+//---------------------------------------------------------
+//   directions
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/cwmnx/part/measure/directions node.
+ */
+
+void MnxParser::directions()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "directions");
+      _logger->logDebugTrace("MnxParser::directions");
+
+      //auto nStaves = 0;
+
+      while (_e.readNextStartElement()) {
+            if (_e.name() == "key") {
+                  key();
+                  }
+            /*
+            else if (_e.name() == "staff") {
+                  setStavesForPart(_part, nStaves + 1);
+                  staff(nStaves); // note orde: staff createdby setStavesForPart()
+                  ++nStaves;
+            }
+             */
+            else if (_e.name() == "tempo") {
+                  skipLogCurrElem();
+                  }
+            else if (_e.name() == "time") {
+                  time();
+                  }
+            else
+                  skipLogCurrElem();
+            }
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "directions");
+      }
+
+//---------------------------------------------------------
 //   event
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/score/part/measure/sequence/event node.
+ Parse the /mnx/score/cwmnx/part/measure/sequence/event node.
  */
 
 Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqNr, Tuplet* tuplet)
@@ -973,6 +1000,32 @@ Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqN
       }
 
 //---------------------------------------------------------
+//   global
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/cwmnx/global node.
+ */
+
+void MnxParser::global()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "global");
+      _logger->logDebugTrace("MnxParser::head");
+
+      auto measureNr = 0;
+
+      while (_e.readNextStartElement()) {
+            if (_e.name() == "measure") {
+                  measure(measureNr);
+                  measureNr++;
+                  } else
+                  skipLogCurrElem();
+            }
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "global");
+      }
+
+//---------------------------------------------------------
 //   head
 //---------------------------------------------------------
 
@@ -984,32 +1037,6 @@ void MnxParser::head()
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "head");
       _logger->logDebugTrace("MnxParser::head");
-
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "identification")
-                  identification();
-            else if (_e.name() == "style") {
-                  skipLogCurrElem();
-                  }
-            else
-                  skipLogCurrElem();
-            }
-
-      Q_ASSERT(_e.isEndElement() && _e.name() == "head");
-      }
-
-//---------------------------------------------------------
-//   identification
-//---------------------------------------------------------
-
-/**
- Parse the /mnx/head/identification node.
- */
-
-void MnxParser::identification()
-      {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "identification");
-      _logger->logDebugTrace("MnxParser::identification");
 
 
       while (_e.readNextStartElement()) {
@@ -1026,7 +1053,7 @@ void MnxParser::identification()
       addVBoxWithMetaData(_score, _composer, _subtitle, _title);
       addMetaData(_score, _composer, _subtitle, _title);
 
-      Q_ASSERT(_e.isEndElement() && _e.name() == "identification");
+      Q_ASSERT(_e.isEndElement() && _e.name() == "head");
       }
 
 //---------------------------------------------------------
@@ -1034,7 +1061,7 @@ void MnxParser::identification()
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/score/part/measure/attributes/key node.
+ Parse the /mnx/score/cwmnx/global/measure/directions/key node.
  */
 
 void MnxParser::key()
@@ -1057,7 +1084,7 @@ void MnxParser::key()
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/score/part/measure/sequence/event/lyric node.
+ Parse the /mnx/score/cwmnx/part/measure/sequence/event/lyric node.
  */
 
 void MnxParser::lyric(ChordRest* cr)
@@ -1086,7 +1113,7 @@ void MnxParser::lyric(ChordRest* cr)
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/score/part/measure node.
+ Parse the /mnx/score/cwmnx/part/measure node.
  */
 
 void MnxParser::measure(const int measureNr)
@@ -1119,8 +1146,8 @@ void MnxParser::measure(const int measureNr)
       QVector<int> staffSeqCount(MAX_STAVES);       // sequence count per staff
 
       while (_e.readNextStartElement()) {
-            if (_e.name() == "attributes")
-                  attributes();
+            if (_e.name() == "directions")
+                  directions();
             else if (_e.name() == "sequence") {
                   auto sequenceStartTick = Fraction(measureNr * _beats, _beatType); // TODO: assumes no timesig changes
                   sequence(currMeasure, sequenceStartTick, staffSeqCount);
@@ -1164,7 +1191,7 @@ void MnxParser::mnx()
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/score/part/measure/sequence/event/note node.
+ Parse the /mnx/score/cwmnx/part/measure/sequence/event/note node.
  */
 
 Note* MnxParser::note(const int seqNr)
@@ -1189,7 +1216,7 @@ Note* MnxParser::note(const int seqNr)
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/score/part node.
+ Parse the /mnx/score/cwmnx/part node.
  */
 
 void MnxParser::part()
@@ -1225,7 +1252,7 @@ void MnxParser::part()
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/score/part/measure/sequence/event/rest node.
+ Parse the /mnx/score/cwmnx/part/measure/sequence/event/rest node.
  */
 
 Rest* MnxParser::rest(Measure* measure, const QString& type, const QString& value, const int seqNr)
@@ -1259,11 +1286,8 @@ void MnxParser::score()
       _logger->logDebugTrace("MnxParser::score");
 
       while (_e.readNextStartElement()) {
-            if (_e.name() == "system")
-                  system();
-            else if (_e.name() == "part") {
-                  part();
-                  }
+            if (_e.name() == "cwmnx")
+                  cwmnx();
             else
                   skipLogCurrElem();
             }
@@ -1276,7 +1300,7 @@ void MnxParser::score()
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/score/part/measure/sequence node.
+ Parse the /mnx/score/cwmnx/part/measure/sequence node.
  */
 
 void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& staffSeqCount)
@@ -1299,7 +1323,10 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& s
             auto track = determineTrack(_part, staff, staffSeqCount.at(staff));
 
             while (_e.readNextStartElement()) {
-                  if (_e.name() == "event") {
+                  if (_e.name() == "clef") {
+                        clef(track);
+                        }
+                  else if (_e.name() == "event") {
                         seqTime += event(measure, sTime + seqTime, track, nullptr);
                         }
                   else if (_e.name() == "tuplet") {
@@ -1315,43 +1342,11 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& s
       }
 
 //---------------------------------------------------------
-//   staff
-//---------------------------------------------------------
-
-/**
- Parse the /mnx/score/part/measure/attributes/staff node.
- */
-
-void MnxParser::staff(const int staffNr)
-      {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "staff");
-      _logger->logDebugTrace("MnxParser::staff");
-
-      auto voice { 0 };
-      auto track = determineTrack(_part, staffNr, voice);
-
-      if (staffNr > 0) {
-            const int tick = 0;
-            addKeySig(_score, tick, track, _key);
-            addTimeSig(_score, tick, track, _beats, _beatType);
-            }
-
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "clef")
-                  clef(track);
-            else
-                  skipLogCurrElem();
-            }
-
-      Q_ASSERT(_e.isEndElement() && _e.name() == "staff");
-      }
-
-//---------------------------------------------------------
 //   subtitle
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/head/identification/subtitle node.
+ Parse the /mnx/head/subtitle node.
  */
 
 void MnxParser::subtitle()
@@ -1366,37 +1361,11 @@ void MnxParser::subtitle()
       }
 
 //---------------------------------------------------------
-//   system
-//---------------------------------------------------------
-
-/**
- Parse the /mnx/score/system node.
- */
-
-void MnxParser::system()
-      {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "system");
-      _logger->logDebugTrace("MnxParser::system");
-
-      auto measureNr = 0;
-
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "measure") {
-                  measure(measureNr);
-                  measureNr++;
-                  } else
-                  skipLogCurrElem();
-            }
-
-      Q_ASSERT(_e.isEndElement() && _e.name() == "system");
-      }
-
-//---------------------------------------------------------
 //   time
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/score/part/measure/attributes/time node.
+ Parse the /mnx/score/cwmnx/global/measure/directions/time node.
  */
 
 void MnxParser::time()
@@ -1418,7 +1387,7 @@ void MnxParser::time()
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/head/identification/title node.
+ Parse the /mnx/head/title node.
  */
 
 void MnxParser::title()
@@ -1437,7 +1406,7 @@ void MnxParser::title()
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/score/part/measure/sequence/tuplet node.
+ Parse the /mnx/score/cwmnx/part/measure/sequence/tuplet node.
  */
 
 Fraction MnxParser::tuplet(Measure* measure, const Fraction sTime, const int seqNr)
