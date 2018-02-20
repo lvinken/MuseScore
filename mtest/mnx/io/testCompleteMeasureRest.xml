@@ -1,39 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mnx>
     <head>
-        <identification>
-            <title>Complete measure rest</title>
-            <subtitle>MuseScore testfile</subtitle>
-            <creator type="composer">Leon Vinken</creator>
-        </identification>
+        <title>Complete measure rest</title>
+        <subtitle>MuseScore testfile</subtitle>
+        <creator type="composer">Leon Vinken</creator>
     </head>
-    <score content="cwmn">
-        <system>
-            <measure>
-                <attributes>
-                    <time signature="3/4"/>
-                </attributes>
-            </measure>
-        </system>
-        <part>
-            <part-name>Music</part-name>
-            <measure>
-                <attributes>
-                    <staff>
-                        <clef sign="G" line="2"/>
-                    </staff>
-                </attributes>
-                <sequence>
-                    <event value="4"><rest/></event>
-                    <event value="4"><rest/></event>
-                    <event value="4"><rest/></event>
-                </sequence>
-            </measure>
-            <measure>
-                <sequence>
-                    <event type="measure"><rest/></event>
-                </sequence>
-            </measure>
-        </part>
+    <score>
+        <cwmnx profile="standard">
+            <global>
+                <measure>
+                    <directions>
+                        <time signature="3/4"/>
+                    </directions>
+                </measure>
+            </global>
+            <part>
+                <part-name>Music</part-name>
+                <measure>
+                    <directions>
+                        <clef line="2" sign="G"/>
+                    </directions>
+                    <sequence>
+                        <event value="/4">
+                            <rest/>
+                        </event>
+                        <event value="/4">
+                            <rest/>
+                        </event>
+                        <event value="/4">
+                            <rest/>
+                        </event>
+                    </sequence>
+                </measure>
+                <measure>
+                    <sequence>
+                        <event measure="yes">
+                            <rest/>
+                        </event>
+                    </sequence>
+                </measure>
+            </part>
+        </cwmnx>
     </score>
 </mnx>

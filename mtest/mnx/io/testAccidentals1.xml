@@ -1,41 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mnx>
     <head>
-        <identification>
-            <title>Accidentals 1</title>
-            <subtitle>MuseScore testfile</subtitle>
-            <creator type="composer">Leon Vinken</creator>
-        </identification>
+        <title>Accidentals 1</title>
+        <subtitle>MuseScore testfile</subtitle>
+        <creator type="composer">Leon Vinken</creator>
     </head>
-    <score content="cwmn">
-        <system>
-            <measure>
-                <attributes>
-                    <time signature="3/4"/>
-                </attributes>
-            </measure>
-        </system>
-        <part>
-            <part-name>Music</part-name>
-            <measure>
-                <attributes>
-                    <staff>
-                        <clef sign="G" line="2"/>
-                    </staff>
-                </attributes>
-                <sequence>
-                    <event value="4"><note pitch="G4"/></event>
-                    <event value="4"><note pitch="A#4" accidental="sharp"/></event>
-                    <event value="4"><note pitch="Bb4" accidental="flat"/></event>
-                </sequence>
-            </measure>
-            <measure>
-                <sequence>
-                    <event value="4"><note pitch="C##5" accidental="sharp-sharp"/></event>
-                    <event value="4"><note pitch="Dbb5" accidental="flat-flat"/></event>
-                    <event value="4"><note pitch="D5"/></event>
-                </sequence>
-            </measure>
-        </part>
+    <score>
+        <cwmnx profile="standard">
+            <global>
+                <measure>
+                    <directions>
+                        <time signature="3/4"/>
+                    </directions>
+                </measure>
+            </global>
+            <part>
+                <part-name>Music</part-name>
+                <measure>
+                    <directions>
+                        <clef line="2" sign="G"/>
+                    </directions>
+                    <sequence>
+                        <event value="/4">
+                            <note pitch="G4"/>
+                        </event>
+                        <event value="/4">
+                            <note accidental="sharp" pitch="A#4"/>
+                        </event>
+                        <event value="/4">
+                            <note accidental="flat" pitch="Bb4"/>
+                        </event>
+                    </sequence>
+                </measure>
+                <measure>
+                    <sequence>
+                        <event value="/4">
+                            <note accidental="sharp-sharp" pitch="C##5"/>
+                        </event>
+                        <event value="/4">
+                            <note accidental="flat-flat" pitch="Dbb5"/>
+                        </event>
+                        <event value="/4">
+                            <note pitch="D5"/>
+                        </event>
+                    </sequence>
+                </measure>
+            </part>
+        </cwmnx>
     </score>
 </mnx>
