@@ -59,7 +59,7 @@ public:
 
 private:
       // functions
-      Fraction beamed(Measure* measure, const Fraction sTime, const int track);
+      Fraction beamed(Measure* measure, const Fraction sTime, const int track, Tuplet* tuplet);
       void clef(const int track);
       void creator();
       void cwmnx();
@@ -75,7 +75,7 @@ private:
       Note* note(const int seqNr);
       Score::FileError parse();
       void part();
-      Rest* rest(Measure* measure, const QString& type, const QString& value, const int seqNr);
+      Rest* rest(Measure* measure, const bool measureRest, const QString& value, const int seqNr);
       void score();
       void sequence(Measure* measure, const Fraction sTime, QVector<int>& staffSeqCount);
       void setInRealPart() { _inRealPart = true; }
@@ -85,7 +85,7 @@ private:
       void tempo();
       void time();
       void title();
-      Fraction tuplet(Measure* measure, const Fraction sTime, const int seqNr);
+      Fraction parseTuplet(Measure* measure, const Fraction sTime, const int track);
 
       // data
       QXmlStreamReader _e;
@@ -804,6 +804,30 @@ static void setTupletParameters(Tuplet* tuplet, const QString& actual, const QSt
       }
 
 //---------------------------------------------------------
+//   parser: support functions
+//---------------------------------------------------------
+
+// read staff attribute, not distinguishing between missing and invalid
+// return 0-based staff number
+
+static int readStaff(QXmlStreamReader& e, MxmlLogger* const logger, bool& ok)
+      {
+      auto attrStaff = e.attributes().value("staff").toString();
+      logger->logDebugTrace(QString("staff '%1'").arg(attrStaff));
+      if (attrStaff.isEmpty()) {
+            ok = true;
+            return 0;
+            }
+      auto staff = attrStaff.toInt(&ok) - 1;
+      if (!ok || staff < 0 || staff >= MAX_STAVES) {
+            ok = false;
+            staff = 0;
+            logger->logError(QString("invalid staff '%1'").arg(attrStaff), &e);
+            }
+      return staff;
+      }
+
+//---------------------------------------------------------
 //   parser: node handlers
 //---------------------------------------------------------
 
@@ -817,7 +841,7 @@ static void setTupletParameters(Tuplet* tuplet, const QString& actual, const QSt
 
 // TODO: actually set the beam (currently the notes are read, but beam handling is still automatic)
 
-Fraction MnxParser::beamed(Measure* measure, const Fraction sTime, const int track)
+Fraction MnxParser::beamed(Measure* measure, const Fraction sTime, const int track, Tuplet* tuplet)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "beamed");
       _logger->logDebugTrace("MnxParser::beamed");
@@ -826,10 +850,10 @@ Fraction MnxParser::beamed(Measure* measure, const Fraction sTime, const int tra
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "event") {
-                  seqTime += event(measure, sTime + seqTime, track, nullptr);
+                  seqTime += event(measure, sTime + seqTime, track, tuplet);
                   }
             else if (_e.name() == "tuplet") {
-                  seqTime += tuplet(measure, sTime + seqTime, track);
+                  seqTime += parseTuplet(measure, sTime + seqTime, track);
                   }
             else
                   skipLogCurrElem();
@@ -853,15 +877,19 @@ void MnxParser::clef(const int track)
       Q_ASSERT(_e.isStartElement() && _e.name() == "clef");
       _logger->logDebugTrace("MnxParser::clef");
 
+      bool ok = true;
       auto sign = _e.attributes().value("sign").toString();
       auto line = _e.attributes().value("line").toString();
-      _logger->logDebugTrace(QString("clef sign '%1' line '%2'").arg(sign).arg(line));
+      auto staff = readStaff(_e, _logger, ok);
+      _logger->logDebugTrace(QString("clef sign '%1' line '%2' staff '%3'").arg(sign).arg(line).arg(staff));
 
-      auto ct = mnxClefToClefType(sign, line);
+      if (ok) {
+            auto ct = mnxClefToClefType(sign, line);
 
-      if (ct != ClefType::INVALID) {
-            const int tick = 0;       // TODO
-            addClef(_score, tick, track, ct);
+            if (ct != ClefType::INVALID) {
+                  const int tick = 0; // TODO
+                  addClef(_score, tick, track + staff * VOICES, ct);
+                  }
             }
 
       _e.skipCurrentElement();
@@ -932,12 +960,29 @@ void MnxParser::directions()
       _logger->logDebugTrace("MnxParser::directions");
 
       while (_e.readNextStartElement()) {
-            if (_e.name() == "key") {
+            if (_e.name() == "clef") {
+                  auto track = determineTrack(_part, 0, 0);
+                  clef(track);
+                  }
+            else if (_e.name() == "key") {
                   key();
                   }
             else if (_e.name() == "staves") {
-                  auto nStaves = staves();
-                  setStavesForPart(_part, nStaves);
+                  // TODO: factor out
+                  auto oldStaves = _part->nstaves();
+                  auto newStaves = staves();
+                  setStavesForPart(_part, newStaves);
+                  for (auto i = oldStaves; i < newStaves; ++i) {
+                        auto voice = 0;
+                        auto track = determineTrack(_part, i, voice);
+
+                        if (i > 0) {
+                              const int tick = 0;
+                              addKeySig(_score, tick, track, _key);
+                              addTimeSig(_score, tick, track, _beats, _beatType);
+                              }
+
+                        }
                   }
             else if (_e.name() == "tempo") {
                   skipLogCurrElem();
@@ -965,9 +1010,10 @@ Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqN
       Q_ASSERT(_e.isStartElement() && _e.name() == "event");
       _logger->logDebugTrace("MnxParser::event");
 
-      auto type = _e.attributes().value("type").toString();
-      auto value = _e.attributes().value("value").toString();
-      _logger->logDebugTrace(QString("event type '%1' value '%2'").arg(type).arg(value));
+      auto attrMeasure = _e.attributes().value("measure").toString();
+      bool measureRest = attrMeasure == "yes";
+      auto attrValue = _e.attributes().value("value").toString();
+      _logger->logDebugTrace(QString("event measure '%1' value '%2'").arg(attrMeasure).arg(attrValue));
 
       ChordRest* cr = nullptr;
 
@@ -976,12 +1022,12 @@ Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqN
                   lyric(cr);
             else if (_e.name() == "note") {
                   if (!cr)
-                        cr = createChord(_score, value, seqNr);
+                        cr = createChord(_score, attrValue, seqNr);
                   cr->add(note(seqNr));
                   }
             else if (_e.name() == "rest") {
                   if (!cr)
-                        cr = rest(measure, type, value, seqNr);
+                        cr = rest(measure, measureRest, attrValue, seqNr);
                   }
             else
                   skipLogCurrElem();
@@ -1256,7 +1302,7 @@ void MnxParser::part()
  Parse the /mnx/score/cwmnx/part/measure/sequence/event/rest node.
  */
 
-Rest* MnxParser::rest(Measure* measure, const QString& type, const QString& value, const int seqNr)
+Rest* MnxParser::rest(Measure* measure, const bool measureRest, const QString& value, const int seqNr)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "rest");
       _logger->logDebugTrace("MnxParser::rest");
@@ -1268,7 +1314,7 @@ Rest* MnxParser::rest(Measure* measure, const QString& type, const QString& valu
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "rest");
 
-      return type == "measure"
+      return measureRest
              ? createCompleteMeasureRest(measure, seqNr)
              : createRest(measure->score(), value, seqNr);
       }
@@ -1309,14 +1355,10 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& s
       Q_ASSERT(_e.isStartElement() && _e.name() == "sequence");
       _logger->logDebugTrace("MnxParser::sequence");
 
-      // read staff attribute, not distinguishing between missing and invalid
-      auto ok = false;
-      auto staff = _e.attributes().value("staff").toString().toInt(&ok);
-      _logger->logDebugTrace(QString("staff '%1'").arg(staff));
-      staff = ok ? (staff - 1) : 0;       // convert to zero-based or set default
+      bool ok = false;
+      auto staff = readStaff(_e, _logger, ok);
 
-      if (staff < 0 || staff >= MAX_STAVES) {
-            _logger->logError("invalid staff");
+      if (!ok) {
             skipLogCurrElem();
             }
       else {
@@ -1325,7 +1367,7 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& s
 
             while (_e.readNextStartElement()) {
                   if (_e.name() == "beamed") {
-                        seqTime += beamed(measure, sTime + seqTime, track);
+                        seqTime += beamed(measure, sTime + seqTime, track, nullptr);
                         }
                   else if (_e.name() == "clef") {
                         clef(track);
@@ -1334,7 +1376,7 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& s
                         seqTime += event(measure, sTime + seqTime, track, nullptr);
                         }
                   else if (_e.name() == "tuplet") {
-                        seqTime += tuplet(measure, sTime + seqTime, track);
+                        seqTime += parseTuplet(measure, sTime + seqTime, track);
                         }
                   else
                         skipLogCurrElem();
@@ -1440,7 +1482,7 @@ void MnxParser::title()
  Parse the /mnx/score/cwmnx/part/measure/sequence/tuplet node.
  */
 
-Fraction MnxParser::tuplet(Measure* measure, const Fraction sTime, const int seqNr)
+Fraction MnxParser::parseTuplet(Measure* measure, const Fraction sTime, const int track)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "tuplet");
       _logger->logDebugTrace("MnxParser::tuplet");
@@ -1452,13 +1494,16 @@ Fraction MnxParser::tuplet(Measure* measure, const Fraction sTime, const int seq
       Fraction tupTime(0, 1);       // time in this tuplet
 
       // create the tuplet
-      auto tuplet = createTuplet(measure, seqNr);
+      auto tuplet = createTuplet(measure, track);
       tuplet->setParent(measure);
       setTupletParameters(tuplet, actual, normal);
 
       while (_e.readNextStartElement()) {
-            if (_e.name() == "event") {
-                  tupTime += event(measure, sTime + tupTime, seqNr, tuplet);
+            if (_e.name() == "beamed") {
+                  tupTime += beamed(measure, sTime + tupTime, track, tuplet);
+                  }
+            else if (_e.name() == "event") {
+                  tupTime += event(measure, sTime + tupTime, track, tuplet);
                   }
             else
                   skipLogCurrElem();
