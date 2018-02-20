@@ -18,8 +18,10 @@
                 <part-name>Music</part-name>
                 <measure>
                     <sequence>
-                        <clef sign="G" line="2"/>
-                        <event value="/1"><note pitch="C4"/></event>
+                        <clef line="2" sign="G"/>
+                        <event value="/1">
+                            <note pitch="C4"/>
+                        </event>
                     </sequence>
                 </measure>
             </part>

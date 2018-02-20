@@ -1,45 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mnx>
     <head>
-        <identification>
-            <title>Multi part</title>
-            <subtitle>MuseScore testfile</subtitle>
-            <creator type="composer">Leon Vinken</creator>
-        </identification>
+        <title>Multi part</title>
+        <subtitle>MuseScore testfile</subtitle>
+        <creator type="composer">Leon Vinken</creator>
     </head>
-    <score content="cwmn">
-        <system>
-            <measure>
-                <attributes>
-                    <time signature="4/4"/>
-                </attributes>
-            </measure>
-        </system>
-        <part>
-            <part-name>Violin</part-name>
-            <measure>
-                <attributes>
-                    <staff>
-                        <clef sign="G" line="2"/>
-                    </staff>
-                </attributes>
-                <sequence>
-                    <event value="1"><note pitch="G4"/></event>
-                </sequence>
-            </measure>
-        </part>
-        <part>
-            <part-name>Cello</part-name>
-            <measure>
-                <attributes>
-                    <staff>
-                        <clef sign="F" line="4"/>
-                    </staff>
-                </attributes>
-                <sequence>
-                    <event value="1"><note pitch="C2"/></event>
-                </sequence>
-            </measure>
-        </part>     
+    <score>
+        <cwmnx profile="standard">
+            <global>
+                <measure>
+                    <directions>
+                        <time signature="4/4"/>
+                    </directions>
+                </measure>
+            </global>
+            <part>
+                <part-name>Violin</part-name>
+                <measure>
+                    <directions>
+                        <clef line="2" sign="G"/>
+                    </directions>
+                    <sequence>
+                        <event value="/1">
+                            <note pitch="G4"/>
+                        </event>
+                    </sequence>
+                </measure>
+            </part>
+            <part>
+                <part-name>Cello</part-name>
+                <measure>
+                    <directions>
+                        <clef line="4" sign="F"/>
+                    </directions>
+                    <sequence>
+                        <event value="/1">
+                            <note pitch="C2"/>
+                        </event>
+                    </sequence>
+                </measure>
+            </part>
+        </cwmnx>
     </score>
 </mnx>
