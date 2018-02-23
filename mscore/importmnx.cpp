@@ -401,11 +401,11 @@ static Part* appendPart(Score* score, const KeySigEvent key, const int bts, cons
       part->setStaves(1);
 
       // if not the first part, add the key and time signature
-      const auto staff { 0 };
-      const auto voice { 0 };
+      const auto staff = 0;
+      const auto voice = 0;
       auto track = determineTrack(part, staff, voice);
       if (track > 0) {
-            const auto tick { 0 };
+            const auto tick = 0;
             addKeySig(score, tick, track, key);
             addTimeSig(score, tick, track, bts, bttp);
             }
@@ -782,9 +782,9 @@ static void setTupletParameters(Tuplet* tuplet, const QString& actual, const QSt
       {
       Q_ASSERT(tuplet);
 
-      auto actualNotes { 3 };
-      auto normalNotes { 2 };
-      auto td { TDuration::DurationType::V_INVALID };
+      auto actualNotes = 3;
+      auto normalNotes = 2;
+      auto td = TDuration::DurationType::V_INVALID;
 
       if (actual == "3/4" && normal == "2/4") {
             actualNotes = 3; normalNotes = 2; td = TDuration::DurationType::V_QUARTER;
