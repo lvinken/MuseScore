@@ -257,19 +257,19 @@ static void addMetaData(Score* score, const QString& composer, const QString& su
 static void addVBoxWithMetaData(Score* score, const QString& composer, const QString& subtitle, const QString& title)
       {
       if (!composer.isEmpty() || !subtitle.isEmpty() || !title.isEmpty()) {
-            VBox* vbox = new VBox(score);
+            auto vbox = new VBox(score);
             if (!composer.isEmpty()) {
-                  Text* text = new Text(SubStyle::COMPOSER, score);
+                  auto text = new Text(score, Tid::COMPOSER);
                   text->setPlainText(composer);
                   vbox->add(text);
                   }
             if (!subtitle.isEmpty()) {
-                  Text* text = new Text(SubStyle::SUBTITLE, score);
+                  auto text = new Text(score, Tid::COMPOSER);
                   text->setPlainText(subtitle);
                   vbox->add(text);
                   }
             if (!title.isEmpty()) {
-                  Text* text = new Text(SubStyle::TITLE, score);
+                  auto text = new Text(score, Tid::COMPOSER);
                   text->setPlainText(title);
                   vbox->add(text);
                   }
