@@ -264,12 +264,12 @@ static void addVBoxWithMetaData(Score* score, const QString& composer, const QSt
                   vbox->add(text);
                   }
             if (!subtitle.isEmpty()) {
-                  auto text = new Text(score, Tid::COMPOSER);
+                  auto text = new Text(score, Tid::SUBTITLE);
                   text->setPlainText(subtitle);
                   vbox->add(text);
                   }
             if (!title.isEmpty()) {
-                  auto text = new Text(score, Tid::COMPOSER);
+                  auto text = new Text(score, Tid::TITLE);
                   text->setPlainText(title);
                   vbox->add(text);
                   }
