@@ -6,7 +6,7 @@
         <creator type="composer">Leon Vinken</creator>
     </head>
     <score>
-        <cwmnx profile="standard">
+        <mnx-common profile="standard">
             <global>
                 <measure>
                     <directions>
@@ -48,6 +48,6 @@
                     </sequence>
                 </measure>
             </part>
-        </cwmnx>
+        </mnx-common>
     </score>
 </mnx>
