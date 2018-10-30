@@ -60,10 +60,9 @@ public:
 private:
       // functions
       Fraction beamed(Measure* measure, const Fraction sTime, const int track, Tuplet* tuplet);
-      void clef(const int track);
+      void clef(const int paramStaff);
       void creator();
-      void cwmnx();
-      void directions();
+      void directions(const int paramStaff = -1);
       Fraction event(Measure* measure, const Fraction sTime, const int seqNr, Tuplet* tuplet);
       void global();
       void head();
@@ -72,6 +71,7 @@ private:
       void lyric(ChordRest* cr);
       void measure(const int measureNr);
       void mnx();
+      void mnxCommon();
       Note* note(const int seqNr);
       Score::FileError parse();
       void part();
@@ -807,8 +807,7 @@ static void setTupletParameters(Tuplet* tuplet, const QString& actual, const QSt
 //   parser: support functions
 //---------------------------------------------------------
 
-// read staff attribute, not distinguishing between missing and invalid
-// return 0-based staff number
+// read staff attribute, return 0-based staff number
 
 static int readStaff(QXmlStreamReader& e, MxmlLogger* const logger, bool& ok)
       {
@@ -869,18 +868,35 @@ Fraction MnxParser::beamed(Measure* measure, const Fraction sTime, const int tra
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/score/cwmnx/part/measure/directions/clef node.
+ Parse the clef node.
+ The staff number may be:
+ - implicit (single-staff parts)
+ - specified in the staff attribute (typically when clef is in a directions in a measure)
+ - specified in the enclosing seqence's staff attribute
+   (when clef is in a directions in a sequence in a measure)
  */
 
-void MnxParser::clef(const int track)
+void MnxParser::clef(const int paramStaff)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "clef");
       _logger->logDebugTrace("MnxParser::clef");
 
-      bool ok = true;
       auto sign = _e.attributes().value("sign").toString();
       auto line = _e.attributes().value("line").toString();
-      auto staff = readStaff(_e, _logger, ok);
+
+      bool ok { true };
+      auto attributeStaff = readStaff(_e, _logger, ok);
+      int staff { 0 };
+      if (paramStaff >= 0) {
+            staff = paramStaff;
+            }
+      else if (ok) {
+            staff = attributeStaff;
+            }
+      qDebug("paramStaff %d attributeStaff %d (ok %d) -> staff %d",
+             paramStaff, attributeStaff, ok, staff);
+
+
       _logger->logDebugTrace(QString("clef sign '%1' line '%2' staff '%3'").arg(sign).arg(line).arg(staff));
 
       if (ok) {
@@ -888,6 +904,7 @@ void MnxParser::clef(const int track)
 
             if (ct != ClefType::INVALID) {
                   const int tick = 0; // TODO
+                  auto track = determineTrack(_part, 0, 0);
                   addClef(_score, tick, track + staff * VOICES, ct);
                   }
             }
@@ -921,48 +938,24 @@ void MnxParser::creator()
       }
 
 //---------------------------------------------------------
-//   cwmnx
-//---------------------------------------------------------
-
-/**
- Parse the /mnx/score/cwmnx node.
- */
-
-void MnxParser::cwmnx()
-      {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "cwmnx");
-      _logger->logDebugTrace("MnxParser::cwmnx");
-
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "global")
-                  global();
-            else if (_e.name() == "part") {
-                  part();
-                  }
-            else
-                  skipLogCurrElem();
-            }
-
-      Q_ASSERT(_e.isEndElement() && _e.name() == "cwmnx");
-      }
-
-//---------------------------------------------------------
 //   directions
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/score/cwmnx/part/measure/directions node.
+ Parse the directions node, which may be found:
+ - within in a measure in the global score structure
+ - within a measure in a part
+ - within a sequence in a measure in a part
  */
 
-void MnxParser::directions()
+void MnxParser::directions(const int paramStaff)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "directions");
       _logger->logDebugTrace("MnxParser::directions");
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "clef") {
-                  auto track = determineTrack(_part, 0, 0);
-                  clef(track);
+                  clef(paramStaff);
                   }
             else if (_e.name() == "key") {
                   key();
@@ -1234,6 +1227,32 @@ void MnxParser::mnx()
       }
 
 //---------------------------------------------------------
+//   mnxCommon
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/mnx-common node.
+ */
+
+void MnxParser::mnxCommon()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "mnx-common");
+      _logger->logDebugTrace("MnxParser::mnxCommon");
+
+      while (_e.readNextStartElement()) {
+            if (_e.name() == "global")
+                  global();
+            else if (_e.name() == "part") {
+                  part();
+                  }
+            else
+                  skipLogCurrElem();
+            }
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "mnx-common");
+      }
+
+//---------------------------------------------------------
 //   note
 //---------------------------------------------------------
 
@@ -1333,8 +1352,8 @@ void MnxParser::score()
       _logger->logDebugTrace("MnxParser::score");
 
       while (_e.readNextStartElement()) {
-            if (_e.name() == "cwmnx")
-                  cwmnx();
+            if (_e.name() == "mnx-common")
+                  mnxCommon();
             else
                   skipLogCurrElem();
             }
@@ -1369,8 +1388,8 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& s
                   if (_e.name() == "beamed") {
                         seqTime += beamed(measure, sTime + seqTime, track, nullptr);
                         }
-                  else if (_e.name() == "clef") {
-                        clef(track);
+                  else if (_e.name() == "directions") {
+                        directions(staff);
                         }
                   else if (_e.name() == "event") {
                         seqTime += event(measure, sTime + seqTime, track, nullptr);
@@ -1395,19 +1414,33 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& s
  Parse the /mnx/score/cwmnx/part/measure/directions/staves node.
  */
 
+/*
+ * File FaurReveSample-common.xml in commit 02ab667 of 26 June 2018
+ * uses "index" instead of "number" for the number of staves, while
+ * the 28 August 2018 spec still refers to "number".
+ * For now, accept either.
+ */
+
 int MnxParser::staves()
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "staves");
       _logger->logDebugTrace("MnxParser::staves");
 
       auto number = _e.attributes().value("number").toString();
+      auto index = _e.attributes().value("index").toString();
 
       _e.skipCurrentElement();
 
       bool ok = false;
       auto res = number.toInt(&ok);
-      if (!ok)
-            _logger->logError(QString("invalid number of staves '%1'").arg(number));
+      if (!ok) {
+            res = index.toInt(&ok);
+            }
+      if (!ok) {
+            _logger->logError(QString("invalid number (and index) of staves '%1' '%2'")
+                              .arg(number)
+                              .arg(index));
+            }
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "staves");
 
