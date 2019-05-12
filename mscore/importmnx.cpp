@@ -226,8 +226,8 @@ static void addClef(Score* score, const int tick, const int track, const ClefTyp
       auto clef = new Clef(score);
       clef->setClefType(ct);
       clef->setTrack(track);
-      auto measure = score->tick2measure(tick);
-      auto s = measure->getSegment(tick ? SegmentType::Clef : SegmentType::HeaderClef, tick);
+      auto measure = score->tick2measure(Fraction::fromTicks(tick));
+      auto s = measure->getSegment(tick ? SegmentType::Clef : SegmentType::HeaderClef, Fraction::fromTicks(tick));
       s->add(clef);
       }
 
@@ -273,7 +273,7 @@ static void addVBoxWithMetaData(Score* score, const QString& composer, const QSt
                   text->setPlainText(title);
                   vbox->add(text);
                   }
-            vbox->setTick(0);
+            vbox->setTick(Fraction(0, 1));
             score->measures()->add(vbox);
             }
       }
@@ -312,8 +312,8 @@ static void addKeySig(Score* score, const int tick, const int track, const KeySi
             auto keysig = new KeySig(score);
             keysig->setTrack(track);
             keysig->setKeySigEvent(key);
-            auto measure = score->tick2measure(tick);
-            auto s = measure->getSegment(SegmentType::KeySig, tick);
+            auto measure = score->tick2measure(Fraction::fromTicks(tick));
+            auto s = measure->getSegment(SegmentType::KeySig, Fraction::fromTicks(tick));
             s->add(keysig);
             }
       }
@@ -357,10 +357,10 @@ static void addLyric(ChordRest* cr, int lyricNo, const QString& text)
 static Measure* addMeasure(Score* score, const int tick, const int bts, const int bttp, const int no)
       {
       auto m = new Measure(score);
-      m->setTick(tick);
+      m->setTick(Fraction::fromTicks(tick));
       m->setTimesig(Fraction(bts, bttp));
       m->setNo(no);
-      m->setLen(Fraction(bts, bttp));
+      m->setTicks(Fraction(bts, bttp));
       score->measures()->add(m);
       return m;
       }
@@ -378,8 +378,8 @@ static void addTimeSig(Score* score, const int tick, const int track, const int 
       auto timesig = new TimeSig(score);
       timesig->setSig(Fraction(bts, bttp));
       timesig->setTrack(track);
-      auto measure = score->tick2measure(tick);
-      auto s = measure->getSegment(SegmentType::TimeSig, tick);
+      auto measure = score->tick2measure(Fraction::fromTicks(tick));
+      auto s = measure->getSegment(SegmentType::TimeSig, Fraction::fromTicks(tick));
       s->add(timesig);
       }
 
@@ -442,7 +442,7 @@ Chord* createChord(Score* score, const QString& value, const int track)
       auto chord = new Chord(score);
       chord->setTrack(track);
       chord->setDurationType(dur);
-      chord->setDuration(dur.fraction());
+      chord->setTicks(dur.fraction());
       chord->setDots(dur.dots());
       return chord;
       }
@@ -459,7 +459,7 @@ Rest* createCompleteMeasureRest(Measure* measure, const int track)
       {
       auto rest = new Rest(measure->score());
       rest->setDurationType(TDuration::DurationType::V_MEASURE);
-      rest->setDuration(measure->len());
+      rest->setTicks(measure->Element::tick());
       rest->setTrack(track);
       return rest;
       }
@@ -544,7 +544,7 @@ static int determineTrack(const Part* const part, const int staff, const int voi
 static Measure* findMeasure(const Score* const score, const int tick)
       {
       for (Measure* m = score->firstMeasure();; m = m->nextMeasure()) {
-            if (m && m->tick() == tick)
+            if (m && m->tick() == Fraction::fromTicks(tick))
                   return m;
             }
       return 0;
@@ -1026,7 +1026,7 @@ Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqN
                   skipLogCurrElem();
             }
 
-      auto s = measure->getSegment(SegmentType::ChordRest, sTime.ticks());
+      auto s = measure->getSegment(SegmentType::ChordRest, sTime);
       s->add(cr);
 
       if (tuplet) {
@@ -1036,7 +1036,7 @@ Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqN
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "event");
 
-      return cr->actualFraction();
+      return cr->ticks();
       }
 
 //---------------------------------------------------------
