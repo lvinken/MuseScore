@@ -34,8 +34,8 @@
 #include "libmscore/part.h"
 #include "libmscore/rest.h"
 #include "libmscore/staff.h"
+#include "libmscore/timesig.h"
 #include "libmscore/tuplet.h"
-#include "musescore.h"
 #include "importmxmllogger.h"
 #include "importmnx.h"
 
