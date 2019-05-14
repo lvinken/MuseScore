@@ -459,7 +459,7 @@ Rest* createCompleteMeasureRest(Measure* measure, const int track)
       {
       auto rest = new Rest(measure->score());
       rest->setDurationType(TDuration::DurationType::V_MEASURE);
-      rest->setTicks(measure->Element::tick());
+      rest->setTicks(measure->ticks());
       rest->setTrack(track);
       return rest;
       }
