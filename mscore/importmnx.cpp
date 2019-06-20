@@ -76,6 +76,7 @@ private:
       Score::FileError parse();
       void part();
       Rest* rest(Measure* measure, const bool measureRest, const QString& value, const int seqNr);
+      void rights();
       void score();
       void sequence(Measure* measure, const Fraction sTime, QVector<int>& staffSeqCount);
       void setInRealPart() { _inRealPart = true; }
@@ -98,6 +99,7 @@ private:
       KeySigEvent _key;                               ///< initial key signature
       QString _composer;                              ///< metadata: composer
       QString _lyricist;                              ///< metadata: lyricist
+      QString _rights;                                ///< metadata: rights
       QString _subtitle;                              ///< metadata: subtitle
       QString _title;                                 ///< metadata: title
       bool _inRealPart;
@@ -240,12 +242,13 @@ static void addClef(Score* score, const int tick, const int track, const ClefTyp
  Add (part of) the metadata to the score.
  */
 
-static void addMetaData(Score* score, const QString& composer, const QString& lyricist, const QString& subtitle, const QString& title)
+static void addMetaData(Score* score, const QString& composer, const QString& lyricist, const QString& rights, const QString& subtitle, const QString& title)
       {
       if (!title.isEmpty()) score->setMetaTag("workTitle", title);
       if (!subtitle.isEmpty()) score->setMetaTag("workNumber", subtitle);
       if (!composer.isEmpty()) score->setMetaTag("composer", composer);
       if (!lyricist.isEmpty()) score->setMetaTag("lyricist", lyricist);
+      if (!rights.isEmpty()) score->setMetaTag("copyright", rights);
       }
 
 //---------------------------------------------------------
@@ -1104,6 +1107,8 @@ void MnxParser::head()
       while (_e.readNextStartElement()) {
             if (_e.name() == "creator")
                   creator();
+            else if (_e.name() == "rights")
+                  rights();
             else if (_e.name() == "subtitle")
                   subtitle();
             else if (_e.name() == "title")
@@ -1113,7 +1118,7 @@ void MnxParser::head()
             }
 
       addVBoxWithMetaData(_score, _composer, _lyricist, _subtitle, _title);
-      addMetaData(_score, _composer, _lyricist, _subtitle, _title);
+      addMetaData(_score, _composer, _lyricist, _rights, _subtitle, _title);
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "head");
       }
@@ -1358,6 +1363,29 @@ Rest* MnxParser::rest(Measure* measure, const bool measureRest, const QString& v
       return measureRest
              ? createCompleteMeasureRest(measure, seqNr)
              : createRest(measure->score(), value, seqNr);
+      }
+
+      //---------------------------------------------------------
+      //   rights
+      //---------------------------------------------------------
+
+      /**
+       Parse the /mnx/head/rights node.
+       */
+
+      void MnxParser::rights()
+      {
+            Q_ASSERT(_e.isStartElement() && _e.name() == "rights");
+            _logger->logDebugTrace("MnxParser::rights");
+
+            auto rightsValue = _e.readElementText();
+            _logger->logDebugTrace(QString("rights '%1'").arg(rightsValue));
+
+            if (!rightsValue.isEmpty()) {
+                  _rights = rightsValue;
+            }
+
+            Q_ASSERT(_e.isEndElement() && _e.name() == "rights");
       }
 
 //---------------------------------------------------------
