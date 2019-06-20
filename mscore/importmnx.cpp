@@ -804,6 +804,17 @@ static void setTupletParameters(Tuplet* tuplet, const QString& actual, const QSt
       }
 
 //---------------------------------------------------------
+//   setTupletTicks
+//---------------------------------------------------------
+
+static void setTupletTicks(Tuplet* tuplet)
+      {
+      Q_ASSERT(tuplet);
+
+      tuplet->setTicks(tuplet->elementsDuration() / tuplet->ratio());
+      }
+
+//---------------------------------------------------------
 //   parser: support functions
 //---------------------------------------------------------
 
@@ -998,8 +1009,6 @@ void MnxParser::directions(const int paramStaff)
  Parse the /mnx/score/cwmnx/part/measure/sequence/event node.
  */
 
-// TODO fix tuplet duration (reported as 0/1 in the debugger
-
 Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqNr, Tuplet* tuplet)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "event");
@@ -1028,23 +1037,12 @@ Fraction MnxParser::event(Measure* measure, const Fraction sTime, const int seqN
                   skipLogCurrElem();
             }
 
-            qDebug("cr %p ticks %s actual ticks %s",
-                   cr,
-                   qPrintable(cr->ticks().print()),
-                   qPrintable(cr->actualTicks().print())
-                   );
-            
       auto s = measure->getSegment(SegmentType::ChordRest, sTime);
       s->add(cr);
 
       if (tuplet) {
             cr->setTuplet(tuplet);
             tuplet->add(cr);
-            qDebug("cr %p in tuplet %p ticks %s actual ticks %s",
-                   cr, tuplet,
-                   qPrintable(cr->ticks().print()),
-                   qPrintable(cr->actualTicks().print())
-                   );
             }
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "event");
@@ -1554,6 +1552,8 @@ Fraction MnxParser::parseTuplet(Measure* measure, const Fraction sTime, const in
             else
                   skipLogCurrElem();
             }
+
+      setTupletTicks(tuplet);
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "tuplet");
 
