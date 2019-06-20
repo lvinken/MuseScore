@@ -97,6 +97,7 @@ private:
       int _beatType;                                  ///< initial beat type
       KeySigEvent _key;                               ///< initial key signature
       QString _composer;                              ///< metadata: composer
+      QString _lyricist;                              ///< metadata: lyricist
       QString _subtitle;                              ///< metadata: subtitle
       QString _title;                                 ///< metadata: title
       bool _inRealPart;
@@ -239,11 +240,12 @@ static void addClef(Score* score, const int tick, const int track, const ClefTyp
  Add (part of) the metadata to the score.
  */
 
-static void addMetaData(Score* score, const QString& composer, const QString& subtitle, const QString& title)
+static void addMetaData(Score* score, const QString& composer, const QString& lyricist, const QString& subtitle, const QString& title)
       {
       if (!title.isEmpty()) score->setMetaTag("workTitle", title);
       if (!subtitle.isEmpty()) score->setMetaTag("workNumber", subtitle);
       if (!composer.isEmpty()) score->setMetaTag("composer", composer);
+      if (!lyricist.isEmpty()) score->setMetaTag("lyricist", lyricist);
       }
 
 //---------------------------------------------------------
@@ -254,15 +256,20 @@ static void addMetaData(Score* score, const QString& composer, const QString& su
  Add a vbox containing (part of) the metadata to the score.
  */
 
-static void addVBoxWithMetaData(Score* score, const QString& composer, const QString& subtitle, const QString& title)
+static void addVBoxWithMetaData(Score* score, const QString& composer, const QString& lyricist, const QString& subtitle, const QString& title)
       {
-      if (!composer.isEmpty() || !subtitle.isEmpty() || !title.isEmpty()) {
+      if (!composer.isEmpty() || !lyricist.isEmpty() || !subtitle.isEmpty() || !title.isEmpty()) {
             auto vbox = new VBox(score);
             if (!composer.isEmpty()) {
                   auto text = new Text(score, Tid::COMPOSER);
                   text->setPlainText(composer);
                   vbox->add(text);
                   }
+            if (!lyricist.isEmpty()) {
+                  auto text = new Text(score, Tid::POET);
+                  text->setPlainText(lyricist);
+                  vbox->add(text);
+            }
             if (!subtitle.isEmpty()) {
                   auto text = new Text(score, Tid::SUBTITLE);
                   text->setPlainText(subtitle);
@@ -942,8 +949,12 @@ void MnxParser::creator()
       auto creatorValue = _e.readElementText();
       _logger->logDebugTrace(QString("creator '%1' '%2'").arg(creatorType).arg(creatorValue));
 
-      if (creatorType == "composer" && !creatorValue.isEmpty())
-            _composer = creatorValue;
+      if (!creatorValue.isEmpty()) {
+            if (creatorType == "composer")
+                  _composer = creatorValue;
+            else if (creatorType == "lyricist")
+                  _lyricist = creatorValue;
+            }
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "creator");
       }
@@ -1101,8 +1112,8 @@ void MnxParser::head()
                   skipLogCurrElem();
             }
 
-      addVBoxWithMetaData(_score, _composer, _subtitle, _title);
-      addMetaData(_score, _composer, _subtitle, _title);
+      addVBoxWithMetaData(_score, _composer, _lyricist, _subtitle, _title);
+      addMetaData(_score, _composer, _lyricist, _subtitle, _title);
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "head");
       }
