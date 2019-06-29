@@ -27,6 +27,7 @@
 
 #include "libmscore/box.h"
 #include "libmscore/chord.h"
+#include "libmscore/dynamic.h"
 #include "libmscore/durationtype.h"
 #include "libmscore/keysig.h"
 #include "libmscore/lyrics.h"
@@ -62,7 +63,8 @@ private:
       Fraction beamed(Measure* measure, const Fraction sTime, const int track, Tuplet* tuplet);
       void clef(const int paramStaff);
       void creator();
-      void directions(const int paramStaff = -1);
+      void directions(const Fraction sTime, const int paramStaff = -1);
+      void dynamics(const Fraction sTime, const int paramStaff = -1);
       Fraction event(Measure* measure, const Fraction sTime, const int seqNr, Tuplet* tuplet);
       void global();
       void head();
@@ -235,6 +237,22 @@ static void addClef(Score* score, const int tick, const int track, const ClefTyp
       }
 
 //---------------------------------------------------------
+//   addElementToSegmentChordRest
+//---------------------------------------------------------
+
+/**
+ Add an element to the score in a ChordRest segment.
+ */
+
+static void addElementToSegmentChordRest(Score* score, const int tick, const int track, Element* el)
+      {
+      el->setTrack(track);
+      auto measure = score->tick2measure(Fraction::fromTicks(tick));
+      auto s = measure->getSegment(SegmentType::ChordRest, Fraction::fromTicks(tick));
+      s->add(el);
+      }
+
+//---------------------------------------------------------
 //   addMetaData
 //---------------------------------------------------------
 
@@ -272,7 +290,7 @@ static void addVBoxWithMetaData(Score* score, const QString& composer, const QSt
                   auto text = new Text(score, Tid::POET);
                   text->setPlainText(lyricist);
                   vbox->add(text);
-            }
+                  }
             if (!subtitle.isEmpty()) {
                   auto text = new Text(score, Tid::SUBTITLE);
                   text->setPlainText(subtitle);
@@ -472,6 +490,21 @@ Rest* createCompleteMeasureRest(Measure* measure, const int track)
       rest->setTicks(measure->ticks());
       rest->setTrack(track);
       return rest;
+      }
+
+//---------------------------------------------------------
+//   createDynamic
+//---------------------------------------------------------
+
+/*
+ * Create a MuseScore Dynamic of the specified MNX type.
+ */
+
+static Dynamic* createDynamic(Score* score, const QString& type)
+      {
+      auto dynamic = new Dynamic(score);
+      dynamic->setDynamicType(type);
+      return dynamic;
       }
 
 //---------------------------------------------------------
@@ -973,7 +1006,7 @@ void MnxParser::creator()
  - within a sequence in a measure in a part
  */
 
-void MnxParser::directions(const int paramStaff)
+void MnxParser::directions(const Fraction sTime, const int paramStaff)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "directions");
       _logger->logDebugTrace("MnxParser::directions");
@@ -981,6 +1014,9 @@ void MnxParser::directions(const int paramStaff)
       while (_e.readNextStartElement()) {
             if (_e.name() == "clef") {
                   clef(paramStaff);
+                  }
+            else if (_e.name() == "dynamics") {
+                  dynamics(sTime, paramStaff);
                   }
             else if (_e.name() == "key") {
                   key();
@@ -1013,6 +1049,34 @@ void MnxParser::directions(const int paramStaff)
             }
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "directions");
+      }
+
+//---------------------------------------------------------
+//   dynamics
+//---------------------------------------------------------
+
+/**
+ Parse the dynamics node, which may be found:
+ - within a sequence in a measure in a part
+ - within a directions in a sequence in a measure in a part
+ */
+
+void MnxParser::dynamics(const Fraction sTime, const int paramStaff)
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "dynamics");
+      _logger->logDebugTrace("MnxParser::dynamics");
+
+      auto type = _e.attributes().value("type").toString();
+
+      _logger->logDebugTrace(QString("dynamics type '%1' paramStaff '%2'").arg(type).arg(paramStaff));
+
+      _e.skipCurrentElement();
+
+      auto track = determineTrack(_part, 0, 0);
+      auto dyn = createDynamic(_score, type);
+      addElementToSegmentChordRest(_score, sTime.ticks(), track + paramStaff * VOICES, dyn);
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "dynamics");
       }
 
 //---------------------------------------------------------
@@ -1211,13 +1275,13 @@ void MnxParser::measure(const int measureNr)
             }
 
       QVector<int> staffSeqCount(MAX_STAVES);       // sequence count per staff
+      auto startTick = Fraction(measureNr * _beats, _beatType);       // TODO: assumes no timesig changes
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "directions")
-                  directions();
+                  directions(startTick);
             else if (_e.name() == "sequence") {
-                  auto sequenceStartTick = Fraction(measureNr * _beats, _beatType); // TODO: assumes no timesig changes
-                  sequence(currMeasure, sequenceStartTick, staffSeqCount);
+                  sequence(currMeasure, startTick, staffSeqCount);
                   }
             else
                   skipLogCurrElem();
@@ -1365,27 +1429,27 @@ Rest* MnxParser::rest(Measure* measure, const bool measureRest, const QString& v
              : createRest(measure->score(), value, seqNr);
       }
 
-      //---------------------------------------------------------
-      //   rights
-      //---------------------------------------------------------
+//---------------------------------------------------------
+//   rights
+//---------------------------------------------------------
 
-      /**
-       Parse the /mnx/head/rights node.
-       */
+/**
+ Parse the /mnx/head/rights node.
+ */
 
-      void MnxParser::rights()
+void MnxParser::rights()
       {
-            Q_ASSERT(_e.isStartElement() && _e.name() == "rights");
-            _logger->logDebugTrace("MnxParser::rights");
+      Q_ASSERT(_e.isStartElement() && _e.name() == "rights");
+      _logger->logDebugTrace("MnxParser::rights");
 
-            auto rightsValue = _e.readElementText();
-            _logger->logDebugTrace(QString("rights '%1'").arg(rightsValue));
+      auto rightsValue = _e.readElementText();
+      _logger->logDebugTrace(QString("rights '%1'").arg(rightsValue));
 
-            if (!rightsValue.isEmpty()) {
-                  _rights = rightsValue;
+      if (!rightsValue.isEmpty()) {
+            _rights = rightsValue;
             }
 
-            Q_ASSERT(_e.isEndElement() && _e.name() == "rights");
+      Q_ASSERT(_e.isEndElement() && _e.name() == "rights");
       }
 
 //---------------------------------------------------------
@@ -1439,7 +1503,10 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& s
                         seqTime += beamed(measure, sTime + seqTime, track, nullptr);
                         }
                   else if (_e.name() == "directions") {
-                        directions(staff);
+                        directions(sTime + seqTime, staff);
+                        }
+                  else if (_e.name() == "dynamics") {
+                        dynamics(sTime + seqTime, staff);
                         }
                   else if (_e.name() == "event") {
                         seqTime += event(measure, sTime + seqTime, track, nullptr);
