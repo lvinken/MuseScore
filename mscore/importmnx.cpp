@@ -83,11 +83,13 @@ private:
       void sequence(Measure* measure, const Fraction sTime, QVector<int>& staffSeqCount);
       void setInRealPart() { _inRealPart = true; }
       void skipLogCurrElem();
+      void slur();
       int staves();
       void subtitle();
       void tempo();
       void time();
       void title();
+      void wedge();
       Fraction parseTuplet(Measure* measure, const Fraction sTime, const int track);
 
       // data
@@ -905,6 +907,9 @@ Fraction MnxParser::beamed(Measure* measure, const Fraction sTime, const int tra
             if (_e.name() == "event") {
                   seqTime += event(measure, sTime + seqTime, track, tuplet);
                   }
+            else if (_e.name() == "slur") {
+                  slur();
+                  }
             else if (_e.name() == "tuplet") {
                   seqTime += parseTuplet(measure, sTime + seqTime, track);
                   }
@@ -1043,6 +1048,9 @@ void MnxParser::directions(const Fraction sTime, const int paramStaff)
                   }
             else if (_e.name() == "time") {
                   time();
+                  }
+            else if (_e.name() == "wedge") {
+                  wedge();
                   }
             else
                   skipLogCurrElem();
@@ -1511,6 +1519,9 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& s
                   else if (_e.name() == "event") {
                         seqTime += event(measure, sTime + seqTime, track, nullptr);
                         }
+                  else if (_e.name() == "slur") {
+                        slur();
+                        }
                   else if (_e.name() == "tuplet") {
                         seqTime += parseTuplet(measure, sTime + seqTime, track);
                         }
@@ -1521,6 +1532,27 @@ void MnxParser::sequence(Measure* measure, const Fraction sTime, QVector<int>& s
             }
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "sequence");
+      }
+
+//---------------------------------------------------------
+//   slur
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/cwmnx/.../slur node.
+ */
+
+void MnxParser::slur()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "slur");
+      _logger->logDebugTrace("MnxParser::slur");
+
+      auto end = _e.attributes().value("end").toString();
+      qDebug("slur end '%s'", qPrintable(end));
+
+      _e.skipCurrentElement();
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "slur");
       }
 
 //---------------------------------------------------------
@@ -1655,6 +1687,9 @@ Fraction MnxParser::parseTuplet(Measure* measure, const Fraction sTime, const in
             else if (_e.name() == "event") {
                   tupTime += event(measure, sTime + tupTime, track, tuplet);
                   }
+            else if (_e.name() == "slur") {
+                  slur();
+                  }
             else
                   skipLogCurrElem();
             }
@@ -1664,6 +1699,35 @@ Fraction MnxParser::parseTuplet(Measure* measure, const Fraction sTime, const in
       Q_ASSERT(_e.isEndElement() && _e.name() == "tuplet");
 
       return tupTime;
+      }
+
+//---------------------------------------------------------
+//   wedge
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/cwmnx/.../wedge node.
+ */
+
+void MnxParser::wedge()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "wedge");
+      _logger->logDebugTrace("MnxParser::wedge");
+
+      auto end = _e.attributes().value("end").toString();
+      auto location = _e.attributes().value("location").toString();
+      auto start = _e.attributes().value("start").toString();
+      auto type = _e.attributes().value("type").toString();
+      qDebug("wedge end '%s' location '%s' start '%s' type '%s'",
+             qPrintable(end),
+             qPrintable(location),
+             qPrintable(start),
+             qPrintable(type)
+             );
+
+      _e.skipCurrentElement();
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "wedge");
       }
 
 //---------------------------------------------------------
