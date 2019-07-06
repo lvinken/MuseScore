@@ -34,6 +34,7 @@
 #include "libmscore/measure.h"
 #include "libmscore/part.h"
 #include "libmscore/rest.h"
+#include "libmscore/slur.h"
 #include "libmscore/staff.h"
 #include "libmscore/timesig.h"
 #include "libmscore/tuplet.h"
@@ -396,6 +397,29 @@ static Measure* addMeasure(Score* score, const int tick, const int bts, const in
       }
 
 //---------------------------------------------------------
+//   addSlur
+//---------------------------------------------------------
+
+/**
+ Add a slur to the score between chord1 and chord2.
+ Assumes chord1 and chord1 have been initialized (tick and track valid).
+ Also assumes slur has been initialized (score and properties).
+ */
+
+static void addSlur(Chord* const chord1, Chord* const chord2, Slur* const slur)
+      {
+      slur->setStartElement(chord1);
+      slur->setTick(chord1->tick());
+      slur->setTrack(chord1->track());
+      slur->setEndElement(chord2);
+      slur->setTick2(chord2->tick());
+      slur->setTrack2(chord2->track());
+
+      auto score = slur->score();
+      score->addElement(slur);
+      }
+
+//---------------------------------------------------------
 //   addTimeSig
 //---------------------------------------------------------
 
@@ -543,6 +567,20 @@ Rest* createRest(Score* score, const QString& value, const int track)
       auto rest = new Rest(score, dur);
       rest->setTrack(track);
       return rest;
+      }
+
+//---------------------------------------------------------
+//   createSlur
+//---------------------------------------------------------
+
+/*
+ * Create a slur.
+ */
+
+static Slur* createSlur(Score* score)
+      {
+      auto slur = new Slur(score);
+      return slur;
       }
 
 //---------------------------------------------------------
