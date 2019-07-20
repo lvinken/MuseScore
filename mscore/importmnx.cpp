@@ -29,6 +29,7 @@
 #include "libmscore/chord.h"
 #include "libmscore/dynamic.h"
 #include "libmscore/durationtype.h"
+#include "libmscore/hairpin.h"
 #include "libmscore/keysig.h"
 #include "libmscore/lyrics.h"
 #include "libmscore/measure.h"
@@ -420,6 +421,22 @@ static void addSlur(Chord* const chord1, Chord* const chord2, Slur* const slur)
       }
 
 //---------------------------------------------------------
+//   addSpanner
+//---------------------------------------------------------
+
+/**
+ Add a spanner to the score between tick1 and tick2.
+ Assumes spanner has been initialized (score and track).
+ */
+
+static void addSpanner(Spanner* const sp, const Fraction tick1, const Fraction tick2)
+      {
+      sp->setTick(tick1);
+      sp->setTick2(tick2);
+      sp->score()->addElement(sp);
+      }
+
+//---------------------------------------------------------
 //   addTimeSig
 //---------------------------------------------------------
 
@@ -596,6 +613,22 @@ Tuplet* createTuplet(Measure* measure, const int track)
       auto tuplet = new Tuplet(measure->score());
       tuplet->setTrack(track);
       return tuplet;
+      }
+
+//---------------------------------------------------------
+//   createHairpin
+//---------------------------------------------------------
+
+/*
+ * Create a hairpin.
+ */
+
+static Hairpin* createHairpin(Score* score, const int track)
+      {
+      auto hairpin = new Hairpin(score);
+      hairpin->setTrack(track);
+      hairpin->setTrack2(track);
+      return hairpin;
       }
 
 //---------------------------------------------------------
