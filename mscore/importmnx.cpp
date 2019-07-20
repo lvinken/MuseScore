@@ -1480,6 +1480,10 @@ void MnxParser::part()
                   skipLogCurrElem();
             }
 
+      // hack: add a dummy hairpin in track 0
+      auto hp = createHairpin(_score, 0);
+      addSpanner(hp, Fraction(1, 4), Fraction(3, 4));
+
       Q_ASSERT(_e.isEndElement() && _e.name() == "part");
       }
 
