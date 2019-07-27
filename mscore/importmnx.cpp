@@ -37,6 +37,7 @@
 #include "libmscore/rest.h"
 #include "libmscore/slur.h"
 #include "libmscore/staff.h"
+#include "libmscore/tempotext.h"
 #include "libmscore/timesig.h"
 #include "libmscore/tuplet.h"
 #include "importmxmllogger.h"
@@ -275,6 +276,7 @@ Score::FileError MnxParser::parse()
 
 static void addKeySig(Score* score, const Fraction tick, const int track, const KeySigEvent key);
 static Measure* addMeasure(Score* score, const Fraction tick, const int bts, const int bttp, const int no);
+static void addTempoText(Score* score, const Fraction tick, const float bpm, const TDuration::DurationType val);
 static void addTimeSig(Score* score, const Fraction tick, const int track, const int bts, const int bttp);
 static int determineTrack(const Part* const part, const int staff, const int voice);
 static TDuration mnxEventValueToTDuration(const QString& value);
@@ -380,7 +382,8 @@ static void addVBoxWithMetaData(Score* score, const QString& composer, const QSt
  Add the first measure to the score.
  */
 
-static Measure* addFirstMeasure(Score* score, const KeySigEvent key, const int bts, const int bttp)
+static Measure* addFirstMeasure(Score* score, const KeySigEvent key, const int bts, const int bttp,
+                                const float bpm, TDuration::DurationType val)
       {
       const auto tick = Fraction(0, 1);
       const auto nr = 1;
@@ -389,6 +392,8 @@ static Measure* addFirstMeasure(Score* score, const KeySigEvent key, const int b
       const int track = 0;
       addKeySig(score, tick, track, key);
       addTimeSig(score, tick, track, bts, bttp);
+      if (bpm > 0)
+            addTempoText(score, tick, bpm, val);
       return m;
       }
 
@@ -496,6 +501,31 @@ static void addSpanner(Spanner* const sp, const Fraction tick1, const Fraction t
       sp->setTick(tick1);
       sp->setTick2(tick2);
       sp->score()->addElement(sp);
+      }
+
+//---------------------------------------------------------
+//   addTempoText
+//---------------------------------------------------------
+
+/**
+ Add a tempo text to a track.
+ */
+
+static void addTempoText(Score* score, const Fraction tick, const float bpm, const TDuration::DurationType val)
+      {
+      double tpo = bpm / 60;
+      score->setTempo(tick, tpo);
+
+      auto t = new TempoText(score);
+      t->setXmlText(QString("%1 = %2").arg(TempoText::duration2tempoTextString(TDuration(val))).arg(bpm));
+      t->setTempo(tpo);
+      t->setFollowText(true);
+
+      t->setPlacement(Placement::ABOVE);
+      t->setTrack(0);          // TempoText must be in track 0
+      auto measure = score->tick2measure(tick);
+      auto s = measure->getSegment(SegmentType::ChordRest, tick);
+      s->add(t);
       }
 
 //---------------------------------------------------------
@@ -1445,7 +1475,8 @@ void MnxParserPart::measure(const int measureNr)
             // note: adding time signature requires at least one staff
             currMeasure = measureNr
                   ? addMeasure(_score, startTick, _global.beats(), _global.beatType(), measureNr + 1)
-                  : addFirstMeasure(_score, _global.key(), _global.beats(), _global.beatType());
+                  : addFirstMeasure(_score, _global.key(), _global.beats(), _global.beatType(),
+                                    _global.tempoBpm(), _global.tempoValue());
             }
       else {
             // for the other parts, just find the measure
