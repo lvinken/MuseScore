@@ -62,13 +62,15 @@ public:
       int beatType() const { return _beatType; }
       KeySigEvent key() const { return _key; }
       void parse();
-
+      float tempoBpm() const { return _tempoBpm; }
+      TDuration::DurationType tempoValue() const { return _tempoValue; }
 private:
       // functions
       void directions(const Fraction sTime, const int paramStaff = -1);
       void parseKey();
       void measure(const int measureNr);
       void skipLogCurrElem();
+      void tempo();
       void time();
 
       // data
@@ -78,6 +80,8 @@ private:
       int _beats;                                           ///< initial number of beats
       int _beatType;                                        ///< initial beat type
       KeySigEvent _key;                                     ///< initial key signature
+      float _tempoBpm;                                      ///< initial tempo beats per minute
+      TDuration::DurationType _tempoValue;                  ///< initial tempo beat value
       };
 
 //---------------------------------------------------------
@@ -1036,6 +1040,9 @@ void MnxParserGlobal::directions(const Fraction sTime, const int paramStaff)
             if (_e.name() == "key") {
                   parseKey();
                   }
+            else if (_e.name() == "tempo") {
+                  tempo();
+                  }
             else if (_e.name() == "time") {
                   time();
                   }
@@ -1118,6 +1125,32 @@ void MnxParserGlobal::parse()
             }
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "global");
+      }
+
+//---------------------------------------------------------
+//   tempo
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/cwmnx/global/measure/directions/tempo node.
+ */
+
+void MnxParserGlobal::tempo()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "tempo");
+      _logger->logDebugTrace("MnxParserGlobal::tempo");
+
+      const auto bpm = _e.attributes().value("bpm").toString();
+      const auto value = _e.attributes().value("value").toString();
+      _logger->logDebugTrace(QString("tempo bpm '%1' value '%2'").arg(bpm).arg(value));
+      _e.skipCurrentElement();
+
+      bool ok = false;
+      _tempoBpm = bpm.toFloat(&ok);
+      if (!ok) _tempoBpm = -1;
+      _tempoValue = mnxValueUnitToDurationType(value);
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "tempo");
       }
 
 //---------------------------------------------------------
