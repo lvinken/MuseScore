@@ -61,6 +61,7 @@ public:
       MnxParserGlobal(QXmlStreamReader& e, Score* score, MxmlLogger* logger);
       int beats() const { return _beats; }
       int beatType() const { return _beatType; }
+      QString instruction() const { return _instruction; }
       KeySigEvent key() const { return _key; }
       void parse();
       float tempoBpm() const { return _tempoBpm; }
@@ -69,6 +70,7 @@ private:
       // functions
       void directions(const Fraction sTime, const int paramStaff = -1);
       void dirgroup(const Fraction sTime, const int paramStaff = -1);
+      void parseInstruction();
       void parseKey();
       void measure(const int measureNr);
       void skipLogCurrElem();
@@ -81,6 +83,7 @@ private:
       MxmlLogger* const _logger;                            ///< Error logger
       int _beats;                                           ///< initial number of beats
       int _beatType;                                        ///< initial beat type
+      QString _instruction;
       KeySigEvent _key;                                     ///< initial key signature
       float _tempoBpm;                                      ///< initial tempo beats per minute
       TDuration::DurationType _tempoValue;                  ///< initial tempo beat value
@@ -1071,6 +1074,9 @@ void MnxParserGlobal::directions(const Fraction sTime, const int paramStaff)
             if (_e.name() == "dirgroup") {
                   dirgroup(sTime, paramStaff);
                   }
+            else if (_e.name() == "instruction") {
+                  parseInstruction();
+                  }
             else if (_e.name() == "key") {
                   parseKey();
                   }
@@ -1102,7 +1108,10 @@ void MnxParserGlobal::dirgroup(const Fraction sTime, const int paramStaff)
       _logger->logDebugTrace("MnxParserGlobal::dirgroup");
 
       while (_e.readNextStartElement()) {
-            if (_e.name() == "key") {
+            if (_e.name() == "instruction") {
+                  parseInstruction();
+                  }
+            else if (_e.name() == "key") {
                   parseKey();
                   }
             else if (_e.name() == "tempo") {
@@ -1116,6 +1125,26 @@ void MnxParserGlobal::dirgroup(const Fraction sTime, const int paramStaff)
             }
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "dirgroup");
+      }
+
+//---------------------------------------------------------
+//   parseInstruction
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/cwmnx/global/measure/directions/instruction node.
+ */
+
+void MnxParserGlobal::parseInstruction()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "instruction");
+      _logger->logDebugTrace("MnxParserGlobal::instruction");
+
+      auto text = _e.readElementText();
+      _logger->logDebugTrace(QString("instruction '%1'").arg(text));
+      _instruction = text;
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "instruction");
       }
 
 //---------------------------------------------------------
