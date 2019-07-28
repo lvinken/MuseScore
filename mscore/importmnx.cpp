@@ -37,6 +37,7 @@
 #include "libmscore/rest.h"
 #include "libmscore/slur.h"
 #include "libmscore/staff.h"
+#include "libmscore/stafftext.h"
 #include "libmscore/tempotext.h"
 #include "libmscore/timesig.h"
 #include "libmscore/tuplet.h"
@@ -280,6 +281,7 @@ Score::FileError MnxParser::parse()
 
 static void addKeySig(Score* score, const Fraction tick, const int track, const KeySigEvent key);
 static Measure* addMeasure(Score* score, const Fraction tick, const int bts, const int bttp, const int no);
+static void addStaffText(Score* score, const Fraction tick, const int track, const QString& text);
 static void addTempoText(Score* score, const Fraction tick, const float bpm, const TDuration::DurationType val);
 static void addTimeSig(Score* score, const Fraction tick, const int track, const int bts, const int bttp);
 static int determineTrack(const Part* const part, const int staff, const int voice);
@@ -387,7 +389,7 @@ static void addVBoxWithMetaData(Score* score, const QString& composer, const QSt
  */
 
 static Measure* addFirstMeasure(Score* score, const KeySigEvent key, const int bts, const int bttp,
-                                const float bpm, TDuration::DurationType val)
+                                const float bpm, TDuration::DurationType val, const QString& instr)
       {
       const auto tick = Fraction(0, 1);
       const auto nr = 1;
@@ -398,6 +400,8 @@ static Measure* addFirstMeasure(Score* score, const KeySigEvent key, const int b
       addTimeSig(score, tick, track, bts, bttp);
       if (bpm > 0)
             addTempoText(score, tick, bpm, val);
+      if (instr != "")
+            addStaffText(score, tick, 0, instr);
       return m;
       }
 
@@ -508,11 +512,30 @@ static void addSpanner(Spanner* const sp, const Fraction tick1, const Fraction t
       }
 
 //---------------------------------------------------------
+//   addStaffText
+//---------------------------------------------------------
+
+/**
+ Add a staff text to a track.
+ */
+
+static void addStaffText(Score* score, const Fraction tick, const int track, const QString& text)
+      {
+      auto t = new StaffText(score);
+      t->setXmlText(text);
+      t->setPlacement(Placement::ABOVE);
+      t->setTrack(track);
+      auto measure = score->tick2measure(tick);
+      auto s = measure->getSegment(SegmentType::ChordRest, tick);
+      s->add(t);
+      }
+
+//---------------------------------------------------------
 //   addTempoText
 //---------------------------------------------------------
 
 /**
- Add a tempo text to a track.
+ Add a tempo text to track 0.
  */
 
 static void addTempoText(Score* score, const Fraction tick, const float bpm, const TDuration::DurationType val)
@@ -1540,7 +1563,7 @@ void MnxParserPart::measure(const int measureNr)
             currMeasure = measureNr
                   ? addMeasure(_score, startTick, _global.beats(), _global.beatType(), measureNr + 1)
                   : addFirstMeasure(_score, _global.key(), _global.beats(), _global.beatType(),
-                                    _global.tempoBpm(), _global.tempoValue());
+                                    _global.tempoBpm(), _global.tempoValue(), _global.instruction());
             }
       else {
             // for the other parts, just find the measure

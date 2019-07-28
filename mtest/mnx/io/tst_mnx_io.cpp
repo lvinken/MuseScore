@@ -67,6 +67,7 @@ private slots:
       void tuplets0() { mnxIoTest("testTuplets0"); }
       void voicePiano1() { mnxIoTest("testVoicePiano1"); }
       void voicePiano2() { mnxIoTest("testVoicePiano2"); }
+      void words0() { mnxIoTest("testWords0"); }
       };
 
 //---------------------------------------------------------
