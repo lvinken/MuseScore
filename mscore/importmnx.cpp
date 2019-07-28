@@ -68,6 +68,7 @@ public:
 private:
       // functions
       void directions(const Fraction sTime, const int paramStaff = -1);
+      void dirgroup(const Fraction sTime, const int paramStaff = -1);
       void parseKey();
       void measure(const int measureNr);
       void skipLogCurrElem();
@@ -1058,13 +1059,47 @@ static int readStaff(QXmlStreamReader& e, MxmlLogger* const logger, bool& ok)
 //---------------------------------------------------------
 
 /**
- Parse the /mnx/score/cwmnx/global/measure/directions/key node.
+ Parse the /mnx/score/cwmnx/global/measure/directions node.
  */
 
 void MnxParserGlobal::directions(const Fraction sTime, const int paramStaff)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "directions");
       _logger->logDebugTrace("MnxParserGlobal::directions");
+
+      while (_e.readNextStartElement()) {
+            if (_e.name() == "dirgroup") {
+                  dirgroup(sTime, paramStaff);
+                  }
+            else if (_e.name() == "key") {
+                  parseKey();
+                  }
+            else if (_e.name() == "tempo") {
+                  tempo();
+                  }
+            else if (_e.name() == "time") {
+                  time();
+                  }
+            else
+                  skipLogCurrElem();
+            }
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "directions");
+      }
+
+//---------------------------------------------------------
+//   dirgroup
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/cwmnx/global/measure/directions/dirgroup node.
+ TODO: minimize duplicate code with MnxParserGlobal::directions().
+ */
+
+void MnxParserGlobal::dirgroup(const Fraction sTime, const int paramStaff)
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "dirgroup");
+      _logger->logDebugTrace("MnxParserGlobal::dirgroup");
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "key") {
@@ -1080,7 +1115,7 @@ void MnxParserGlobal::directions(const Fraction sTime, const int paramStaff)
                   skipLogCurrElem();
             }
 
-      Q_ASSERT(_e.isEndElement() && _e.name() == "directions");
+      Q_ASSERT(_e.isEndElement() && _e.name() == "dirgroup");
       }
 
 //---------------------------------------------------------
