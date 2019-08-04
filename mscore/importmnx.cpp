@@ -716,9 +716,9 @@ Rest* createRest(Score* score, const QString& value, const int track)
  * Create a slur.
  */
 
-static Slur* createSlur(Score* score)
+static std::unique_ptr<Slur> createSlur(Score* score)
       {
-      auto slur = new Slur(score);
+      std::unique_ptr<Slur> slur(new Slur(score));
       return slur;
       }
 
@@ -745,9 +745,9 @@ Tuplet* createTuplet(Measure* measure, const int track)
  * Create a hairpin.
  */
 
-static Hairpin* createHairpin(Score* score, const int track)
+static std::unique_ptr<Hairpin> createHairpin(Score* score, const int track)
       {
-      auto hairpin = new Hairpin(score);
+      std::unique_ptr<Hairpin> hairpin(new Hairpin(score));
       hairpin->setTrack(track);
       hairpin->setTrack2(track);
       return hairpin;
