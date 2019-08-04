@@ -25,6 +25,8 @@
  - have factory functions return unique_ptr
  */
 
+#include <vector>
+
 #include "libmscore/box.h"
 #include "libmscore/chord.h"
 #include "libmscore/dynamic.h"
@@ -122,7 +124,7 @@ private:
       Note* note(const int seqNr);
       Fraction parseTuplet(Measure* measure, const Fraction sTime, const int track);
       Rest* rest(Measure* measure, const bool measureRest, const QString& value, const int seqNr);
-      void sequence(Measure* measure, const Fraction sTime, QVector<int>& staffSeqCount);
+      void sequence(Measure* measure, const Fraction sTime, std::vector<int>& staffSeqCount);
       void skipLogCurrElem();
       void slur();
       int staves();
@@ -1576,7 +1578,7 @@ void MnxParserPart::measure(const int measureNr)
 
             }
 
-      QVector<int> staffSeqCount(MAX_STAVES);       // sequence count per staff
+      std::vector<int> staffSeqCount(MAX_STAVES, 0);       // sequence count per staff
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "directions")
@@ -1684,7 +1686,7 @@ Rest* MnxParserPart::rest(Measure* measure, const bool measureRest, const QStrin
  Parse the /mnx/score/cwmnx/part/measure/sequence node.
  */
 
-void MnxParserPart::sequence(Measure* measure, const Fraction sTime, QVector<int>& staffSeqCount)
+void MnxParserPart::sequence(Measure* measure, const Fraction sTime, std::vector<int>& staffSeqCount)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "sequence");
       _logger->logDebugTrace("MnxParserPart::sequence");
@@ -1721,7 +1723,7 @@ void MnxParserPart::sequence(Measure* measure, const Fraction sTime, QVector<int
                   else
                         skipLogCurrElem();
                   }
-            staffSeqCount[staff]++;
+            staffSeqCount.at(staff)++;
             }
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "sequence");
