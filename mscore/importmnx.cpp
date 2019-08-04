@@ -25,6 +25,7 @@
  - have factory functions return unique_ptr
  */
 
+#include <memory>
 #include <vector>
 
 #include "libmscore/box.h"
@@ -664,9 +665,9 @@ Rest* createCompleteMeasureRest(Measure* measure, const int track)
  * Create a MuseScore Dynamic of the specified MNX type.
  */
 
-static Dynamic* createDynamic(Score* score, const QString& type)
+static std::unique_ptr<Dynamic> createDynamic(Score* score, const QString& type)
       {
-      auto dynamic = new Dynamic(score);
+      std::unique_ptr<Dynamic> dynamic(new Dynamic(score));
       dynamic->setDynamicType(type);
       return dynamic;
       }
@@ -1460,7 +1461,7 @@ void MnxParserPart::dynamics(const Fraction sTime, const int paramStaff)
 
       auto track = determineTrack(_part, 0, 0);
       auto dyn = createDynamic(_score, type);
-      addElementToSegmentChordRest(_score, sTime.ticks(), track + paramStaff * VOICES, dyn);
+      addElementToSegmentChordRest(_score, sTime.ticks(), track + paramStaff * VOICES, dyn.release());
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "dynamics");
       }
