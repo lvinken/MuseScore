@@ -122,7 +122,7 @@ private:
       Fraction event(Measure* measure, const Fraction sTime, const int seqNr, Tuplet* tuplet);
       void lyric(ChordRest* cr);
       void measure(const int measureNr);
-      Note* note(const int seqNr);
+      std::unique_ptr<Note> note(const int seqNr);
       Fraction parseTuplet(Measure* measure, const Fraction sTime, const int track);
       Rest* rest(Measure* measure, const bool measureRest, const QString& value, const int seqNr);
       void sequence(Measure* measure, const Fraction sTime, std::vector<int>& staffSeqCount);
@@ -680,9 +680,9 @@ static std::unique_ptr<Dynamic> createDynamic(Score* score, const QString& type)
  * Create a note with pitch \a pitch in track \a track.
  */
 
-Note* createNote(Score* score, const QString& pitch, const int track)
+static std::unique_ptr<Note> createNote(Score* score, const QString& pitch, const int track)
       {
-      auto note = new Note(score);
+      std::unique_ptr<Note> note(new Note(score));
       note->setTrack(track);
       auto tpc2 = 0;
       auto msPitch = mnxToMidiPitch(pitch, tpc2);
@@ -1492,7 +1492,7 @@ Fraction MnxParserPart::event(Measure* measure, const Fraction sTime, const int 
             else if (_e.name() == "note") {
                   if (!cr)
                         cr = createChord(_score, attrValue, seqNr);
-                  cr->add(note(seqNr));
+                  cr->add(note(seqNr).release());
                   }
             else if (_e.name() == "rest") {
                   if (!cr)
@@ -1602,7 +1602,7 @@ void MnxParserPart::measure(const int measureNr)
  Parse the /mnx/score/cwmnx/part/measure/sequence/event/note node.
  */
 
-Note* MnxParserPart::note(const int seqNr)
+std::unique_ptr<Note> MnxParserPart::note(const int seqNr)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "note");
       _logger->logDebugTrace("MnxParserPart::note");
