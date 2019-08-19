@@ -1487,16 +1487,31 @@ Fraction MnxParserPart::event(Measure* measure, const Fraction sTime, const int 
       ChordRest* cr = nullptr;
 
       while (_e.readNextStartElement()) {
-            if (_e.name() == "lyric")
+            if (_e.name() == "lyric") {
                   lyric(cr);
+                  }
             else if (_e.name() == "note") {
                   if (!cr)
                         cr = createChord(_score, attrValue, seqNr);
-                  cr->add(note(seqNr).release());
+                  if (cr->isChord()) {
+                        cr->add(note(seqNr).release());
+                        }
+                  else if (cr->isRest()) {
+                        _logger->logError("cannot add note to rest");
+                        skipLogCurrElem();
+                        }
                   }
             else if (_e.name() == "rest") {
-                  if (!cr)
+                  if (!cr) {
                         cr = rest(measure, measureRest, attrValue, seqNr);
+                        }
+                  else {
+                        if (cr->isChord())
+                              _logger->logError("cannot add rest to chord");
+                        else if (cr->isRest())
+                              _logger->logError("cannot add rest to rest");
+                        skipLogCurrElem();
+                        }
                   }
             else
                   skipLogCurrElem();
