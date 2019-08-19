@@ -56,6 +56,11 @@ private slots:
       void accidentals4() { mnxIoTest("testAccidentals4"); }
       void chords() { mnxIoTest("testChords"); }
       void completeMeasureRest() { mnxIoTest("testCompleteMeasureRest"); }
+      void eventABD() { mnxIoTest("testEventABD"); }
+      void eventABcD() { mnxIoTest("testEventABcD"); }
+      void eventABrD() { mnxIoTest("testEventABrD"); }
+      void eventARD() { mnxIoTest("testEventARD"); }
+      void eventARcD() { mnxIoTest("testEventARcD"); }
       void hello() { mnxIoTest("testHello"); }
       void keysig0() { mnxIoTest("testKeysig0"); }
       void lyrics1() { mnxIoTest("testLyrics1"); }
