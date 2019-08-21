@@ -356,31 +356,29 @@ static void addMetaData(Score* score, const QString& composer, const QString& ly
 
 static void addVBoxWithMetaData(Score* score, const QString& composer, const QString& lyricist, const QString& subtitle, const QString& title)
       {
-      if (!composer.isEmpty() || !lyricist.isEmpty() || !subtitle.isEmpty() || !title.isEmpty()) {
-            auto vbox = new VBox(score);
-            if (!composer.isEmpty()) {
-                  auto text = new Text(score, Tid::COMPOSER);
-                  text->setPlainText(composer);
-                  vbox->add(text);
-                  }
-            if (!lyricist.isEmpty()) {
-                  auto text = new Text(score, Tid::POET);
-                  text->setPlainText(lyricist);
-                  vbox->add(text);
-                  }
-            if (!subtitle.isEmpty()) {
-                  auto text = new Text(score, Tid::SUBTITLE);
-                  text->setPlainText(subtitle);
-                  vbox->add(text);
-                  }
-            if (!title.isEmpty()) {
-                  auto text = new Text(score, Tid::TITLE);
-                  text->setPlainText(title);
-                  vbox->add(text);
-                  }
-            vbox->setTick(Fraction(0, 1));
-            score->measures()->add(vbox);
+      auto vbox = new VBox(score);
+      if (!composer.isEmpty()) {
+            auto text = new Text(score, Tid::COMPOSER);
+            text->setPlainText(composer);
+            vbox->add(text);
             }
+      if (!lyricist.isEmpty()) {
+            auto text = new Text(score, Tid::POET);
+            text->setPlainText(lyricist);
+            vbox->add(text);
+            }
+      if (!subtitle.isEmpty()) {
+            auto text = new Text(score, Tid::SUBTITLE);
+            text->setPlainText(subtitle);
+            vbox->add(text);
+            }
+      if (!title.isEmpty()) {
+            auto text = new Text(score, Tid::TITLE);
+            text->setPlainText(title);
+            vbox->add(text);
+            }
+      vbox->setTick(Fraction(0, 1));
+      score->measures()->add(vbox);
       }
 
 //---------------------------------------------------------
@@ -1966,11 +1964,18 @@ void MnxParser::mnx()
       Q_ASSERT(_e.isStartElement() && _e.name() == "mnx");
       _logger->logDebugTrace("MnxParser::mnx");
 
-
+      bool hasHead = false;
       while (_e.readNextStartElement()) {
-            if (_e.name() == "head")
+            if (_e.name() == "head") {
                   head();
+                  hasHead = true;
+                  }
             else if (_e.name() == "score") {
+                  // make sure a VBox is always present
+                  if (!hasHead) {
+                        addVBoxWithMetaData(_score, "", "", "", "");
+                        hasHead = true;
+                        }
                   score();
                   }
             else
