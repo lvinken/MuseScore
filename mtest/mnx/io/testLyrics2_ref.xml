@@ -111,9 +111,6 @@
           <text>S2</text>
           </lyric>
         </note>
-      <barline location="right">
-        <bar-style>light-heavy</bar-style>
-        </barline>
       </measure>
     </part>
   <part id="P2">
@@ -160,9 +157,6 @@
           <text>A2</text>
           </lyric>
         </note>
-      <barline location="right">
-        <bar-style>light-heavy</bar-style>
-        </barline>
       </measure>
     </part>
   <part id="P3">
@@ -209,9 +203,6 @@
           <text>T2</text>
           </lyric>
         </note>
-      <barline location="right">
-        <bar-style>light-heavy</bar-style>
-        </barline>
       </measure>
     </part>
   <part id="P4">
@@ -258,9 +249,6 @@
           <text>B2</text>
           </lyric>
         </note>
-      <barline location="right">
-        <bar-style>light-heavy</bar-style>
-        </barline>
       </measure>
     </part>
   </score-partwise>

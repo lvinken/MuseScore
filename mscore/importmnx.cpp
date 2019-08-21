@@ -1666,6 +1666,14 @@ void MnxParserPart::parsePartAndAppendToScore()
                   skipLogCurrElem();
             }
 
+      // set end barline to normal
+      const auto lastMeas = _score->lastMeasure();
+      const int voice = 0;
+      for (int staff = 0; staff < _part->nstaves(); ++staff) {
+            const auto track = determineTrack(_part, staff, voice);
+            lastMeas->setEndBarLineType(BarLineType::NORMAL, track);
+            }
+
       Q_ASSERT(_e.isEndElement() && _e.name() == "part");
       }
 
