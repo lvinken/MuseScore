@@ -72,9 +72,6 @@
         <duration>3</duration>
         <voice>1</voice>
         </note>
-      <barline location="right">
-        <bar-style>light-heavy</bar-style>
-        </barline>
       </measure>
     </part>
   </score-partwise>

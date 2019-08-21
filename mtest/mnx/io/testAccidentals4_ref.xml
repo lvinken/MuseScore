@@ -108,9 +108,6 @@
         <type>whole</type>
         <accidental>double-sharp</accidental>
         </note>
-      <barline location="right">
-        <bar-style>light-heavy</bar-style>
-        </barline>
       </measure>
     </part>
   </score-partwise>
