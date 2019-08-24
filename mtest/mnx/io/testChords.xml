@@ -11,7 +11,7 @@
                 <measure>
                     <directions>
                         <time signature="4/4"/>
-                        <tempo bpm="120" value="4"/>
+                        <tempo bpm="120" value="/4"/>
                     </directions>
                 </measure>
             </global>
