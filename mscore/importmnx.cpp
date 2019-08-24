@@ -28,6 +28,8 @@
 #include <memory>
 #include <vector>
 
+#include <QRegExp>
+
 #include "libmscore/box.h"
 #include "libmscore/chord.h"
 #include "libmscore/dynamic.h"
@@ -36,6 +38,7 @@
 #include "libmscore/keysig.h"
 #include "libmscore/lyrics.h"
 #include "libmscore/measure.h"
+#include "libmscore/ottava.h"
 #include "libmscore/part.h"
 #include "libmscore/rest.h"
 #include "libmscore/slur.h"
@@ -54,6 +57,22 @@ namespace Ms {
 //---------------------------------------------------------
 
 const int MAX_LYRICS       = 16;
+
+//---------------------------------------------------------
+//   SpannerDescription
+//---------------------------------------------------------
+
+struct SpannerDescription
+      {
+      std::unique_ptr<Spanner> sp;
+      QString end;
+      // note that due to the unique_ptr, SpannerDescription cannot be copied
+      SpannerDescription() = default;                                           // Constructor
+      SpannerDescription(const SpannerDescription&) = delete;                   // Copy constructor
+      SpannerDescription(SpannerDescription &&) = default;                      // Move constructor
+      SpannerDescription& operator=(const SpannerDescription&) = delete;        // Copy assignment operator
+      SpannerDescription& operator=(SpannerDescription &&) = default;           // Move assignment operator
+      };
 
 //---------------------------------------------------------
 //   MnxParserGlobal definition
@@ -123,6 +142,7 @@ private:
       void lyric(ChordRest* cr);
       void measure(const int measureNr);
       std::unique_ptr<Note> note(const int seqNr);
+      void octaveShift(const Fraction sTime, const int paramStaff = -1);
       Fraction parseTuplet(Measure* measure, const Fraction sTime, const int track);
       Rest* rest(Measure* measure, const bool measureRest, const QString& value, const int seqNr);
       void sequence(Measure* measure, const Fraction sTime, std::vector<int>& staffSeqCount);
@@ -136,6 +156,7 @@ private:
       Score* const _score;                                  ///< MuseScore score
       MxmlLogger* const _logger;                            ///< Error logger
       const MnxParserGlobal& _global;                       ///< Data extracted from the "global" tree
+      std::vector<SpannerDescription> _spanners;            ///< Spanners already created with tick2 still unknown
       };
 
 //---------------------------------------------------------
@@ -691,6 +712,21 @@ static std::unique_ptr<Note> createNote(Score* score, const QString& pitch, cons
       }
 
 //---------------------------------------------------------
+//   createOttava
+//---------------------------------------------------------
+
+/*
+ * Create a MuseScore Ottava of the specified MNX type.
+ */
+
+static std::unique_ptr<Ottava> createOttava(Score* score, const QString& /* type */)
+      {
+      std::unique_ptr<Ottava> ottava(new Ottava(score));
+      ottava->setOttavaType(OttavaType::OTTAVA_8VA);       // TODO
+      return ottava;
+      }
+
+//---------------------------------------------------------
 //   createRest
 //---------------------------------------------------------
 
@@ -759,11 +795,12 @@ static std::unique_ptr<Hairpin> createHairpin(Score* score, const int track)
  * Calculate track from \a part, \a staff and \a voice.
  */
 
-static int determineTrack(const Part* const part, const int staff, const int voice)
+static int determineTrack(const Part* const part, const int staff, const int voice = 0)
       {
       // make score-relative instead on part-relative
       Q_ASSERT(part);
       Q_ASSERT(part->score());
+      Q_ASSERT(staff >= 0);
       auto scoreRelStaff = part->score()->staffIdx(part); // zero-based number of part's first staff in the score
       auto res = (scoreRelStaff + staff) * VOICES + voice;
       return res;
@@ -921,8 +958,7 @@ static TDuration::DurationType mnxValueUnitToDurationType(const QString& s)
             return TDuration::DurationType::V_LONG;
       else {
             qDebug("mnxValueUnitToDurationType(%s): unknown", qPrintable(s));
-            //return TDuration::DurationType::V_INVALID;
-            return TDuration::DurationType::V_QUARTER;
+            return TDuration::DurationType::V_INVALID;
             }
       }
 
@@ -950,6 +986,76 @@ static TDuration mnxEventValueToTDuration(const QString& value)
       res.setDots(dots);
 
       return res;
+      }
+
+//---------------------------------------------------------
+//   mnxMeasurePositionToFraction
+//---------------------------------------------------------
+
+/*
+ * Convert MNX measure position to Fraction.
+ */
+
+static Fraction mnxMeasurePositionToFraction(const QString& value)
+      {
+      const QRegExp noteValueQuantity { "(\\d+)(/\\d+)" };    // TODO: support dots
+      Fraction res { 0, 0 };        // invalid
+
+      // parse floating point and note value separately
+      if (noteValueQuantity.exactMatch(value)) {
+            //qDebug("value '%s' ('%s' '%s') is noteValueQuantity ", qPrintable(value), qPrintable(noteValueQuantity.cap(1)), qPrintable(noteValueQuantity.cap(2)));
+            const auto val = mnxValueUnitToDurationType(noteValueQuantity.cap(2));
+            if (val != TDuration::DurationType::V_INVALID) {
+                  TDuration dur { val };
+                  res = noteValueQuantity.cap(1).toInt() * dur.ticks();
+                  }
+            }
+      else {
+            qDebug("unknown value '%s'", qPrintable(value));
+            // TODO support floating point
+            }
+
+      //qDebug("res '%s'", qPrintable(res.print()));
+      return res;
+      }
+
+//---------------------------------------------------------
+//   mnxMeasureLocationToTick
+//---------------------------------------------------------
+
+/**
+ Convert MNX measure location to tick in Fraction.
+ Does not (yet) support real data.
+ Possible content:
+ - position in the current measure: floating point (e.g. 0.75) or note value quantity (e.g. 3/4)
+ - position in an arbitrary measure: measure index, ":" and floating point (e.g. 1:0.75) or note value quantity (e.g. 1:3/4)
+ - an element location: "#" and the element's XMLID (e.g. #p1m3n21)
+ TODO: assumes no timesig changes
+ */
+
+static Fraction mnxMeasureLocationToTick(const QString& location, const Fraction& measureDuration)
+      {
+      const QRegExp elementLocation { "#\\S+" };    // TODO: check if this matches all XML ID legal characters
+      const QRegExp arbitraryMeasurePosition { "(\\d+):(\\S+)" };
+
+      if (elementLocation.exactMatch(location)) {
+            //qDebug("loc '%s' is elementLocation", qPrintable(location));
+            }
+      else if (arbitraryMeasurePosition.exactMatch(location)) {
+            //qDebug("loc '%s' is arbitraryMeasurePosition", qPrintable(location));
+            const auto positionInMeasure = mnxMeasurePositionToFraction(arbitraryMeasurePosition.cap(2));
+            const auto startOfMeasure = (arbitraryMeasurePosition.cap(1).toInt() - 1) * measureDuration;
+            const auto res = startOfMeasure + positionInMeasure;
+            //qDebug("res '%s'", qPrintable(res.print()));
+            return res;
+            }
+      else {
+            //qDebug("loc '%s' is currentMeasurePosition", qPrintable(location));
+            //return mnxMeasurePositionToFraction(location); // TODO: interpret as measure-relative
+            }
+
+      qDebug("unknown value '%s'", qPrintable(location));
+      return { 0, 0 };       // force invalid result
       }
 
 //---------------------------------------------------------
@@ -1406,6 +1512,9 @@ void MnxParserPart::directions(const Fraction sTime, const int paramStaff)
             else if (_e.name() == "dynamics") {
                   dynamics(sTime, paramStaff);
                   }
+            else if (_e.name() == "octave-shift") {
+                  octaveShift(sTime, paramStaff);
+                  }
             else if (_e.name() == "staves") {
                   // TODO: factor out
                   auto oldStaves = _part->nstaves();
@@ -1633,6 +1742,90 @@ std::unique_ptr<Note> MnxParserPart::note(const int seqNr)
       }
 
 //---------------------------------------------------------
+//   octaveShift
+//---------------------------------------------------------
+
+/**
+ Parse the octave-shift node, which may be found:
+ - TBD (?)
+ - within a sequence in a measure in a part
+ */
+
+void MnxParserPart::octaveShift(const Fraction sTime, const int paramStaff)
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "octave-shift");
+      _logger->logDebugTrace("MnxParserPart::octaveShift");
+
+      auto type = _e.attributes().value("type").toString();
+      // note: end may contain a reference to a specific, future, element (unknown here)
+      auto end = _e.attributes().value("end").toString();
+      _logger->logDebugTrace(QString("- octave-shift type '%1' end '%2'").arg(type).arg(end));
+
+      auto sp = createOttava(_score, type);
+      sp->setTick(sTime);
+      sp->setTrack(determineTrack(_part, paramStaff));
+      SpannerDescription sd { std::move(sp), end };
+      _spanners.push_back(std::move(sd));
+
+      // TODO which is correct ? _e.readNext();
+      _e.skipCurrentElement();
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "octave-shift");
+      }
+
+//---------------------------------------------------------
+//   updateNotePitchForOttava
+//---------------------------------------------------------
+
+/**
+ Add pitchDelta to all notes between firstTick and lastTick in the staff starting at startTrack.
+ Both ticks are included.
+ */
+
+static void updateNotePitchForOttava(Score* score, const int startTrack, const Fraction firstTick, const Fraction lastTick, const int pitchDelta)
+      {
+      auto firstseg = score->tick2segment(firstTick, true, SegmentType::ChordRest);
+      if (!firstseg)
+            return;
+
+      for (auto seg = firstseg; seg && seg->tick() < lastTick; seg = seg->next1(SegmentType::ChordRest)) {
+            for (int track = startTrack; track < startTrack + VOICES; ++track) {
+                  auto elem = seg->element(track);
+                  if (elem && elem->isChord()) {
+                        auto chord = toChord(elem);
+                        for (auto note : chord->notes())
+                              note->setPitch(note->pitch() - pitchDelta);
+                        }
+                  }
+            }
+      }
+
+//---------------------------------------------------------
+//   findLastChordForSpanner
+//---------------------------------------------------------
+
+/**
+ Find chord in staff at tick.
+ */
+
+static Chord* findLastChordForSpanner(Score* score, const int staff, const Fraction tick)
+      {
+      auto seg = score->tick2segment(tick, true, SegmentType::ChordRest);
+
+      if (seg) {
+            const int startTrack = staff * VOICES;
+            for (int track = startTrack; track < (startTrack + VOICES); ++track) {
+                  auto elem = seg->element(track);
+                  if (elem && elem->isChord()) {
+                        auto chord = toChord(elem);
+                        return chord;
+                        }
+                  }
+            }
+      return nullptr;
+      }
+
+//---------------------------------------------------------
 //   parsePartAndAppendToScore
 //---------------------------------------------------------
 
@@ -1662,6 +1855,33 @@ void MnxParserPart::parsePartAndAppendToScore()
                   }
             else
                   skipLogCurrElem();
+            }
+
+      // dump spanners read
+      /*
+      qDebug("spanners");
+      for (const auto& sd : _spanners)
+            qDebug("sp %p end '%s'", sd.sp.get(), qPrintable(sd.end));
+       */
+
+      // add spanners read to score
+      for (auto& sd : _spanners) {
+            const auto measureDuration = Fraction(_global.beats(), _global.beatType());             // TODO: assumes no timesig changes
+            auto tick2 = mnxMeasureLocationToTick(sd.end, measureDuration);
+            if (tick2.isValid()) {
+                  auto sp = sd.sp.release();
+                  // tick2 is the start tick of the last note affected, MuseScore needs the end tick
+                  auto lastChord = findLastChordForSpanner(_score, sp->track() / VOICES, tick2);
+                  if (lastChord)
+                        tick2 += lastChord->ticks();
+                  else
+                        _logger->logError(QString("chord not found for spanner end '%1'").arg(sd.end));
+                  sp->setTick2(tick2);
+                  updateNotePitchForOttava(_score, sp->track(), sp->tick(), tick2, 12 /* TODO */);
+                  _score->addElement(sp);
+                  }
+            else
+                  _logger->logError(QString("invalid spanner end '%1'").arg(sd.end));
             }
 
       // set end barline to normal
