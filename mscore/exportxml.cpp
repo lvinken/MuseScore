@@ -4805,11 +4805,20 @@ static void midiInstrument(XmlWriter& xml, const int partNr, const int instrNr,
 static void initInstrMap(MxmlInstrumentMap& im, const InstrumentList* il, const Score* /*score*/)
       {
       im.clear();
+      qDebug("begin");
       for (auto i = il->begin(); i != il->end(); ++i) {
             const Instrument* pinstr = i->second;
+            const auto& lnl = pinstr->longNames();
+            const QString ln = lnl.empty() ? "" : lnl[0].name();
+            const auto& snl = pinstr->shortNames();
+            const QString sn = snl.empty() ? "" : snl[0].name();
+            qDebug("%d '%s' '%s' %d %d",
+                   i->first, qPrintable(ln), qPrintable(sn),
+                   pinstr->transpose().diatonic, pinstr->transpose().chromatic);
             if (!im.contains(pinstr))
                   im.insert(pinstr, im.size());
             }
+      qDebug("end");
       }
 
 //---------------------------------------------------------
@@ -5606,6 +5615,10 @@ void ExportMusicXml::write(QIODevice* dev)
                   print(m, idx, staffCount, staves);
 
                   _attr.start();
+
+                  // find and write changed transpose
+                  const auto hasTranspose = part->instruments()->count(m->tick().ticks()) > 0;
+                  qDebug("measure tick %s %d hasTranspose %d", qPrintable(m->tick().print()), m->tick().ticks(), hasTranspose);
 
                   findTrills(m, strack, etrack, _trillStart, _trillStop);
 
