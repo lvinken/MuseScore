@@ -1303,9 +1303,10 @@ static void tabpitch2xml(const int pitch, const int tpc, QString& s, int& alter,
 static void pitch2xml(const Note* note, QString& s, int& alter, int& octave)
       {
 
-      const Staff* st = note->staff();
-      const Instrument* instr = st->part()->instrument();   // TODO: tick
-      const Interval intval = instr->transpose();
+      const auto st = note->staff();
+      const auto tick = note->chord()->tick();
+      const auto instr = st->part()->instrument(tick);
+      const auto intval = instr->transpose();
 
       s      = tpc2stepName(note->tpc());
       alter  = tpc2alterByKey(note->tpc(), Key::C);
@@ -1319,7 +1320,6 @@ static void pitch2xml(const Note* note, QString& s, int& alter, int& octave)
       // note->pitch() and note->line()
       // note->line() is determined by drumMap
       //
-      Fraction tick        = note->chord()->tick();
       ClefType ct     = st->clef(tick);
       if (ct == ClefType::PERC || ct == ClefType::PERC2) {
             alter = 0;
@@ -5653,8 +5653,10 @@ void ExportMusicXml::write(QIODevice* dev)
                   if (hasTranspose) {
                         const auto instr = it->second;
                         qDebug("instr %p dia %d chr %d", instr, instr->transpose().diatonic, instr->transpose().chromatic);
+                        if (instr->transpose().chromatic) {
                         _attr.doAttr(_xml, true);
                         writeInstrumentDetails(_xml, instr->transpose());
+                        }
                   }
 
                   // output attributes with the first actual measure (pickup or regular) only
