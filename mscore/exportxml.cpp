@@ -4812,9 +4812,9 @@ static void initInstrMap(MxmlInstrumentMap& im, const InstrumentList* il, const 
             const QString ln = lnl.empty() ? "" : lnl[0].name();
             const auto& snl = pinstr->shortNames();
             const QString sn = snl.empty() ? "" : snl[0].name();
-            qDebug("%d '%s' '%s' %d %d",
+            qDebug("%d '%s' '%s' %p %d %d",
                    i->first, qPrintable(ln), qPrintable(sn),
-                   pinstr->transpose().diatonic, pinstr->transpose().chromatic);
+                   pinstr, pinstr->transpose().diatonic, pinstr->transpose().chromatic);
             if (!im.contains(pinstr))
                   im.insert(pinstr, im.size());
             }
@@ -5417,16 +5417,17 @@ static void writeStaffDetails(XmlWriter& xml, const Part* part)
  Write the instrument details for \a part to \a xml.
  */
 
-static void writeInstrumentDetails(XmlWriter& xml, const Part* part)
+static void writeInstrumentDetails(XmlWriter& xml, const Interval& interval)
       {
-      const Instrument* instrument = part->instrument();
+      //const Instrument* instrument = part->instrument();
 
       // instrument details
-      if (instrument->transpose().chromatic) {        // TODO: tick
+      //if (instrument->transpose().chromatic) {        // TODO: tick
+            if (interval.chromatic) {
             xml.stag("transpose");
-            xml.tag("diatonic",  instrument->transpose().diatonic % 7);
-            xml.tag("chromatic", instrument->transpose().chromatic % 12);
-            int octaveChange = instrument->transpose().chromatic / 12;
+            xml.tag("diatonic",  interval.diatonic % 7);
+            xml.tag("chromatic", interval.chromatic % 12);
+            const int octaveChange = interval.chromatic / 12;
             if (octaveChange != 0)
                   xml.tag("octave-change", octaveChange);
             xml.etag();
@@ -5616,10 +5617,6 @@ void ExportMusicXml::write(QIODevice* dev)
 
                   _attr.start();
 
-                  // find and write changed transpose
-                  const auto hasTranspose = part->instruments()->count(m->tick().ticks()) > 0;
-                  qDebug("measure tick %s %d hasTranspose %d", qPrintable(m->tick().print()), m->tick().ticks(), hasTranspose);
-
                   findTrills(m, strack, etrack, _trillStart, _trillStop);
 
                   // barline left must be the first element in a measure
@@ -5648,10 +5645,22 @@ void ExportMusicXml::write(QIODevice* dev)
                   // make sure a clef gets exported if none is found
                   exportDefaultClef(part, m);
 
+                  // find and write changed transpose
+                  const auto instrs = part->instruments();
+                  const auto it = instrs->find(m->tick().ticks());
+                  const auto hasTranspose = it != instrs->end();
+                  qDebug("measure tick %s %d hasTranspose %d", qPrintable(m->tick().print()), m->tick().ticks(), hasTranspose);
+                  if (hasTranspose) {
+                        const auto instr = it->second;
+                        qDebug("instr %p dia %d chr %d", instr, instr->transpose().diatonic, instr->transpose().chromatic);
+                        _attr.doAttr(_xml, true);
+                        writeInstrumentDetails(_xml, instr->transpose());
+                  }
+
                   // output attributes with the first actual measure (pickup or regular) only
                   if (isFirstActualMeasure) {
                         writeStaffDetails(_xml, part);
-                        writeInstrumentDetails(_xml, part);
+                        writeInstrumentDetails(_xml, part->instrument()->transpose());
                         }
 
                   // output attribute at start of measure: measure-style
