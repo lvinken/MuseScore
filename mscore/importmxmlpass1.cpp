@@ -1927,12 +1927,12 @@ void MusicXMLParserPass1::part()
 
       //qDebug("lyric numbers: %s", qPrintable(_parts[id].lyricNumberHandler().toString()));
 
-      /*
+      /**/
       qDebug("instrument map:");
       for (auto& instr: _parts[id]._instrList) {
             qDebug("%s %s", qPrintable(instr.first.print()), qPrintable(instr.second));
             }
-      */
+      /**/
 
       /*
       qDebug("voiceMapperStats: new staff");
