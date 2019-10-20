@@ -569,7 +569,7 @@ static void setPartInstruments(MxmlLogger* logger, const QXmlStreamReader* const
                         else {
                               MusicXMLDrumInstrument mxmlInstr = mxmlDrumset.value(instrId);
                               Instrument instr = createInstrument(mxmlInstr);
-                              //qDebug("instr %p", &instr);
+                              qDebug("instr %p", &instr); // <- apparently we are here after trying to set transpose
 
                               InstrumentChange* ic = new InstrumentChange(instr, score);
                               ic->setTrack(track);
@@ -2082,7 +2082,7 @@ void MusicXMLParserPass2::attributes(const QString& partId, Measure* measure, co
             else if (_e.name() == "time")
                   time(partId, measure, tick);
             else if (_e.name() == "transpose")
-                  transpose(partId, tick);
+                  _e.skipCurrentElement();  // skip but don't log
             else
                   skipLogCurrElem();
             }
@@ -3741,13 +3741,8 @@ void MusicXMLParserPass2::time(const QString& partId, Measure* measure, const Fr
       }
 
       //---------------------------------------------------------
-      //  initInstrMap
+      //  DumpInstrList
       //---------------------------------------------------------
-
-      /**
-       Initialize the Instrument* to number map for a Part
-       Used to generate instrument numbers for a multi-instrument part
-       */
 
       static void DumpInstrList(const InstrumentList* il)
       {
@@ -3765,7 +3760,11 @@ void MusicXMLParserPass2::time(const QString& partId, Measure* measure, const Fr
             qDebug("end");
       }
 
-      static QString findInstrumentForTranspose(const MusicXmlInstrList instrs, const Fraction& tick)
+      //---------------------------------------------------------
+      //   findInstrumentForTranspose
+      //---------------------------------------------------------
+
+      static Fraction findInstrumentForTranspose(const MusicXmlInstrList instrs, const Fraction& tick)
       {
             qDebug("tick %s", qPrintable(tick.print()));
             qDebug("instrument map:");
@@ -3783,11 +3782,11 @@ void MusicXMLParserPass2::time(const QString& partId, Measure* measure, const Fr
             }
             if (it != instrs.end()) {
                   qDebug("2 found tick %s instr '%s'", qPrintable(it->first.print()), qPrintable(it->second));
-                  return it->second;
+                  return it->first;
             }
 
             qDebug("not found");
-            return "";
+            return { 0, 0}; // invalid
       }
 
 //---------------------------------------------------------
@@ -3797,7 +3796,7 @@ void MusicXMLParserPass2::time(const QString& partId, Measure* measure, const Fr
 /**
  Parse the /score-partwise/part/measure/attributes/transpose node.
  */
-
+/*
 void MusicXMLParserPass2::transpose(const QString& partId, const Fraction& tick)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "transpose");
@@ -3829,13 +3828,15 @@ void MusicXMLParserPass2::transpose(const QString& partId, const Fraction& tick)
       if (chromatic && !diatonic)
             interval.diatonic += chromatic2diatonic(interval.chromatic);
 
-            findInstrumentForTranspose(_pass1.getMusicXmlPart(partId)._instrList, tick);
+            const auto tickForTranspose = findInstrumentForTranspose(_pass1.getMusicXmlPart(partId)._instrList, tick);
 
-      _pass1.getPart(partId)->instrument()->setTranspose(interval);
+            if (tickForTranspose.isValid())
+      _pass1.getPart(partId)->instrument(tickForTranspose)->setTranspose(interval);
 
             qDebug("2 tick %s", qPrintable(tick.print()));
             DumpInstrList(_pass1.getPart(partId)->instruments());
       }
+ */
 
 //---------------------------------------------------------
 //   divisions

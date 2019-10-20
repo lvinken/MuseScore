@@ -133,6 +133,7 @@ public:
       void attributes(const QString& partId, const Fraction cTime);
       void clef(const QString& partId);
       void time(const Fraction cTime);
+      void transpose(const QString& partId, const Fraction& tick);
       void divisions();
       void staves(const QString& partId);
       void direction(const QString& partId, const Fraction cTime);
