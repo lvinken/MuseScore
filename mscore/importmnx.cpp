@@ -25,6 +25,8 @@
  - have factory functions return unique_ptr
  */
 
+// to enable tracing, uncomment line containing logger.setLoggingLevel
+
 #include <memory>
 #include <vector>
 
@@ -149,6 +151,7 @@ private:
       void skipLogCurrElem();
       void slur();
       int staves();
+      QString tied();
       void wedge();
       // data
       QXmlStreamReader& _e;
@@ -1731,13 +1734,21 @@ std::unique_ptr<Note> MnxParserPart::note(const int seqNr)
 
       auto accidental = _e.attributes().value("accidental").toString();
       auto pitch = _e.attributes().value("pitch").toString();
-      _logger->logDebugTrace(QString("- note pitch '%1' accidental '%2'").arg(pitch).arg(accidental));
+      QString tiedTarget;
 
-      // TODO which is correct ? _e.readNext();
-      _e.skipCurrentElement();
+      while (_e.readNextStartElement()) {
+            if (_e.name() == "tied")
+                  tiedTarget = tied();
+            else
+                  skipLogCurrElem();
+            }
+
+      _logger->logDebugTrace(QString("- note pitch '%1' accidental '%2' tiedTarget '%3'")
+                             .arg(pitch).arg(accidental).arg(tiedTarget));
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "note");
 
+      // TODO: store note created plus tied target for later use
       return createNote(_score, pitch, seqNr /*, accidental*/);
       }
 
@@ -1883,6 +1894,8 @@ void MnxParserPart::parsePartAndAppendToScore()
             else
                   _logger->logError(QString("invalid spanner end '%1'").arg(sd.end));
             }
+
+      // TODO: connect ties
 
       // set end barline to normal
       const auto lastMeas = _score->lastMeasure();
@@ -2031,6 +2044,28 @@ int MnxParserPart::staves()
       Q_ASSERT(_e.isEndElement() && _e.name() == "staves");
 
       return res;
+      }
+
+//---------------------------------------------------------
+//   tied
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/cwmnx/.../tied node.
+ */
+
+QString MnxParserPart::tied()
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "tied");
+      _logger->logDebugTrace("MnxParserPart::tied");
+
+      auto target = _e.attributes().value("target").toString();
+
+      _e.skipCurrentElement();
+
+      Q_ASSERT(_e.isEndElement() && _e.name() == "tied");
+
+      return target;
       }
 
 //---------------------------------------------------------
