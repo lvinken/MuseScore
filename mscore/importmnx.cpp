@@ -1733,6 +1733,7 @@ std::unique_ptr<Note> MnxParserPart::note(const int seqNr)
       _logger->logDebugTrace("MnxParserPart::note");
 
       auto accidental = _e.attributes().value("accidental").toString();
+      auto id = _e.attributes().value("id").toString();
       auto pitch = _e.attributes().value("pitch").toString();
       QString tiedTarget;
 
@@ -1743,11 +1744,12 @@ std::unique_ptr<Note> MnxParserPart::note(const int seqNr)
                   skipLogCurrElem();
             }
 
-      _logger->logDebugTrace(QString("- note pitch '%1' accidental '%2' tiedTarget '%3'")
-                             .arg(pitch).arg(accidental).arg(tiedTarget));
+      _logger->logDebugTrace(QString("- note pitch '%1' accidental '%2' id '%3' tiedTarget '%4'")
+                             .arg(pitch).arg(accidental).arg(id).arg(tiedTarget));
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "note");
 
+      // TODO: store note created plus id for later use
       // TODO: store note created plus tied target for later use
       return createNote(_score, pitch, seqNr /*, accidental*/);
       }
