@@ -48,6 +48,7 @@
 #include "libmscore/stafftext.h"
 #include "libmscore/tempotext.h"
 #include "libmscore/timesig.h"
+#include "libmscore/tie.h"
 #include "libmscore/tuplet.h"
 #include "importmxmllogger.h"
 #include "importmnx.h"
@@ -125,6 +126,17 @@ MnxParserGlobal::MnxParserGlobal(QXmlStreamReader& e, Score* score, MxmlLogger* 
       }
 
 //---------------------------------------------------------
+//   TieDescription
+//---------------------------------------------------------
+
+struct TieDescription
+      {
+      TieDescription(Note* fromNote, const QString& target) : _fromNote(fromNote), _target(target) {}
+      Note* _fromNote;
+      QString _target;
+      };
+
+//---------------------------------------------------------
 //   MnxParserPart definition
 //---------------------------------------------------------
 
@@ -138,6 +150,7 @@ private:
       // functions
       Fraction beamed(Measure* measure, const Fraction sTime, const int track, Tuplet* tuplet);
       void clef(const int paramStaff);
+      void debugDumpData();
       void directions(const Fraction sTime, const int paramStaff = -1);
       void dynamics(const Fraction sTime, const int paramStaff = -1);
       Fraction event(Measure* measure, const Fraction sTime, const int seqNr, Tuplet* tuplet);
@@ -160,6 +173,8 @@ private:
       MxmlLogger* const _logger;                            ///< Error logger
       const MnxParserGlobal& _global;                       ///< Data extracted from the "global" tree
       std::vector<SpannerDescription> _spanners;            ///< Spanners already created with tick2 still unknown
+      std::vector<TieDescription> _ties;                    ///< Descriptions of ties to be created and connected
+      std::map<QString, Note*> _ids;                        ///< IDs and notes they refer to
       };
 
 //---------------------------------------------------------
@@ -1443,6 +1458,34 @@ Fraction MnxParserPart::beamed(Measure* measure, const Fraction sTime, const int
       }
 
 //---------------------------------------------------------
+//   debugDumpData
+//---------------------------------------------------------
+
+void MnxParserPart::debugDumpData()
+      {
+      // dump ids read
+      /*
+            qDebug("ids");
+      for (const auto& kv : _ids)
+            qDebug("id '%s' note %p", qPrintable(kv.first), kv.second);
+      */
+
+      // dump spanners read
+      /*
+      qDebug("spanners");
+      for (const auto& sd : _spanners)
+            qDebug("sp %p end '%s'", sd.sp.get(), qPrintable(sd.end));
+      */
+
+      // dump ties read
+      /*
+      qDebug("ties");
+      for (const auto& tieDesc : _ties)
+            qDebug("note %p target '%s'", tieDesc._fromNote, qPrintable(tieDesc._target));
+      */
+      }
+
+//---------------------------------------------------------
 //   clef
 //---------------------------------------------------------
 
@@ -1749,9 +1792,14 @@ std::unique_ptr<Note> MnxParserPart::note(const int seqNr)
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "note");
 
-      // TODO: store note created plus id for later use
-      // TODO: store note created plus tied target for later use
-      return createNote(_score, pitch, seqNr /*, accidental*/);
+      auto note = createNote(_score, pitch, seqNr /*, accidental*/);
+      // store note created plus id for later use
+      if (id != "")
+            _ids.insert({ id, note.get() });          // TODO: check for duplicate ID
+      // store note created plus tied target for later use
+      if (tiedTarget != "")
+            _ties.emplace_back(note.get(), tiedTarget);
+      return note;
       }
 
 //---------------------------------------------------------
@@ -1870,12 +1918,7 @@ void MnxParserPart::parsePartAndAppendToScore()
                   skipLogCurrElem();
             }
 
-      // dump spanners read
-      /*
-      qDebug("spanners");
-      for (const auto& sd : _spanners)
-            qDebug("sp %p end '%s'", sd.sp.get(), qPrintable(sd.end));
-       */
+      debugDumpData();
 
       // add spanners read to score
       for (auto& sd : _spanners) {
@@ -1897,7 +1940,14 @@ void MnxParserPart::parsePartAndAppendToScore()
                   _logger->logError(QString("invalid spanner end '%1'").arg(sd.end));
             }
 
-      // TODO: connect ties
+      // connect ties
+      for (const auto& tieDesc : _ties) {
+            auto note = tieDesc._fromNote;
+            auto tie = new Tie(note->score());
+            note->setTieFor(tie);
+            tie->setStartNote(note);
+            tie->setTrack(note->track());
+            }
 
       // set end barline to normal
       const auto lastMeas = _score->lastMeasure();
