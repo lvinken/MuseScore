@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mnx>
+    <head>
+        <title>Ties 1</title>
+        <subtitle>MuseScore testfile</subtitle>
+        <creator type="composer">Leon Vinken</creator>
+    </head>
+    <score>
+        <mnx-common profile="standard">
+            <global>
+                <measure>
+                    <directions>
+                        <time signature="4/4"/>
+                    </directions>
+                </measure>
+                <measure/>
+                <measure/>
+                <measure/>
+                </global>
+            <part>
+                <part-name>Voice</part-name>
+                <measure>
+                    <directions>
+                        <clef line="2" sign="G"/>
+                    </directions>
+                    <sequence>
+                        <event value="/2">
+                            <note pitch="G4">
+                                <tied target="note2"/>
+                            </note>
+                        </event>
+                        <event value="/2">
+                            <note pitch="G4" id="note2"/>
+                        </event>
+                    </sequence>
+                </measure>
+                <measure>
+                    <sequence>
+                        <event value="/1">
+                            <rest/>
+                        </event>
+                    </sequence>
+                </measure>
+                <measure>
+                    <sequence>
+                        <event value="/1">
+                            <rest/>
+                        </event>
+                    </sequence>
+                </measure>
+                <measure>
+                    <sequence>
+                        <event value="/1">
+                            <rest/>
+                        </event>
+                    </sequence>
+                </measure>
+            </part>
+            <part>
+                <part-name>Piano</part-name>
+                <measure>
+                    <directions>
+                        <staves number="2"/>
+                        <clef line="2" sign="G" staff="1"/>
+                        <clef line="4" sign="F" staff="2"/>
+                    </directions>
+                    <sequence staff="1">
+                        <event value="/1">
+                            <rest/>
+                        </event>
+                    </sequence>
+                    <sequence staff="2">
+                        <event value="/1">
+                            <rest/>
+                        </event>
+                    </sequence>
+                </measure>
+                <measure>
+                    <sequence staff="1">
+                        <event value="/2">
+                            <note pitch="G4">
+                                <tied target="note2"/>
+                            </note>
+                        </event>
+                        <event value="/2">
+                            <note pitch="G4" id="note2"/>
+                        </event>
+                    </sequence>
+                    <sequence staff="2">
+                        <event value="/1">
+                            <rest/>
+                        </event>
+                    </sequence>
+                </measure>
+                <measure>
+                    <sequence staff="1">
+                        <event value="/1">
+                            <rest/>
+                        </event>
+                    </sequence>
+                    <sequence staff="2">
+                        <event value="/2">
+                            <note pitch="G4">
+                                <tied target="note2"/>
+                            </note>
+                        </event>
+                        <event value="/2">
+                            <note pitch="G4" id="note2"/>
+                        </event>
+                    </sequence>
+                </measure>
+                <measure>
+                    <sequence staff="1">
+                        <event value="/1">
+                            <rest/>
+                        </event>
+                    </sequence>
+                    <sequence staff="1">
+                        <event value="/2">
+                            <note pitch="G4">
+                                <tied target="note2"/>
+                            </note>
+                        </event>
+                        <event value="/2">
+                            <note pitch="G4" id="note2"/>
+                        </event>
+                    </sequence>
+                    <sequence staff="2">
+                        <event value="/1">
+                            <rest/>
+                        </event>
+                    </sequence>
+                </measure>
+            </part>
+        </mnx-common>
+    </score>
+</mnx>
