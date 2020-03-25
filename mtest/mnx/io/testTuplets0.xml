@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mnx>
+    <head>
+        <title>Tuplets 0</title>
+        <subtitle>MuseScore testfile</subtitle>
+        <creator type="composer">Leon Vinken</creator>
+    </head>
+    <score content="cwmn">
+        <mnx-common profile="standard">
+            <global>
+                <measure>
+                    <directions>
+                        <time signature="4/4"/>
+                    </directions>
+                </measure>
+            </global>
+            <part>
+                <part-name>Music</part-name>
+                <measure>
+                    <directions>
+                        <clef line="2" sign="G"/>
+                    </directions>
+                    <sequence>
+                        <event value="/4">
+                            <note pitch="G4"/>
+                        </event>
+                        <tuplet actual="3/4" normal="2/4">
+                            <event value="/4">
+                                <note pitch="A4"/>
+                            </event>
+                            <event value="/4">
+                                <note pitch="B4"/>
+                            </event>
+                            <event value="/4">
+                                <note pitch="C5"/>
+                            </event>
+                        </tuplet>
+                        <event value="/4">
+                            <note pitch="D5"/>
+                        </event>
+                    </sequence>
+                </measure>
+            </part>
+            <part>
+                <part-name>Music</part-name>
+                <measure>
+                    <directions>
+                        <staves number="2"/>
+                        <clef line="2" sign="G" staff="1"/>
+                        <clef line="4" sign="F" staff="2"/>
+                    </directions>
+                    <sequence staff="1">
+                        <event value="/1">
+                            <note pitch="G4"/>
+                        </event>
+                    </sequence>
+                    <sequence staff="2">
+                        <event value="/1">
+                            <note pitch="G3"/>
+                        </event>
+                    </sequence>
+                    <sequence staff="2">
+                        <event value="/8">
+                            <note pitch="G2"/>
+                        </event>
+                        <tuplet actual="3/8" normal="2/8">
+                            <event value="/8">
+                                <note pitch="A2"/>
+                            </event>
+                            <event value="/8">
+                                <note pitch="B2"/>
+                            </event>
+                            <event value="/8">
+                                <note pitch="C3"/>
+                            </event>
+                        </tuplet>
+                        <event value="/8">
+                            <note pitch="D3"/>
+                        </event>
+                        <event value="/2">
+                            <note pitch="E3"/>
+                        </event>
+                    </sequence>
+                </measure>
+            </part>
+        </mnx-common>
+    </score>
+</mnx>

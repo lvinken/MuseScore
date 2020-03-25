@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mnx>
+    <head>
+        <title>Tuplets 0</title>
+        <subtitle>MuseScore testfile</subtitle>
+        <creator type="composer">Leon Vinken</creator>
+    </head>
+    <score>
+        <mnx-common profile="standard">
+            <global>
+                <measure>
+                    <directions>
+                        <time signature="4/4"/>
+                    </directions>
+                </measure>
+            </global>
+            <part>
+                <part-name>Music</part-name>
+                <measure>
+                    <directions>
+                        <clef line="2" sign="G"/>
+                    </directions>
+                    <sequence>
+                        <event value="/4">
+                            <note pitch="G4"/>
+                        </event>
+                        <event value="/4">
+                            <note pitch="A4"/>
+                        </event>
+                        <event value="/4">
+                            <note pitch="B4"/>
+                        </event>
+                        <event value="/4">
+                            <note pitch="C%"/>
+                        </event>
+                    </sequence>
+                </measure>
+            </part>
+        </mnx-common>
+    </score>
+</mnx>

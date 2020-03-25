@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mnx>
+    <head>
+        <title>Event</title>
+        <subtitle>MuseScore testfile</subtitle>
+        <creator type="composer">Leon Vinken</creator>
+    </head>
+    <score>
+        <mnx-common profile="standard">
+            <global>
+                <measure>
+                    <directions>
+                        <time signature="3/4"/>
+                    </directions>
+                </measure>
+            </global>
+            <part>
+                <part-name>Music</part-name>
+                <measure>
+                    <sequence>
+                        <clef line="2" sign="G"/>
+                        <event value="/4">
+                            <note pitch="A4"/>
+                        </event>
+                        <event value="/4">
+                            <rest/>
+                            <note pitch="C5"/>
+                        </event>
+                        <event value="/4">
+                            <note pitch="D5"/>
+                        </event>
+                    </sequence>
+                </measure>
+            </part>
+        </mnx-common>
+    </score>
+</mnx>
