@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mnx>
+    <head>
+        <title>Lyrics 1</title>
+        <subtitle>MuseScore testfile</subtitle>
+        <creator type="composer">Leon Vinken</creator>
+    </head>
+    <score>
+        <mnx-common profile="standard">
+            <global>
+                <measure>
+                    <directions>
+                        <time signature="4/4"/>
+                    </directions>
+                </measure>
+            </global>
+            <part>
+                <part-name>Voice</part-name>
+                <measure>
+                    <directions>
+                        <clef line="2" sign="G"/>
+                    </directions>
+                    <sequence>
+                        <event value="/2">
+                            <note pitch="G4"/>
+                            <lyric>
+                                <syllabic>single</syllabic>
+                                <text>lyric1</text>
+                            </lyric>
+                        </event>
+                        <event value="/2">
+                            <note pitch="A4"/>
+                            <lyric>
+                                <syllabic>single</syllabic>
+                                <text>lyric2</text>
+                            </lyric>
+                        </event>
+                    </sequence>
+                </measure>
+            </part>
+        </mnx-common>
+    </score>
+</mnx>

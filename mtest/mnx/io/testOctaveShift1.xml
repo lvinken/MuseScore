@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mnx>
+    <head>
+        <title>Octave Shift 1</title>
+        <subtitle>MuseScore testfile</subtitle>
+        <creator type="composer">Leon Vinken</creator>
+    </head>
+    <score>
+        <mnx-common profile="standard">
+            <global>
+                <measure>
+                    <directions>
+                        <time signature="4/4"/>
+                    </directions>
+                </measure>
+                <measure/>
+                <measure/>
+            </global>
+            <part>
+                <part-name>Voice</part-name>
+                <measure>
+                    <directions>
+                        <clef line="2" sign="G"/>
+                    </directions>
+                    <sequence>
+                        <event value="/4">
+                            <note pitch="G4"/>
+                        </event>
+                        <directions>
+                            <octave-shift type="-8" end="1:1/2"/>
+                        </directions>
+                        <event value="/4">
+                            <note pitch="G5"/>
+                        </event>
+                        <event value="/4">
+                            <note pitch="G5"/>
+                        </event>
+                        <event value="/4">
+                            <note pitch="G4"/>
+                        </event>
+                    </sequence>
+                </measure>
+                <measure>
+                    <sequence>
+                        <event value="/1">
+                            <rest/>
+                        </event>
+                    </sequence>
+                </measure>
+                <measure>
+                    <sequence>
+                        <event value="/1">
+                            <rest/>
+                        </event>
+                    </sequence>
+                </measure>
+            </part>
+            <part>
+                <part-name>Piano</part-name>
+                <measure>
+                    <directions>
+                        <staves number="2"/>
+                        <clef line="2" sign="G" staff="1"/>
+                        <clef line="2" sign="G" staff="2"/>
+                    </directions>
+                    <sequence staff="1">
+                        <event value="/1">
+                            <rest/>
+                        </event>
+                    </sequence>
+                    <sequence staff="2">
+                        <event value="/1">
+                            <rest/>
+                        </event>
+                    </sequence>
+                </measure>
+                <measure>
+                    <sequence staff="1">
+                        <event value="/4">
+                            <note pitch="G4"/>
+                        </event>
+                        <directions>
+                            <octave-shift type="-8" end="2:1/2"/>
+                        </directions>
+                        <event value="/4">
+                            <note pitch="G5"/>
+                        </event>
+                        <event value="/4">
+                            <note pitch="G5"/>
+                        </event>
+                        <event value="/4">
+                            <note pitch="G4"/>
+                        </event>
+                    </sequence>
+                    <sequence staff="2">
+                        <event value="/1">
+                            <rest/>
+                        </event>
+                    </sequence>
+                </measure>
+                <measure>
+                    <sequence staff="1">
+                        <event value="/1">
+                            <rest/>
+                        </event>
+                    </sequence>
+                    <sequence staff="2">
+                        <event value="/4">
+                            <note pitch="G4"/>
+                        </event>
+                        <directions>
+                            <octave-shift type="-8" end="3:1/2"/>
+                        </directions>
+                        <event value="/4">
+                            <note pitch="G5"/>
+                        </event>
+                        <event value="/4">
+                            <note pitch="G5"/>
+                        </event>
+                        <event value="/4">
+                            <note pitch="G4"/>
+                        </event>
+                    </sequence>
+                </measure>
+            </part>
+        </mnx-common>
+    </score>
+</mnx>
