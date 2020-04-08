@@ -2,7 +2,7 @@
 //  MuseScore
 //  Linux Music Score Editor
 //
-//  Copyright (C) 2017-2019 Werner Schweer and others
+//  Copyright (C) 2017-2020 Werner Schweer and others
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License version 2.
@@ -85,34 +85,35 @@ class MnxParserGlobal
       {
 public:
       MnxParserGlobal(QXmlStreamReader& e, Score* score, MxmlLogger* logger);
-      int beats() const { return _beats; }
-      int beatType() const { return _beatType; }
       QString instruction() const { return _instruction; }
       KeySigEvent key() const { return _key; }
+      int measureNr(const Fraction time) const;
       void parse();
+      Fraction startTime(const int measureNr) const;
       float tempoBpm() const { return _tempoBpm; }
       TDuration::DurationType tempoValue() const { return _tempoValue; }
+      Fraction timeSig(const int measureNr) const;
 private:
       // functions
-      void directions(const Fraction sTime, const int paramStaff = -1);
-      void dirgroup(const Fraction sTime, const int paramStaff = -1);
+      void directions(const int measureNr, const Fraction sTime, const int paramStaff = -1);
+      void dirgroup(const int measureNr, const Fraction sTime, const int paramStaff = -1);
       void parseInstruction();
       void parseKey();
       void measure(const int measureNr);
       void skipLogCurrElem();
       void tempo();
-      void time();
+      void time(const int measureNr);
 
       // data
       QXmlStreamReader& _e;
       Score* const _score;                                  ///< MuseScore score TODO: remove if MnxParserGlobal does not create score elements
       MxmlLogger* const _logger;                            ///< Error logger
-      int _beats;                                           ///< initial number of beats
-      int _beatType;                                        ///< initial beat type
       QString _instruction;
+      int _nrOfMeasures { 0 };
       KeySigEvent _key;                                     ///< initial key signature
       float _tempoBpm;                                      ///< initial tempo beats per minute
       TDuration::DurationType _tempoValue;                  ///< initial tempo beat value
+      std::map<int, Fraction> _timeSigs;                    ///< timesig changes (measure based)
       };
 
 //---------------------------------------------------------
@@ -120,7 +121,7 @@ private:
 //---------------------------------------------------------
 
 MnxParserGlobal::MnxParserGlobal(QXmlStreamReader& e, Score* score, MxmlLogger* logger)
-      : _e(e), _score(score), _logger(logger), _beats(1), _beatType(1)
+      : _e(e), _score(score), _logger(logger)
       {
       // nothing
       }
@@ -322,10 +323,10 @@ Score::FileError MnxParser::parse()
 //---------------------------------------------------------
 
 static void addKeySig(Score* score, const Fraction tick, const int track, const KeySigEvent key);
-static Measure* addMeasure(Score* score, const Fraction tick, const int bts, const int bttp, const int no);
+static Measure* addMeasure(Score* score, const Fraction tick, const Fraction sig, const int no);
 static void addStaffText(Score* score, const Fraction tick, const int track, const QString& text);
 static void addTempoText(Score* score, const Fraction tick, const float bpm, const TDuration::DurationType val);
-static void addTimeSig(Score* score, const Fraction tick, const int track, const int bts, const int bttp);
+static void addTimeSig(Score* score, const Fraction tick, const int track, const Fraction sig);
 static int determineTrack(const Part* const part, const int staff, const int voice);
 static TDuration mnxEventValueToTDuration(const QString& value);
 static int mnxToMidiPitch(const QString& value, int& tpc);
@@ -428,21 +429,16 @@ static void addVBoxWithMetaData(Score* score, const QString& composer, const QSt
  Add the first measure to the score.
  */
 
-static Measure* addFirstMeasure(Score* score, const KeySigEvent key, const int bts, const int bttp,
-                                const float bpm, TDuration::DurationType val, const QString& instr)
+static void addFirstKeysigEtc(Score* score, const KeySigEvent key,
+                              const float bpm, TDuration::DurationType val, const QString& instr)
       {
-      const auto tick = Fraction(0, 1);
-      const auto nr = 1;
-      auto m = addMeasure(score, tick, bts, bttp, nr);
-      // keysig and timesig
+      const auto tick = Fraction { 0, 1 };
       const int track = 0;
       addKeySig(score, tick, track, key);
-      addTimeSig(score, tick, track, bts, bttp);
       if (bpm > 0)
             addTempoText(score, tick, bpm, val);
       if (instr != "")
             addStaffText(score, tick, 0, instr);
-      return m;
       }
 
 //---------------------------------------------------------
@@ -501,13 +497,13 @@ static void addLyric(ChordRest* cr, int lyricNo, const QString& text)
  Add a measure to the score.
  */
 
-static Measure* addMeasure(Score* score, const Fraction tick, const int bts, const int bttp, const int no)
+static Measure* addMeasure(Score* score, const Fraction tick, const Fraction sig, const int no)
       {
       auto m = new Measure(score);
       m->setTick(tick);
-      m->setTimesig(Fraction(bts, bttp));
+      m->setTimesig(sig);
       m->setNo(no);
-      m->setTicks(Fraction(bts, bttp));
+      m->setTicks(sig);
       score->measures()->add(m);
       return m;
       }
@@ -603,10 +599,10 @@ static void addTempoText(Score* score, const Fraction tick, const float bpm, con
  Add a time signature to a track.
  */
 
-static void addTimeSig(Score* score, const Fraction tick, const int track, const int bts, const int bttp)
+static void addTimeSig(Score* score, const Fraction tick, const int track, const Fraction sig)
       {
       auto timesig = new TimeSig(score);
-      timesig->setSig(Fraction(bts, bttp));
+      timesig->setSig(sig);
       timesig->setTrack(track);
       auto measure = score->tick2measure(tick);
       auto s = measure->getSegment(SegmentType::TimeSig, tick);
@@ -621,7 +617,7 @@ static void addTimeSig(Score* score, const Fraction tick, const int track, const
  Append a new (single staff) part to the score.
  */
 
-static Part* appendPart(Score* score, const KeySigEvent key, const int bts, const int bttp)
+static Part* appendPart(Score* score, const KeySigEvent key, const Fraction sig)
       {
       // create part and first staff
       QString id("importMnx");
@@ -637,25 +633,10 @@ static Part* appendPart(Score* score, const KeySigEvent key, const int bts, cons
       if (track > 0) {
             const auto tick = Fraction(0, 1);
             addKeySig(score, tick, track, key);
-            addTimeSig(score, tick, track, bts, bttp);
+            addTimeSig(score, tick, track, sig);
             }
 
       return part;
-      }
-
-//---------------------------------------------------------
-//   calculateMeasureStartTick
-//---------------------------------------------------------
-
-/**
- Calculate the start tick of measure \a no.
- TODO: assumes no timesig changes
- */
-
-static int calculateMeasureStartTick(const int bts, const int bttp, const int no)
-      {
-      Fraction f(bts, bttp);
-      return no * f.ticks();
       }
 
 //---------------------------------------------------------
@@ -834,11 +815,13 @@ static int determineTrack(const Part* const part, const int staff, const int voi
 
 static Measure* findMeasure(const Score* const score, const Fraction tick)
       {
-      for (Measure* m = score->firstMeasure();; m = m->nextMeasure()) {
+      auto m = score->firstMeasure();
+      while (m) {
             if (m && m->tick() == tick)
                   return m;
+            m = m->nextMeasure();
             }
-      return 0;
+      return nullptr;
       }
 
 //---------------------------------------------------------
@@ -849,7 +832,7 @@ static Measure* findMeasure(const Score* const score, const Fraction tick)
  Set number of staves for part \a part to the max value of the current value
  and the value in \a staves.
  */
-/* TODO */
+
 static void setStavesForPart(Part* part, const int staves)
       {
       if (!(staves > 0 && staves <= MAX_STAVES)) {
@@ -861,7 +844,7 @@ static void setStavesForPart(Part* part, const int staves)
       if (staves > part->nstaves())
             part->setStaves(staves);
       }
-/**/
+
 //---------------------------------------------------------
 //   type conversions
 //---------------------------------------------------------
@@ -870,7 +853,7 @@ static void setStavesForPart(Part* part, const int staves)
 //   mnxClefToClefType
 //---------------------------------------------------------
 
-/*
+/**
  * Convert MNX clef type to MuseScore ClefType.
  */
 
@@ -893,7 +876,7 @@ static ClefType mnxClefToClefType(const QString& sign, const QString& line)
 //   mnxKeyToKeySigEvent
 //---------------------------------------------------------
 
-/*
+/**
  * Convert MNX key type to MuseScore KeySigEvent.
  */
 
@@ -922,27 +905,29 @@ static KeySigEvent mnxKeyToKeySigEvent(const QString& fifths, const QString& mod
 //   mnxTSigToBtsBtp
 //---------------------------------------------------------
 
-/*
+/**
  * Convert MNX time signature to beats and beat type.
+ * TODO: support more time signatures
  */
 
-static void mnxTSigToBtsBtp(const QString& tsig, int& beats, int& beattp)
+static Fraction mnxTSigToBtsBtp(const QString& tsig)
       {
-      if (tsig == "3/4") {
-            beats = 3; beattp = 4;
-            }
-      else if (tsig == "4/4") {
-            beats = 4; beattp = 4;
-            }
-      else
-            qDebug("mnxTSigToBtsBtp: unknown '%s'", qPrintable(tsig));
+      if (tsig == "2/4")
+            return Fraction { 2, 4 };
+      else if (tsig == "3/4")
+            return Fraction { 3, 4 };
+      else if (tsig == "4/4")
+            return Fraction { 4, 4 };
+
+      qDebug("mnxTSigToBtsBtp: unknown '%s'", qPrintable(tsig));
+      return {};
       }
 
 //---------------------------------------------------------
 //   mnxValueUnitToDurationType
 //---------------------------------------------------------
 
-/*
+/**
  * Convert MNX note value unit to MuseScore DurationType.
  */
 
@@ -984,7 +969,7 @@ static TDuration::DurationType mnxValueUnitToDurationType(const QString& s)
 //   mnxEventValueToTDuration
 //---------------------------------------------------------
 
-/*
+/**
  * Convert MNX note value (unit plus optional dots) to MuseScore TDuration.
  */
 
@@ -1010,7 +995,7 @@ static TDuration mnxEventValueToTDuration(const QString& value)
 //   mnxMeasurePositionToFraction
 //---------------------------------------------------------
 
-/*
+/**
  * Convert MNX measure position to Fraction.
  */
 
@@ -1048,10 +1033,9 @@ static Fraction mnxMeasurePositionToFraction(const QString& value)
  - position in the current measure: floating point (e.g. 0.75) or note value quantity (e.g. 3/4)
  - position in an arbitrary measure: measure index, ":" and floating point (e.g. 1:0.75) or note value quantity (e.g. 1:3/4)
  - an element location: "#" and the element's XMLID (e.g. #p1m3n21)
- TODO: assumes no timesig changes
  */
 
-static Fraction mnxMeasureLocationToTick(const QString& location, const Fraction& measureDuration)
+static Fraction mnxMeasureLocationToTick(const QString& location, const MnxParserGlobal& global)
       {
       const QRegExp elementLocation { "#\\S+" };    // TODO: check if this matches all XML ID legal characters
       const QRegExp arbitraryMeasurePosition { "(\\d+):(\\S+)" };
@@ -1062,7 +1046,7 @@ static Fraction mnxMeasureLocationToTick(const QString& location, const Fraction
       else if (arbitraryMeasurePosition.exactMatch(location)) {
             //qDebug("loc '%s' is arbitraryMeasurePosition", qPrintable(location));
             const auto positionInMeasure = mnxMeasurePositionToFraction(arbitraryMeasurePosition.cap(2));
-            const auto startOfMeasure = (arbitraryMeasurePosition.cap(1).toInt() - 1) * measureDuration;
+            const auto startOfMeasure = global.startTime(arbitraryMeasurePosition.cap(1).toInt() - 1);
             const auto res = startOfMeasure + positionInMeasure;
             //qDebug("res '%s'", qPrintable(res.print()));
             return res;
@@ -1213,14 +1197,14 @@ static int readStaff(QXmlStreamReader& e, MxmlLogger* const logger, bool& ok)
  Parse the /mnx/score/cwmnx/global/measure/directions node.
  */
 
-void MnxParserGlobal::directions(const Fraction sTime, const int paramStaff)
+void MnxParserGlobal::directions(const int measureNr, const Fraction sTime, const int paramStaff)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "directions");
       _logger->logDebugTrace("MnxParserGlobal::directions");
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "dirgroup") {
-                  dirgroup(sTime, paramStaff);
+                  dirgroup(measureNr, sTime, paramStaff);
                   }
             else if (_e.name() == "instruction") {
                   parseInstruction();
@@ -1232,7 +1216,7 @@ void MnxParserGlobal::directions(const Fraction sTime, const int paramStaff)
                   tempo();
                   }
             else if (_e.name() == "time") {
-                  time();
+                  time(measureNr);
                   }
             else
                   skipLogCurrElem();
@@ -1250,7 +1234,7 @@ void MnxParserGlobal::directions(const Fraction sTime, const int paramStaff)
  TODO: minimize duplicate code with MnxParserGlobal::directions().
  */
 
-void MnxParserGlobal::dirgroup(const Fraction sTime, const int paramStaff)
+void MnxParserGlobal::dirgroup(const int measureNr, const Fraction sTime, const int paramStaff)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "dirgroup");
       _logger->logDebugTrace("MnxParserGlobal::dirgroup");
@@ -1266,7 +1250,7 @@ void MnxParserGlobal::dirgroup(const Fraction sTime, const int paramStaff)
                   tempo();
                   }
             else if (_e.name() == "time") {
-                  time();
+                  time(measureNr);
                   }
             else
                   skipLogCurrElem();
@@ -1331,16 +1315,29 @@ void MnxParserGlobal::measure(const int measureNr)
       Q_ASSERT(_e.isStartElement() && _e.name() == "measure");
       _logger->logDebugTrace("MnxParserGlobal::measure");
 
-      auto startTick = Fraction(measureNr * _beats, _beatType);             // TODO: assumes no timesig changes
+      auto startTick = startTime(measureNr);
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "directions")
-                  directions(startTick);
+                  directions(measureNr, startTick);
             else
                   skipLogCurrElem();
             }
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "measure");
+      }
+
+//---------------------------------------------------------
+//   measureNr
+//---------------------------------------------------------
+
+int MnxParserGlobal::measureNr(const Fraction time) const
+      {
+      for (int i = 0; i < _nrOfMeasures; ++i) {
+            if (time == startTime(i))
+                  return i;
+            }
+      return -1;
       }
 
 //---------------------------------------------------------
@@ -1356,17 +1353,46 @@ void MnxParserGlobal::parse()
       Q_ASSERT(_e.isStartElement() && _e.name() == "global");
       _logger->logDebugTrace("MnxParserGlobal::parse");
 
-      auto measureNr = 0;
-
       while (_e.readNextStartElement()) {
             if (_e.name() == "measure") {
-                  measure(measureNr);
-                  measureNr++;
+                  measure(_nrOfMeasures);
+                  _nrOfMeasures++;
                   } else
                   skipLogCurrElem();
             }
 
+      Fraction cTime { 0, 1 };
+      Fraction timeSig { 1, 1 };
+      for (int i = 0; i < _nrOfMeasures; ++i) {
+            const auto it = _timeSigs.find(i);
+            if (it != _timeSigs.end())
+                  timeSig = it->second;
+            addMeasure(_score, cTime, timeSig, i + 1);
+            cTime += timeSig;
+            }
+
       Q_ASSERT(_e.isEndElement() && _e.name() == "global");
+      }
+
+//---------------------------------------------------------
+//   startTime
+//---------------------------------------------------------
+
+/**
+ Calculate the start time for measure number measureNr.
+ */
+
+Fraction MnxParserGlobal::startTime(const int measureNr) const
+      {
+      Fraction cTime { 0, 1 };
+      Fraction timeSig { 1, 1 };    // default in case no time signature found
+      for (int i = 0; i < measureNr && i < _nrOfMeasures; ++i) {
+            const auto it = _timeSigs.find(i);
+            if (it != _timeSigs.end())
+                  timeSig = it->second;
+            cTime += timeSig;
+            }
+      return cTime;
       }
 
 //---------------------------------------------------------
@@ -1403,18 +1429,36 @@ void MnxParserGlobal::tempo()
  Parse the /mnx/score/cwmnx/global/measure/directions/time node.
  */
 
-void MnxParserGlobal::time()
+void MnxParserGlobal::time(const int measureNr)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "time");
       _logger->logDebugTrace("MnxParserGlobal::time");
 
       QString signature = _e.attributes().value("signature").toString();
-      _logger->logDebugTrace(QString("time-sig '%1'").arg(signature));
+      _logger->logDebugTrace(QString("measure %1 time-sig '%2'").arg(measureNr).arg(signature));
       _e.skipCurrentElement();
 
-      mnxTSigToBtsBtp(signature, _beats, _beatType);
+      _timeSigs[measureNr] = mnxTSigToBtsBtp(signature);
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "time");
+      }
+
+//---------------------------------------------------------
+//   timeSig
+//---------------------------------------------------------
+
+/**
+ Find the time signature for measure number measureNr.
+ */
+
+Fraction MnxParserGlobal::timeSig(const int measureNr) const
+      {
+      const auto it = _timeSigs.find(measureNr);
+
+      if (it != _timeSigs.end())
+            return it->second;
+
+      return { 0, 0 }; // invalid
       }
 
 //---------------------------------------------------------
@@ -1572,8 +1616,10 @@ void MnxParserPart::directions(const Fraction sTime, const int paramStaff)
 
                         if (i > 0) {
                               const auto tick = Fraction(0, 1);
-                              addKeySig(_score, tick, track, _global.key());
-                              addTimeSig(_score, tick, track, _global.beats(), _global.beatType());
+                              addKeySig(_score, tick /* TODO sTime */, track, _global.key());
+                              const auto measureNr = _global.measureNr(sTime);
+                              const auto tsig = _global.timeSig(measureNr);
+                              addTimeSig(_score, sTime, track, tsig);
                               }
 
                         }
@@ -1726,25 +1772,29 @@ void MnxParserPart::measure(const int measureNr)
       _logger->logDebugTrace("MnxParserPart::measure");
 
       Measure* currMeasure = nullptr;
-      auto startTick = Fraction(measureNr * _global.beats(), _global.beatType());             // TODO: assumes no timesig changes
+      const auto startTick = _global.startTime(measureNr);
 
       if (_score->staffIdx(_part) == 0) {
-            // for first part only: create a measure
+            // for first part only: create key and time signatures
             // note: adding time signature requires at least one staff
-            currMeasure = measureNr
-                  ? addMeasure(_score, startTick, _global.beats(), _global.beatType(), measureNr + 1)
-                  : addFirstMeasure(_score, _global.key(), _global.beats(), _global.beatType(),
-                                    _global.tempoBpm(), _global.tempoValue(), _global.instruction());
-            }
-      else {
-            // for the other parts, just find the measure
-            // TODO: also support the first part having less measures than the others
-            currMeasure = findMeasure(_score, startTick);
-            if (!currMeasure) {
-                  _logger->logError(QString("measure at tick %s not found!").arg(qPrintable(startTick.print())));
-                  skipLogCurrElem();
+            const int track = 0;
+            const auto tsig = _global.timeSig(measureNr);
+            if (tsig.isValid()) {
+                  //qDebug("measure %d startTick %s tsig %s", measureNr, qPrintable(startTick.print()), qPrintable(tsig.print()));
+                  addTimeSig(_score, startTick, track, tsig);
                   }
+            // TODO addKeySig(score, tick, track, key);
+            if (!measureNr)
+                  addFirstKeysigEtc(_score, _global.key(), _global.tempoBpm(), _global.tempoValue(), _global.instruction());
+            }
 
+      // for the other parts, just find the measure
+      // note: currently only supporting profile standard, which implies the following contraint:
+      // "The measure content in all global or part elements consists of an identical number of measures."
+      currMeasure = findMeasure(_score, startTick);
+      if (!currMeasure) {
+            _logger->logError(QString("measure at tick %1 not found!").arg(qPrintable(startTick.print())));
+            skipLogCurrElem();
             }
 
       std::vector<int> staffSeqCount(MAX_STAVES, 0);       // sequence count per staff
@@ -1899,9 +1949,9 @@ void MnxParserPart::parsePartAndAppendToScore()
       Q_ASSERT(_e.isStartElement() && _e.name() == "part");
       _logger->logDebugTrace("MnxParserPart::parsePartAndAppendToScore");
 
-      _part = appendPart(_score, _global.key(), _global.beats(), _global.beatType());
-
       auto measureNr = 0;
+      const auto tsig = _global.timeSig(measureNr);         // TODO: when to check for valid tsig ?
+      _part = appendPart(_score, _global.key(), tsig);
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "measure") {
@@ -1922,8 +1972,7 @@ void MnxParserPart::parsePartAndAppendToScore()
 
       // add spanners read to score
       for (auto& sd : _spanners) {
-            const auto measureDuration = Fraction(_global.beats(), _global.beatType());             // TODO: assumes no timesig changes
-            auto tick2 = mnxMeasureLocationToTick(sd.end, measureDuration);
+            auto tick2 = mnxMeasureLocationToTick(sd.end, _global);
             if (tick2.isValid()) {
                   auto sp = sd.sp.release();
                   // tick2 is the start tick of the last note affected, MuseScore needs the end tick
@@ -1950,11 +1999,13 @@ void MnxParserPart::parsePartAndAppendToScore()
             }
 
       // set end barline to normal
-      const auto lastMeas = _score->lastMeasure();
-      const int voice = 0;
-      for (int staff = 0; staff < _part->nstaves(); ++staff) {
-            const auto track = determineTrack(_part, staff, voice);
-            lastMeas->setEndBarLineType(BarLineType::NORMAL, track);
+      if (_score->measures()->size() > 1) {       // there is always a vbox ...
+            const auto lastMeas = _score->lastMeasure();
+            const int voice = 0;
+            for (int staff = 0; staff < _part->nstaves(); ++staff) {
+                  const auto track = determineTrack(_part, staff, voice);
+                  lastMeas->setEndBarLineType(BarLineType::NORMAL, track);
+                  }
             }
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "part");
