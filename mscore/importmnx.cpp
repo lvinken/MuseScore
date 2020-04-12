@@ -86,7 +86,7 @@ class MnxParserGlobal
 public:
       MnxParserGlobal(QXmlStreamReader& e, Score* score, MxmlLogger* logger);
       QString instruction() const { return _instruction; }
-      KeySigEvent key() const { return _key; }
+      KeySigEvent keySig(const int measureNr) const;
       int measureNr(const Fraction time) const;
       void parse();
       Fraction startTime(const int measureNr) const;
@@ -98,7 +98,7 @@ private:
       void directions(const int measureNr, const Fraction sTime, const int paramStaff = -1);
       void dirgroup(const int measureNr, const Fraction sTime, const int paramStaff = -1);
       void parseInstruction();
-      void parseKey();
+      void parseKey(const int measureNr);
       void measure(const int measureNr);
       void skipLogCurrElem();
       void tempo();
@@ -110,9 +110,9 @@ private:
       MxmlLogger* const _logger;                            ///< Error logger
       QString _instruction;
       int _nrOfMeasures { 0 };
-      KeySigEvent _key;                                     ///< initial key signature
-      float _tempoBpm;                                      ///< initial tempo beats per minute
-      TDuration::DurationType _tempoValue;                  ///< initial tempo beat value
+      float _tempoBpm { 0.0 };                              ///< initial tempo beats per minute
+      TDuration::DurationType _tempoValue { TDuration::DurationType::V_INVALID };   ///< initial tempo beat value
+      std::map<int, KeySigEvent> _keySigs;                  ///< keysig changes (measure based)
       std::map<int, Fraction> _timeSigs;                    ///< timesig changes (measure based)
       };
 
@@ -429,16 +429,15 @@ static void addVBoxWithMetaData(Score* score, const QString& composer, const QSt
  Add the first measure to the score.
  */
 
-static void addFirstKeysigEtc(Score* score, const KeySigEvent key,
-                              const float bpm, TDuration::DurationType val, const QString& instr)
+static void addFirstTempoAndStaffText(Score* score, const float bpm, TDuration::DurationType val, const QString& instr)
       {
+      const auto epsilon { 0.001 };
       const auto tick = Fraction { 0, 1 };
       const int track = 0;
-      addKeySig(score, tick, track, key);
-      if (bpm > 0)
+      if (bpm > epsilon && val != TDuration::DurationType::V_INVALID)
             addTempoText(score, tick, bpm, val);
       if (instr != "")
-            addStaffText(score, tick, 0, instr);
+            addStaffText(score, tick, track, instr);
       }
 
 //---------------------------------------------------------
@@ -1210,7 +1209,7 @@ void MnxParserGlobal::directions(const int measureNr, const Fraction sTime, cons
                   parseInstruction();
                   }
             else if (_e.name() == "key") {
-                  parseKey();
+                  parseKey(measureNr);
                   }
             else if (_e.name() == "tempo") {
                   tempo();
@@ -1244,7 +1243,7 @@ void MnxParserGlobal::dirgroup(const int measureNr, const Fraction sTime, const 
                   parseInstruction();
                   }
             else if (_e.name() == "key") {
-                  parseKey();
+                  parseKey(measureNr);
                   }
             else if (_e.name() == "tempo") {
                   tempo();
@@ -1257,6 +1256,24 @@ void MnxParserGlobal::dirgroup(const int measureNr, const Fraction sTime, const 
             }
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "dirgroup");
+      }
+
+//---------------------------------------------------------
+//   keySig
+//---------------------------------------------------------
+
+/**
+ Find the key signature for measure number measureNr.
+ */
+
+KeySigEvent MnxParserGlobal::keySig(const int measureNr) const
+      {
+      const auto it = _keySigs.find(measureNr);
+
+      if (it != _keySigs.end())
+            return it->second;
+
+      return { };       // invalid
       }
 
 //---------------------------------------------------------
@@ -1287,7 +1304,7 @@ void MnxParserGlobal::parseInstruction()
  Parse the /mnx/score/cwmnx/global/measure/directions/key node.
  */
 
-void MnxParserGlobal::parseKey()
+void MnxParserGlobal::parseKey(const int measureNr)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "key");
       _logger->logDebugTrace("MnxParserGlobal::parseKey");
@@ -1297,7 +1314,7 @@ void MnxParserGlobal::parseKey()
       _logger->logDebugTrace(QString("key-sig '%1' '%2'").arg(fifths).arg(mode));
       _e.skipCurrentElement();
 
-      _key = mnxKeyToKeySigEvent(fifths, mode);
+      _keySigs[measureNr] = mnxKeyToKeySigEvent(fifths, mode);
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "key");
       }
@@ -1615,9 +1632,10 @@ void MnxParserPart::directions(const Fraction sTime, const int paramStaff)
                         auto track = determineTrack(_part, i, voice);
 
                         if (i > 0) {
-                              const auto tick = Fraction(0, 1);
-                              addKeySig(_score, tick /* TODO sTime */, track, _global.key());
+                              // TODO: check if this works if measureNr does not contain a key or time signature change
                               const auto measureNr = _global.measureNr(sTime);
+                              const auto ksig = _global.keySig(measureNr);
+                              addKeySig(_score, sTime, track, ksig);
                               const auto tsig = _global.timeSig(measureNr);
                               addTimeSig(_score, sTime, track, tsig);
                               }
@@ -1776,16 +1794,16 @@ void MnxParserPart::measure(const int measureNr)
 
       if (_score->staffIdx(_part) == 0) {
             // for first part only: create key and time signatures
-            // note: adding time signature requires at least one staff
+            // note: adding these requires at least one staff
             const int track = 0;
             const auto tsig = _global.timeSig(measureNr);
-            if (tsig.isValid()) {
-                  //qDebug("measure %d startTick %s tsig %s", measureNr, qPrintable(startTick.print()), qPrintable(tsig.print()));
+            if (tsig.isValid())
                   addTimeSig(_score, startTick, track, tsig);
-                  }
-            // TODO addKeySig(score, tick, track, key);
+            const auto ksig = _global.keySig(measureNr);
+            if (ksig.isValid())
+                  addKeySig(_score, startTick, track, ksig);
             if (!measureNr)
-                  addFirstKeysigEtc(_score, _global.key(), _global.tempoBpm(), _global.tempoValue(), _global.instruction());
+                  addFirstTempoAndStaffText(_score, _global.tempoBpm(), _global.tempoValue(), _global.instruction());
             }
 
       // for the other parts, just find the measure
@@ -1950,8 +1968,9 @@ void MnxParserPart::parsePartAndAppendToScore()
       _logger->logDebugTrace("MnxParserPart::parsePartAndAppendToScore");
 
       auto measureNr = 0;
+      const auto ksig = _global.keySig(measureNr);          // TODO: when to check for valid ksig ?
       const auto tsig = _global.timeSig(measureNr);         // TODO: when to check for valid tsig ?
-      _part = appendPart(_score, _global.key(), tsig);
+      _part = appendPart(_score, ksig, tsig);
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "measure") {

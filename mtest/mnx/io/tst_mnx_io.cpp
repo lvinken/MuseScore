@@ -63,6 +63,7 @@ private slots:
       void eventARcD() { mnxIoTest("testEventARcD"); }
       void hello() { mnxIoTest("testHello"); }
       void keysig0() { mnxIoTest("testKeysig0"); }
+      void keysig3() { mnxIoTest("testKeysig3"); }
       void lyrics1() { mnxIoTest("testLyrics1"); }
       void lyrics2() { mnxIoTest("testLyrics2"); }
       void multiPart() { mnxIoTest("testMultiPart"); }
