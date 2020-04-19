@@ -22,3 +22,7 @@ set (MUSICXML_SRC
     ${CMAKE_CURRENT_LIST_DIR}/musicxmlsupport.cpp
     ${CMAKE_CURRENT_LIST_DIR}/musicxmlsupport.h
     )
+
+include_directories(
+      ${PROJECT_SOURCE_DIR}/importexport/mnx
+      )
