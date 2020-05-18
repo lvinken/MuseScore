@@ -221,7 +221,7 @@ static void xmlSetPitch(Note* n, int step, int alter, int octave, const int octa
       //const Staff* staff = n->score()->staff(track / VOICES);
       //const Instrument* instr = staff->part()->instr();
 
-      const Interval intval = instr->transpose();     // TODO: tick
+      const Interval intval = instr->transpose();     // TODO: tick <---
 
       //qDebug("  staff=%p instr=%p dia=%d chro=%d",
       //       staff, instr, static_cast<int>(intval.diatonic), static_cast<int>(intval.chromatic));
@@ -463,7 +463,7 @@ static void setFirstInstrument(MxmlLogger* logger, const QXmlStreamReader* const
                                const QString& instrId, const MusicXMLDrumset& mxmlDrumset)
       {
       if (mxmlDrumset.size() > 0) {
-            //qDebug("setFirstInstrument: initial instrument '%s'", qPrintable(instrId));
+            qDebug("setFirstInstrument: initial instrument '%s'", qPrintable(instrId));
             MusicXMLDrumInstrument mxmlInstr;
             if (instrId == "")
                   mxmlInstr = mxmlDrumset.first();
@@ -520,19 +520,19 @@ static void setPartInstruments(MxmlLogger* logger, const QXmlStreamReader* const
             else if (f > Fraction(0, 1)) {
                   auto instrId = (*it).second;
                   bool mustInsert = instrId != prevInstrId;
-                  /*
+                  /**/
                   qDebug("f %s previd %s id %s mustInsert %d",
                          qPrintable(f.print()),
                          qPrintable(prevInstrId),
                          qPrintable(instrId),
                          mustInsert);
-                   */
+                   /**/
                   if (mustInsert) {
                         const int staff = score->staffIdx(part);
                         const int track = staff * VOICES;
                         const Fraction tick = f;
-                        //qDebug("instrument change: tick %s (%d) track %d instr '%s'",
-                        //       qPrintable(f.print()), f.ticks(), track, qPrintable(instrId));
+                        qDebug("instrument change: tick %s (%d) track %d instr '%s'",
+                               qPrintable(f.print()), f.ticks(), track, qPrintable(instrId));
                         auto segment = score->tick2segment(tick, true, SegmentType::ChordRest, true);
                         if (!segment)
                               logger->logError(QString("segment for instrument change at tick %1 not found")
@@ -543,7 +543,7 @@ static void setPartInstruments(MxmlLogger* logger, const QXmlStreamReader* const
                         else {
                               MusicXMLDrumInstrument mxmlInstr = mxmlDrumset.value(instrId);
                               Instrument instr = createInstrument(mxmlInstr);
-                              //qDebug("instr %p", &instr);
+                              qDebug("instr %p", &instr);
 
                               InstrumentChange* ic = new InstrumentChange(instr, score);
                               ic->setTrack(track);
@@ -2106,8 +2106,10 @@ void MusicXMLParserPass2::attributes(const QString& partId, Measure* measure, co
                   staffDetails(partId);
             else if (_e.name() == "time")
                   time(partId, measure, tick);
-            else if (_e.name() == "transpose")
+            else if (_e.name() == "transpose") {
+                  qDebug("attributes/transpose partId %s tick %s", qPrintable(partId), qPrintable(tick.print()));
                   transpose(partId);
+            }
             else
                   skipLogCurrElem();
             }
@@ -3818,6 +3820,7 @@ void MusicXMLParserPass2::transpose(const QString& partId)
       if (chromatic && !diatonic)
             interval.diatonic += chromatic2diatonic(interval.chromatic);
 
+      qDebug("partId %s instr %p", qPrintable(partId), _pass1.getPart(partId)->instrument());
       _pass1.getPart(partId)->instrument()->setTranspose(interval);
       }
 
