@@ -28,6 +28,7 @@
 #include "libmscore/sym.h"
 #include "libmscore/symbol.h"
 #include "libmscore/timesig.h"
+#include "libmscore/utils.h"
 #include "libmscore/style.h"
 #include "libmscore/spanner.h"
 #include "libmscore/bracketItem.h"
@@ -2153,7 +2154,7 @@ void MusicXMLParserPass1::attributes(const QString& partId, const Fraction cTime
             else if (_e.name() == "time")
                   time(cTime);
             else if (_e.name() == "transpose")
-                  _e.skipCurrentElement();  // skip but don't log
+                  transpose(partId, cTime);
             else
                   skipLogCurrElem();
             }
@@ -2286,6 +2287,48 @@ void MusicXMLParserPass1::time(const Fraction cTime)
                   _score->sigmap()->add(cTime.ticks(), _timeSigDura);
                   }
             }
+      }
+
+//---------------------------------------------------------
+//   transpose
+//---------------------------------------------------------
+
+/**
+ Parse the /score-partwise/part/measure/attributes/transpose node.
+ */
+
+void MusicXMLParserPass1::transpose(const QString& partId, const Fraction cTime)
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "transpose");
+
+      Interval interval;
+      bool diatonic = false;
+      bool chromatic = false;
+      while (_e.readNextStartElement()) {
+            int i = _e.readElementText().toInt();
+            if (_e.name() == "diatonic") {
+                  interval.diatonic = i;
+                  diatonic = true;
+                  }
+            else if (_e.name() == "chromatic") {
+                  interval.chromatic = i;
+                  chromatic = true;
+                  }
+            else if (_e.name() == "octave-change") {
+                  interval.diatonic += i * 7;
+                  interval.chromatic += i * 12;
+                  }
+            else
+                  skipLogCurrElem();
+            }
+
+      if (chromatic && !diatonic)
+            interval.diatonic += chromatic2diatonic(interval.chromatic);
+
+      qDebug("partId %s tick %s interval diatonic %d chromatic %d",
+             qPrintable(partId), qPrintable(cTime.print()),
+             static_cast<int>(interval.diatonic), static_cast<int>(interval.chromatic));
+      //_pass1.getPart(partId)->instrument()->setTranspose(interval);
       }
 
 //---------------------------------------------------------

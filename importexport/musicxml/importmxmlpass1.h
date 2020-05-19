@@ -167,7 +167,7 @@ public:
 private:
       // functions
       void setFirstInstr(const QString& id, const Fraction stime);
-
+      void transpose(const QString& partId, const Fraction cTime);
       // generic pass 1 data
       QXmlStreamReader _e;
       int _divs;                                ///< Current MusicXML divisions value
