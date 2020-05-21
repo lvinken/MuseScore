@@ -241,18 +241,27 @@ void LyricNumberHandler::determineLyricNos()
       }
 
 //---------------------------------------------------------
+//   TransposeMap
+//---------------------------------------------------------
+
+TransposeMap::TransposeMap()
+      {
+      (*this)[{ 0, 1 }] = {};
+      }
+
+//---------------------------------------------------------
 //   add
 //---------------------------------------------------------
+
 void TransposeMap::add(const Fraction& f, const Interval& i)
       {
       (*this)[f] = i;
       }
-/*
- void TransposeMap::normalize()
- {
 
- }
- */
+//---------------------------------------------------------
+//   transpose
+//---------------------------------------------------------
+
 const Interval& TransposeMap::transpose(const Fraction& f) const
       {
       static const Interval iv;

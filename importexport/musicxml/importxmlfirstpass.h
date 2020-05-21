@@ -55,9 +55,8 @@ class TransposeMap : public std::map<Fraction, Interval> {
       //void normalize();
 
 public:
-      TransposeMap() {}
+      TransposeMap();
       void add(const Fraction& f, const Interval& i);
-      //const Interval& transpose(int tick) const;
       const Interval& transpose(const Fraction& f) const;
       };
 
