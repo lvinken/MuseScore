@@ -1926,7 +1926,7 @@ void MusicXMLParserPass1::part()
       _parts[id].lyricNumberHandler().determineLyricNos();
 
       // debug: print results
-      //qDebug("%s", qPrintable(_parts[id].toString()));
+      qDebug("%s", qPrintable(_parts[id].toString()));
 
       //qDebug("lyric numbers: %s", qPrintable(_parts[id].lyricNumberHandler().toString()));
 
@@ -2328,7 +2328,7 @@ void MusicXMLParserPass1::transpose(const QString& partId, const Fraction cTime)
       qDebug("partId %s tick %s interval diatonic %d chromatic %d",
              qPrintable(partId), qPrintable(cTime.print()),
              static_cast<int>(interval.diatonic), static_cast<int>(interval.chromatic));
-      //_pass1.getPart(partId)->instrument()->setTranspose(interval);
+      _parts[partId].addTranspose(cTime, interval);
       }
 
 //---------------------------------------------------------

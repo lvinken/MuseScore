@@ -14,6 +14,7 @@
 #define __IMPORTXMLFIRSTPASS_H__
 
 #include "libmscore/fraction.h"
+#include "libmscore/interval.h"
 #include "musicxmlsupport.h"
 
 namespace Ms {
@@ -46,6 +47,20 @@ private:
       std::map<QString, int> _numberToNo;
       };
 
+//---------------------------------------------------------
+//   TransposeMap
+//---------------------------------------------------------
+
+class TransposeMap : public std::map<Fraction, Interval> {
+      //void normalize();
+
+public:
+      TransposeMap() {}
+      void add(const Fraction& f, const Interval& i);
+      //const Interval& transpose(int tick) const;
+      const Interval& transpose(const Fraction& f) const;
+      };
+
 class MusicXmlPart {
 public:
       MusicXmlPart(QString id = "", QString name = "");
@@ -71,6 +86,7 @@ public:
       const LyricNumberHandler& lyricNumberHandler() const { return _lyricNumberHandler; }
       void setMaxStaff(const int staff);
       int maxStaff() const { return _maxStaff; }
+      void addTranspose(const Fraction& f, const Interval& i) { transposeMap.add(f, i); }
 private:
       QString id;
       QString name;
@@ -82,6 +98,7 @@ private:
       QVector<MusicXmlOctaveShiftList> octaveShifts; // octave shift list for every staff
       LyricNumberHandler _lyricNumberHandler;
       int _maxStaff = 0;                      // maximum staff value found (1 based), 0 = none
+      TransposeMap transposeMap;
       };
 
 } // namespace Ms

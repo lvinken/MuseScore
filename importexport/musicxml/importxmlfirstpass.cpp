@@ -62,6 +62,12 @@ QString MusicXmlPart::toString() const
                   .arg(measureDurations.at(i).ticks());
             }
 
+      for (const auto& i : transposeMap)
+            res += QString("\ntick %1 interval diatonic %2 chromatic %3")
+                  .arg(i.first.print())
+                  .arg(static_cast<int>(i.second.diatonic))
+                  .arg(static_cast<int>(i.second.chromatic));
+
       return res;
       }
 
@@ -232,6 +238,30 @@ void LyricNumberHandler::determineLyricNos()
             p.second = i;
             ++i;
             }
+      }
+
+//---------------------------------------------------------
+//   add
+//---------------------------------------------------------
+void TransposeMap::add(const Fraction& f, const Interval& i)
+      {
+      (*this)[f] = i;
+      }
+/*
+ void TransposeMap::normalize()
+ {
+
+ }
+ */
+const Interval& TransposeMap::transpose(const Fraction& f) const
+      {
+      static const Interval iv;
+      if (empty())
+            return iv;
+      auto i = upper_bound(f);
+      if (i != begin())
+            --i;
+      return i->second;
       }
 
 }
