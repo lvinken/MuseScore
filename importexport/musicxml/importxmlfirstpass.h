@@ -86,6 +86,7 @@ public:
       void setMaxStaff(const int staff);
       int maxStaff() const { return _maxStaff; }
       void addTranspose(const Fraction& f, const Interval& i) { transposeMap.add(f, i); }
+      const Interval& transpose(const Fraction& f) const { return transposeMap.transpose(f); }
 private:
       QString id;
       QString name;

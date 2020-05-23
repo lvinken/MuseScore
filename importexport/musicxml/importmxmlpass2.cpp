@@ -460,10 +460,12 @@ static Instrument createInstrument(const MusicXMLDrumInstrument& mxmlInstr)
 
 static void setFirstInstrument(MxmlLogger* logger, const QXmlStreamReader* const xmlreader,
                                Part* part, const QString& partId,
-                               const QString& instrId, const MusicXMLDrumset& mxmlDrumset)
+                               const QString& instrId, const Interval interval,
+                               const MusicXMLDrumset& mxmlDrumset)
       {
       if (mxmlDrumset.size() > 0) {
-            qDebug("setFirstInstrument: initial instrument '%s'", qPrintable(instrId));
+            qDebug("setFirstInstrument: initial instrument '%s' interval diatonic %d chromatic %d",
+                   qPrintable(instrId), static_cast<int>(interval.diatonic), static_cast<int>(interval.chromatic));
             MusicXMLDrumInstrument mxmlInstr;
             if (instrId == "")
                   mxmlInstr = mxmlDrumset.first();
@@ -476,6 +478,7 @@ static void setFirstInstrument(MxmlLogger* logger, const QXmlStreamReader* const
                   }
 
             Instrument instr = createInstrument(mxmlInstr);
+            instr.setTranspose(interval);
             part->setInstrument(instr);
             if (mxmlInstr.midiChannel >= 0) part->setMidiChannel(mxmlInstr.midiChannel, mxmlInstr.midiPort);
             // note: setMidiProgram() does more than simply setting the MIDI program
@@ -509,8 +512,10 @@ static void setStaffTypePercussion(Part* part, Drumset* drumset)
 //---------------------------------------------------------
 
 static void setPartInstruments(MxmlLogger* logger, const QXmlStreamReader* const xmlreader,
-                               Part* part, const QString& partId,
-                               Score* score, const MusicXmlInstrList& il, const MusicXMLDrumset& mxmlDrumset)
+                               Part* part, const QString& partId, Score* score,
+                               const MusicXmlInstrList& il,
+                               const MusicXmlPart& musicXmlPart,
+                               const MusicXMLDrumset& mxmlDrumset)
       {
       QString prevInstrId;
       for (auto it = il.cbegin(); it != il.cend(); ++it) {
@@ -543,7 +548,11 @@ static void setPartInstruments(MxmlLogger* logger, const QXmlStreamReader* const
                         else {
                               MusicXMLDrumInstrument mxmlInstr = mxmlDrumset.value(instrId);
                               Instrument instr = createInstrument(mxmlInstr);
-                              qDebug("instr %p", &instr);
+                              const Interval i = musicXmlPart.transpose(f);
+                              instr.setTranspose(i);
+                              qDebug("tick %s instr %p interval diatonic %d chromatic %d",
+                                     qPrintable(f.print()), &instr,
+                                     static_cast<int>(i.diatonic), static_cast<int>(i.chromatic));
 
                               InstrumentChange* ic = new InstrumentChange(instr, score);
                               ic->setTrack(track);
@@ -1587,7 +1596,8 @@ void MusicXMLParserPass2::part()
 
       // set the parts first instrument
       QString instrId = _pass1.getInstrList(id).instrument(Fraction(0, 1));
-      setFirstInstrument(_logger, &_e, _pass1.getPart(id), id, instrId, mxmlDrumset);
+            const Interval interval = _pass1.getMusicXmlPart(id).transpose(Fraction(0, 1));
+      setFirstInstrument(_logger, &_e, _pass1.getPart(id), id, instrId, interval, mxmlDrumset);
 
       // set the part name
       auto mxmlPart = _pass1.getMusicXmlPart(id);
@@ -1669,17 +1679,21 @@ void MusicXMLParserPass2::part()
       const MusicXMLDrumset& mxmlDrumsetAfterPass2 = _pass1.getDrumset(id);
       initDrumset(drumset, mxmlDrumsetAfterPass2);
 
+            const MusicXmlPart& musicXmlPart = _pass1.getMusicXmlPart(id);
       // debug: dump the instrument map
-      /*
+      /**/
             {
             qDebug("instrlist");
             auto il = _pass1.getInstrList(id);
             for (auto it = il.cbegin(); it != il.cend(); ++it) {
                   Fraction f = (*it).first;
-                  qDebug("pass2: instrument map: tick %s (%d) instr '%s'", qPrintable(f.print()), f.ticks(), qPrintable((*it).second));
+                  Interval i = musicXmlPart.transpose(f);
+                  qDebug("pass2: instrument map: tick %s (%d) instr '%s' interval diatonic %d chromatic %d",
+                         qPrintable(f.print()), f.ticks(), qPrintable((*it).second),
+                         static_cast<int>(i.diatonic), static_cast<int>(i.chromatic));
                   }
             }
-      */
+      /**/
 
       if (_hasDrumset) {
             // set staff type to percussion if incorrectly imported as pitched staff
@@ -1691,7 +1705,7 @@ void MusicXMLParserPass2::part()
             // drumset is not needed
             delete drumset;
             // set the instruments for this part
-            setPartInstruments(_logger, &_e, _pass1.getPart(id), id, _score, _pass1.getInstrList(id), mxmlDrumset);
+            setPartInstruments(_logger, &_e, _pass1.getPart(id), id, _score, _pass1.getInstrList(id), musicXmlPart, mxmlDrumset);
             }
       }
 
