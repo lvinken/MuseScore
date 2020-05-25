@@ -62,12 +62,28 @@ namespace Ms {
 const int MAX_LYRICS       = 16;
 
 //---------------------------------------------------------
+//   SlurDescription
+//---------------------------------------------------------
+
+struct SlurDescription
+      {
+      std::unique_ptr<Slur> slur_ptr;
+      QString target;
+      // note that due to the unique_ptr, SlurDescription cannot be copied
+      SlurDescription() = default;                                                    // Constructor
+      SlurDescription(const SlurDescription&) = delete;                               // Copy constructor
+      SlurDescription(SlurDescription &&) = default;                                  // Move constructor
+      SlurDescription& operator=(const SlurDescription&) = delete;                    // Copy assignment operator
+      SlurDescription& operator=(SlurDescription &&) = default;                       // Move assignment operator
+      };
+
+//---------------------------------------------------------
 //   SpannerDescription
 //---------------------------------------------------------
 
 struct SpannerDescription
       {
-      std::unique_ptr<Spanner> sp;
+      std::unique_ptr<Spanner> spanner_ptr;
       QString end;
       // note that due to the unique_ptr, SpannerDescription cannot be copied
       SpannerDescription() = default;                                           // Constructor
@@ -163,7 +179,7 @@ private:
       Rest* rest(Measure* measure, const bool measureRest, const QString& value, const int seqNr);
       void sequence(Measure* measure, const Fraction sTime, std::vector<int>& staffSeqCount);
       void skipLogCurrElem();
-      void slur();
+      void slur(ChordRest* cr1);
       int staves();
       QString tied();
       void wedge();
@@ -173,9 +189,10 @@ private:
       Score* const _score;                                  ///< MuseScore score
       MxmlLogger* const _logger;                            ///< Error logger
       const MnxParserGlobal& _global;                       ///< Data extracted from the "global" tree
+      std::vector<SlurDescription> _slurs;                  ///< Slurs already created with cr2 still unknown
       std::vector<SpannerDescription> _spanners;            ///< Spanners already created with tick2 still unknown
       std::vector<TieDescription> _ties;                    ///< Descriptions of ties to be created and connected
-      std::map<QString, Note*> _ids;                        ///< IDs and notes they refer to
+      std::map<QString, Element*> _ids;                     ///< IDs and elements they refer to
       };
 
 //---------------------------------------------------------
@@ -1503,9 +1520,6 @@ Fraction MnxParserPart::beamed(Measure* measure, const Fraction sTime, const int
             if (_e.name() == "event") {
                   seqTime += event(measure, sTime + seqTime, track, tuplet);
                   }
-            else if (_e.name() == "slur") {
-                  slur();
-                  }
             else if (_e.name() == "tuplet") {
                   seqTime += parseTuplet(measure, sTime + seqTime, track);
                   }
@@ -1526,9 +1540,16 @@ void MnxParserPart::debugDumpData()
       {
       // dump ids read
       /*
-            qDebug("ids");
+      qDebug("ids");
       for (const auto& kv : _ids)
-            qDebug("id '%s' note %p", qPrintable(kv.first), kv.second);
+            qDebug("id '%s' element %p", qPrintable(kv.first), kv.second);
+      */
+
+      // dump slurs read
+      /*
+      qDebug("slurs");
+      for (const auto& sd : _slurs)
+            qDebug("sp %p end '%s'", sd.slur_ptr.get(), qPrintable(sd.target));
       */
 
       // dump spanners read
@@ -1696,6 +1717,7 @@ Fraction MnxParserPart::event(Measure* measure, const Fraction sTime, const int 
       Q_ASSERT(_e.isStartElement() && _e.name() == "event");
       _logger->logDebugTrace("MnxParserPart::event");
 
+      auto attrId = _e.attributes().value("id").toString();
       auto attrMeasure = _e.attributes().value("measure").toString();
       bool measureRest = attrMeasure == "yes";
       auto attrValue = _e.attributes().value("value").toString();
@@ -1730,9 +1752,16 @@ Fraction MnxParserPart::event(Measure* measure, const Fraction sTime, const int 
                         skipLogCurrElem();
                         }
                   }
+            else if (_e.name() == "slur") {
+                  slur(cr);
+                  }
             else
                   skipLogCurrElem();
             }
+
+      // store chordrest created plus id for later use
+      if (attrId != "")
+            _ids.insert({ attrId, cr });                // TODO: check for duplicate ID
 
       auto s = measure->getSegment(SegmentType::ChordRest, sTime);
       s->add(cr);
@@ -1989,11 +2018,31 @@ void MnxParserPart::parsePartAndAppendToScore()
 
       debugDumpData();
 
+      // add slurs read to score
+      for (auto& sd : _slurs) {
+            const auto result = _ids.find(sd.target);
+            if (result == _ids.end()) {
+                  _logger->logError(QString("slur end '%1' not found").arg(sd.target));
+                  }
+            else {
+                  Element* const elem = result->second;
+                  if (!(elem->isChord())) {
+                        _logger->logError(QString("slur end '%1' is not a chord").arg(sd.target));
+                        }
+                  else {
+                        auto sp = sd.slur_ptr.release();
+                        Chord* const chord1 = toChord(sp->startElement());           // TODO: type check required ?
+                        Chord* const chord2 = toChord(elem);
+                        addSlur(chord1, chord2, sp);
+                        }
+                  }
+            }
+
       // add spanners read to score
       for (auto& sd : _spanners) {
             auto tick2 = mnxMeasureLocationToTick(sd.end, _global);
             if (tick2.isValid()) {
-                  auto sp = sd.sp.release();
+                  auto sp = sd.spanner_ptr.release();
                   // tick2 is the start tick of the last note affected, MuseScore needs the end tick
                   auto lastChord = findLastChordForSpanner(_score, sp->track() / VOICES, tick2);
                   if (lastChord)
@@ -2091,9 +2140,6 @@ void MnxParserPart::sequence(Measure* measure, const Fraction sTime, std::vector
                   else if (_e.name() == "event") {
                         seqTime += event(measure, sTime + seqTime, track, nullptr);
                         }
-                  else if (_e.name() == "slur") {
-                        slur();
-                        }
                   else if (_e.name() == "tuplet") {
                         seqTime += parseTuplet(measure, sTime + seqTime, track);
                         }
@@ -2114,13 +2160,38 @@ void MnxParserPart::sequence(Measure* measure, const Fraction sTime, std::vector
  Parse the /mnx/score/cwmnx/.../slur node.
  */
 
-void MnxParserPart::slur()
+void MnxParserPart::slur(ChordRest* cr1)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "slur");
       _logger->logDebugTrace("MnxParserPart::slur");
 
-      auto end = _e.attributes().value("end").toString();
-      qDebug("slur end '%s'", qPrintable(end));
+      const auto endNote = _e.attributes().value("end-note").toString();
+      const auto location = _e.attributes().value("location").toString();
+      const auto startNote = _e.attributes().value("start-note").toString();
+      const auto target = _e.attributes().value("target").toString();
+      qDebug("slur target '%s'", qPrintable(target));
+
+      if (!cr1) {
+            _logger->logError("no cr for slur");
+            }
+      else if (!(cr1->isChord())) {
+            _logger->logError("no chord for slur");
+            }
+      else if (target == "") {
+            _logger->logError("no target for slur");
+            }
+      else if ((endNote != "") || (startNote != "")) {
+            _logger->logError("start or end note not supported for slur");
+            }
+      else if (location != "") {
+            _logger->logError("location note not supported for slur");
+            }
+      else {
+            auto slur = createSlur(_score);
+            slur->setStartElement(toChord(cr1));
+            SlurDescription slurdesc { std::move(slur), target };
+            _slurs.push_back(std::move(slurdesc));
+            }
 
       _e.skipCurrentElement();
 
@@ -2220,9 +2291,6 @@ Fraction MnxParserPart::parseTuplet(Measure* measure, const Fraction sTime, cons
                   }
             else if (_e.name() == "event") {
                   tupTime += event(measure, sTime + tupTime, track, tuplet);
-                  }
-            else if (_e.name() == "slur") {
-                  slur();
                   }
             else
                   skipLogCurrElem();

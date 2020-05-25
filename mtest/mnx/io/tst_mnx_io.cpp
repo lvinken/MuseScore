@@ -71,6 +71,7 @@ private slots:
       void notesRests1() { mnxIoTest("testNotesRests1"); }
       void octaveShift1() { mnxIoTest("testOctaveShift1"); }
       void octaveShift2() { mnxIoTest("testOctaveShift2"); }
+      void slurs() { mnxIoTest("testSlurs"); }
       void tempo0() { mnxIoTest("testTempo0"); }
       void ties1() { mnxIoTest("testTies1"); }
       void timesig0() { mnxIoTest("testTimesig0"); }
