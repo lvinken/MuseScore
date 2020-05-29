@@ -1867,6 +1867,8 @@ void MnxParserPart::measure(const int measureNr)
  Parse the /mnx/score/cwmnx/part/measure/sequence/event/note node.
  */
 
+// TODO: handle accidental (value is currently ignored)
+
 std::unique_ptr<Note> MnxParserPart::note(const int seqNr)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "note");
