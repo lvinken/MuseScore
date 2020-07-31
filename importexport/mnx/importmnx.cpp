@@ -52,6 +52,7 @@
 #include "libmscore/tuplet.h"
 #include "importmxmllogger.h"
 #include "importmnx.h"
+#include "xmlstreamreader.h"
 
 namespace Ms {
 //---------------------------------------------------------
@@ -99,7 +100,7 @@ struct SpannerDescription
 class MnxParserGlobal
 {
 public:
-    MnxParserGlobal(QXmlStreamReader& e, Score* score, MxmlLogger* logger);
+    MnxParserGlobal(XmlStreamReader& e, Score* score, MxmlLogger* logger);
     QString instruction() const { return _instruction; }
     KeySigEvent keySig(const int measureNr) const;
     int measureNr(const Fraction time) const;
@@ -115,12 +116,11 @@ private:
     void parseInstruction();
     void parseKey(const int measureNr);
     void measure(const int measureNr);
-    void skipLogCurrElem();
     void tempo();
     void time(const int measureNr);
 
     // data
-    QXmlStreamReader& _e;
+    XmlStreamReader& _e;
     Score* const _score;                                    ///< MuseScore score TODO: remove if MnxParserGlobal does not create score elements
     MxmlLogger* const _logger;                              ///< Error logger
     QString _instruction;
@@ -135,7 +135,7 @@ private:
 //   MnxParserGlobal constructor
 //---------------------------------------------------------
 
-MnxParserGlobal::MnxParserGlobal(QXmlStreamReader& e, Score* score, MxmlLogger* logger) :
+MnxParserGlobal::MnxParserGlobal(XmlStreamReader& e, Score* score, MxmlLogger* logger) :
     _e(e), _score(score), _logger(logger)
 {
     // nothing
@@ -159,7 +159,7 @@ struct TieDescription
 class MnxParserPart
 {
 public:
-    MnxParserPart(QXmlStreamReader& e, Score* score, MxmlLogger* logger, const MnxParserGlobal& global);
+    MnxParserPart(XmlStreamReader& e, Score* score, MxmlLogger* logger, const MnxParserGlobal& global);
     void parsePartAndAppendToScore();
 
 private:
@@ -177,13 +177,12 @@ private:
     Fraction parseTuplet(Measure* measure, const Fraction sTime, const int track);
     Rest* rest(Measure* measure, const bool measureRest, const QString& value, const int seqNr);
     void sequence(Measure* measure, const Fraction sTime, std::vector<int>& staffSeqCount);
-    void skipLogCurrElem();
     void slur(ChordRest* cr1);
     int staves();
     QString tied();
     void wedge();
     // data
-    QXmlStreamReader& _e;
+    XmlStreamReader& _e;
     Part* _part = nullptr;                                  ///< The part (allocated in parsePartAndAppendToScore())
     Score* const _score;                                    ///< MuseScore score
     MxmlLogger* const _logger;                              ///< Error logger
@@ -198,7 +197,7 @@ private:
 //   MnxParserPart constructor
 //---------------------------------------------------------
 
-MnxParserPart::MnxParserPart(QXmlStreamReader& e, Score* score, MxmlLogger* logger, const MnxParserGlobal& global) :
+MnxParserPart::MnxParserPart(XmlStreamReader& e, Score* score, MxmlLogger* logger, const MnxParserGlobal& global) :
     _e(e), _score(score), _logger(logger), _global(global)
 {
     // nothing
@@ -224,13 +223,12 @@ private:
     //void part();
     void rights();
     void score();
-    void skipLogCurrElem();
     void subtitle();
     void tempo();
     void title();
 
     // data
-    QXmlStreamReader _e;
+    XmlStreamReader _e;
     QString _parseStatus;                             ///< Parse status (typicallay a short error message)
     Score* const _score;                              ///< MuseScore score
     MxmlLogger* const _logger;                        ///< Error logger
@@ -291,7 +289,6 @@ Score::FileError importMnxFromBuffer(Score* score, const QString& /*name*/, QIOD
 
 Score::FileError MnxParser::parse(QIODevice* device)
 {
-    _logger->logDebugTrace("MnxParser::parse device");
     _e.setDevice(device);
     Score::FileError res = parse();
     if (res != Score::FileError::FILE_NO_ERROR) {
@@ -312,8 +309,6 @@ Score::FileError MnxParser::parse(QIODevice* device)
 
 Score::FileError MnxParser::parse()
 {
-    _logger->logDebugTrace("MnxParser::parse");
-
     bool found = false;
     while (_e.readNextStartElement()) {
         if (_e.name() == "mnx") {
@@ -322,8 +317,37 @@ Score::FileError MnxParser::parse()
         } else {
             _logger->logError(QString("this is not an MNX file (top-level node '%1')")
                               .arg(_e.name().toString()));
-            _e.skipCurrentElement();
-            return Score::FileError::FILE_BAD_FORMAT;
+            _e.handleUnknownChild();
+            //return Score::FileError::FILE_BAD_FORMAT;
+        }
+    }
+
+    const auto errors = _e.errorString();
+    if (errors != "") {
+        qDebug() << errors;
+    }
+
+    const auto& handled = _e.handledElements();
+    if (!handled.empty()) {
+        qDebug() << "handled elements";
+        for (const auto& child : handled) {
+            qDebug() << " " << child;
+        }
+    }
+
+    const auto& ignored = _e.ignoredElements();
+    if (!ignored.empty()) {
+        qDebug() << "ignored elements";
+        for (const auto& child : ignored) {
+            qDebug() << " " << child;
+        }
+    }
+
+    const auto& unknowns = _e.unknownElements();
+    if (!unknowns.empty()) {
+        qDebug() << "unknown elements";
+        for (const auto& child : unknowns) {
+            qDebug() << " " << child;
         }
     }
 
@@ -1195,7 +1219,7 @@ static void setTupletTicks(Tuplet* tuplet)
 
 // read staff attribute, return 0-based staff number
 
-static int readStaff(QXmlStreamReader& e, MxmlLogger* const logger, bool& ok)
+static int readStaff(XmlStreamReader& e, MxmlLogger* const logger, bool& ok)
 {
     auto attrStaff = e.attributes().value("staff").toString();
     logger->logDebugTrace(QString("staff '%1'").arg(attrStaff));
@@ -1207,7 +1231,7 @@ static int readStaff(QXmlStreamReader& e, MxmlLogger* const logger, bool& ok)
     if (!ok || staff < 0 || staff >= MAX_STAVES) {
         ok = false;
         staff = 0;
-        logger->logError(QString("invalid staff '%1'").arg(attrStaff), &e);
+        //logger->logError(QString("invalid staff '%1'").arg(attrStaff), &e);
     }
     return staff;
 }
@@ -1230,9 +1254,6 @@ static int readStaff(QXmlStreamReader& e, MxmlLogger* const logger, bool& ok)
 
 void MnxParserGlobal::directions(const int measureNr, const Fraction sTime, const int paramStaff)
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "directions");
-    _logger->logDebugTrace("MnxParserGlobal::directions");
-
     while (_e.readNextStartElement()) {
         if (_e.name() == "dirgroup") {
             dirgroup(measureNr, sTime, paramStaff);
@@ -1245,11 +1266,9 @@ void MnxParserGlobal::directions(const int measureNr, const Fraction sTime, cons
         } else if (_e.name() == "time") {
             time(measureNr);
         } else {
-            skipLogCurrElem();
+            _e.handleUnknownChild();
         }
     }
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "directions");
 }
 
 //---------------------------------------------------------
@@ -1263,9 +1282,6 @@ void MnxParserGlobal::directions(const int measureNr, const Fraction sTime, cons
 
 void MnxParserGlobal::dirgroup(const int measureNr, const Fraction sTime, const int paramStaff)
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "dirgroup");
-    _logger->logDebugTrace("MnxParserGlobal::dirgroup");
-
     while (_e.readNextStartElement()) {
         if (_e.name() == "instruction") {
             parseInstruction();
@@ -1276,11 +1292,9 @@ void MnxParserGlobal::dirgroup(const int measureNr, const Fraction sTime, const 
         } else if (_e.name() == "time") {
             time(measureNr);
         } else {
-            skipLogCurrElem();
+            _e.handleUnknownChild();
         }
     }
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "dirgroup");
 }
 
 //---------------------------------------------------------
@@ -1312,14 +1326,9 @@ KeySigEvent MnxParserGlobal::keySig(const int measureNr) const
 
 void MnxParserGlobal::parseInstruction()
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "instruction");
-    _logger->logDebugTrace("MnxParserGlobal::instruction");
-
-    auto text = _e.readElementText();
+    auto text = _e.handleElementText();
     _logger->logDebugTrace(QString("instruction '%1'").arg(text));
     _instruction = text;
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "instruction");
 }
 
 //---------------------------------------------------------
@@ -1332,17 +1341,12 @@ void MnxParserGlobal::parseInstruction()
 
 void MnxParserGlobal::parseKey(const int measureNr)
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "key");
-    _logger->logDebugTrace("MnxParserGlobal::parseKey");
-
     auto mode = _e.attributes().value("mode").toString();
     auto fifths = _e.attributes().value("fifths").toString();
     _logger->logDebugTrace(QString("key-sig '%1' '%2'").arg(fifths).arg(mode));
-    _e.skipCurrentElement();
+    _e.handleEmptyElement();
 
     _keySigs[measureNr] = mnxKeyToKeySigEvent(fifths, mode);
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "key");
 }
 
 //---------------------------------------------------------
@@ -1355,20 +1359,15 @@ void MnxParserGlobal::parseKey(const int measureNr)
 
 void MnxParserGlobal::measure(const int measureNr)
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "measure");
-    _logger->logDebugTrace("MnxParserGlobal::measure");
-
     auto startTick = startTime(measureNr);
 
     while (_e.readNextStartElement()) {
         if (_e.name() == "directions") {
             directions(measureNr, startTick);
         } else {
-            skipLogCurrElem();
+            _e.handleUnknownChild();
         }
     }
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "measure");
 }
 
 //---------------------------------------------------------
@@ -1395,15 +1394,12 @@ int MnxParserGlobal::measureNr(const Fraction time) const
 
 void MnxParserGlobal::parse()
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "global");
-    _logger->logDebugTrace("MnxParserGlobal::parse");
-
     while (_e.readNextStartElement()) {
         if (_e.name() == "measure") {
             measure(_nrOfMeasures);
             _nrOfMeasures++;
         } else {
-            skipLogCurrElem();
+            _e.handleUnknownChild();
         }
     }
 
@@ -1417,8 +1413,6 @@ void MnxParserGlobal::parse()
         addMeasure(_score, cTime, timeSig, i + 1);
         cTime += timeSig;
     }
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "global");
 }
 
 //---------------------------------------------------------
@@ -1453,13 +1447,10 @@ Fraction MnxParserGlobal::startTime(const int measureNr) const
 
 void MnxParserGlobal::tempo()
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "tempo");
-    _logger->logDebugTrace("MnxParserGlobal::tempo");
-
     const auto bpm = _e.attributes().value("bpm").toString();
     const auto value = _e.attributes().value("value").toString();
     _logger->logDebugTrace(QString("tempo bpm '%1' value '%2'").arg(bpm).arg(value));
-    _e.skipCurrentElement();
+    _e.handleEmptyElement();
 
     bool ok = false;
     _tempoBpm = bpm.toFloat(&ok);
@@ -1467,8 +1458,6 @@ void MnxParserGlobal::tempo()
         _tempoBpm = -1;
     }
     _tempoValue = mnxValueUnitToDurationType(value);
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "tempo");
 }
 
 //---------------------------------------------------------
@@ -1481,16 +1470,11 @@ void MnxParserGlobal::tempo()
 
 void MnxParserGlobal::time(const int measureNr)
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "time");
-    _logger->logDebugTrace("MnxParserGlobal::time");
-
     QString signature = _e.attributes().value("signature").toString();
     _logger->logDebugTrace(QString("measure %1 time-sig '%2'").arg(measureNr).arg(signature));
-    _e.skipCurrentElement();
+    _e.handleEmptyElement();
 
     _timeSigs[measureNr] = mnxTSigToBtsBtp(signature);
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "time");
 }
 
 //---------------------------------------------------------
@@ -1528,9 +1512,6 @@ Fraction MnxParserGlobal::timeSig(const int measureNr) const
 
 Fraction MnxParserPart::beamed(Measure* measure, const Fraction sTime, const int track, Tuplet* tuplet)
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "beamed");
-    _logger->logDebugTrace("MnxParserPart::beamed");
-
     Fraction seqTime(0, 1);         // time in this sequence
 
     while (_e.readNextStartElement()) {
@@ -1539,11 +1520,9 @@ Fraction MnxParserPart::beamed(Measure* measure, const Fraction sTime, const int
         } else if (_e.name() == "tuplet") {
             seqTime += parseTuplet(measure, sTime + seqTime, track);
         } else {
-            skipLogCurrElem();
+            _e.handleUnknownChild();
         }
     }
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "beamed");
 
     return seqTime;
 }
@@ -1627,7 +1606,7 @@ void MnxParserPart::clef(const int paramStaff)
         }
     }
 
-    _e.skipCurrentElement();
+    _e.handleEmptyElement();
 
     Q_ASSERT(_e.isEndElement() && _e.name() == "clef");
 }
@@ -1644,9 +1623,6 @@ void MnxParserPart::clef(const int paramStaff)
 
 void MnxParserPart::directions(const Fraction sTime, const int paramStaff)
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "directions");
-    _logger->logDebugTrace("MnxParserPart::directions");
-
     while (_e.readNextStartElement()) {
         if (_e.name() == "clef") {
             clef(paramStaff);
@@ -1673,15 +1649,13 @@ void MnxParserPart::directions(const Fraction sTime, const int paramStaff)
                 }
             }
         } else if (_e.name() == "tempo") {
-            skipLogCurrElem();
+            _e.handleIgnoredChild();
         } else if (_e.name() == "wedge") {
             wedge();
         } else {
-            skipLogCurrElem();
+            _e.handleUnknownChild();
         }
     }
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "directions");
 }
 
 //---------------------------------------------------------
@@ -1696,20 +1670,15 @@ void MnxParserPart::directions(const Fraction sTime, const int paramStaff)
 
 void MnxParserPart::dynamics(const Fraction sTime, const int paramStaff)
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "dynamics");
-    _logger->logDebugTrace("MnxParserPart::dynamics");
-
     auto type = _e.attributes().value("type").toString();
 
     _logger->logDebugTrace(QString("dynamics type '%1' paramStaff '%2'").arg(type).arg(paramStaff));
 
-    _e.skipCurrentElement();
+    _e.handleEmptyElement();
 
     auto track = determineTrack(_part, 0, 0);
     auto dyn = createDynamic(_score, type);
     addElementToSegmentChordRest(_score, sTime.ticks(), track + paramStaff * VOICES, dyn.release());
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "dynamics");
 }
 
 //---------------------------------------------------------
@@ -1722,9 +1691,6 @@ void MnxParserPart::dynamics(const Fraction sTime, const int paramStaff)
 
 Fraction MnxParserPart::event(Measure* measure, const Fraction sTime, const int seqNr, Tuplet* tuplet)
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "event");
-    _logger->logDebugTrace("MnxParserPart::event");
-
     auto attrId = _e.attributes().value("id").toString();
     auto attrMeasure = _e.attributes().value("measure").toString();
     bool measureRest = attrMeasure == "yes";
@@ -1744,7 +1710,7 @@ Fraction MnxParserPart::event(Measure* measure, const Fraction sTime, const int 
                 cr->add(note(seqNr).release());
             } else if (cr->isRest()) {
                 _logger->logError("cannot add note to rest");
-                skipLogCurrElem();
+                _e.handleIgnoredChild(); // TODO check
             }
         } else if (_e.name() == "rest") {
             if (!cr) {
@@ -1755,12 +1721,12 @@ Fraction MnxParserPart::event(Measure* measure, const Fraction sTime, const int 
                 } else if (cr->isRest()) {
                     _logger->logError("cannot add rest to rest");
                 }
-                skipLogCurrElem();
+                _e.handleIgnoredChild();   // TODO check
             }
         } else if (_e.name() == "slur") {
             slur(cr);
         } else {
-            skipLogCurrElem();
+            _e.handleUnknownChild();
         }
     }
 
@@ -1776,8 +1742,6 @@ Fraction MnxParserPart::event(Measure* measure, const Fraction sTime, const int 
         tuplet->add(cr);
     }
 
-    Q_ASSERT(_e.isEndElement() && _e.name() == "event");
-
     return cr->actualTicks();
 }
 
@@ -1791,22 +1755,16 @@ Fraction MnxParserPart::event(Measure* measure, const Fraction sTime, const int 
 
 void MnxParserPart::lyric(ChordRest* cr)
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "lyric");
-    _logger->logDebugTrace("MnxParserPart::lyric");
-
     while (_e.readNextStartElement()) {
         if (_e.name() == "syllabic") {
-            // ignore for now
-            _e.skipCurrentElement();
+            _e.handleIgnoredChild();
         } else if (_e.name() == "text") {
-            auto lyricText = _e.readElementText();
+            auto lyricText = _e.handleElementText();
             addLyric(cr, 0, lyricText);
         } else {
-            skipLogCurrElem();
+            _e.handleUnknownChild();
         }
     }
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "lyric");
 }
 
 //---------------------------------------------------------
@@ -1819,9 +1777,6 @@ void MnxParserPart::lyric(ChordRest* cr)
 
 void MnxParserPart::measure(const int measureNr)
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "measure");
-    _logger->logDebugTrace("MnxParserPart::measure");
-
     Measure* currMeasure = nullptr;
     const auto startTick = _global.startTime(measureNr);
 
@@ -1848,7 +1803,7 @@ void MnxParserPart::measure(const int measureNr)
     currMeasure = findMeasure(_score, startTick);
     if (!currMeasure) {
         _logger->logError(QString("measure at tick %1 not found!").arg(qPrintable(startTick.print())));
-        skipLogCurrElem();
+        //skipLogCurrElem(); TODO check
     }
 
     std::vector<int> staffSeqCount(MAX_STAVES, 0);         // sequence count per staff
@@ -1859,11 +1814,9 @@ void MnxParserPart::measure(const int measureNr)
         } else if (_e.name() == "sequence") {
             sequence(currMeasure, startTick, staffSeqCount);
         } else {
-            skipLogCurrElem();
+            _e.handleUnknownChild();
         }
     }
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "measure");
 }
 
 //---------------------------------------------------------
@@ -1878,9 +1831,6 @@ void MnxParserPart::measure(const int measureNr)
 
 std::unique_ptr<Note> MnxParserPart::note(const int seqNr)
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "note");
-    _logger->logDebugTrace("MnxParserPart::note");
-
     auto accidental = _e.attributes().value("accidental").toString();
     auto id = _e.attributes().value("id").toString();
     auto pitch = _e.attributes().value("pitch").toString();
@@ -1890,14 +1840,12 @@ std::unique_ptr<Note> MnxParserPart::note(const int seqNr)
         if (_e.name() == "tied") {
             tiedTarget = tied();
         } else {
-            skipLogCurrElem();
+            _e.handleUnknownChild();
         }
     }
 
     _logger->logDebugTrace(QString("- note pitch '%1' accidental '%2' id '%3' tiedTarget '%4'")
                            .arg(pitch).arg(accidental).arg(id).arg(tiedTarget));
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "note");
 
     auto note = createNote(_score, pitch, seqNr /*, accidental*/);
     // store note created plus id for later use
@@ -1923,9 +1871,6 @@ std::unique_ptr<Note> MnxParserPart::note(const int seqNr)
 
 void MnxParserPart::octaveShift(const Fraction sTime, const int paramStaff)
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "octave-shift");
-    _logger->logDebugTrace("MnxParserPart::octaveShift");
-
     auto type = _e.attributes().value("type").toString();
     // note: end may contain a reference to a specific, future, element (unknown here)
     auto end = _e.attributes().value("end").toString();
@@ -1937,10 +1882,7 @@ void MnxParserPart::octaveShift(const Fraction sTime, const int paramStaff)
     SpannerDescription sd { std::move(sp), end };
     _spanners.push_back(std::move(sd));
 
-    // TODO which is correct ? _e.readNext();
-    _e.skipCurrentElement();
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "octave-shift");
+    _e.handleEmptyElement();
 }
 
 //---------------------------------------------------------
@@ -2008,9 +1950,6 @@ static Chord* findLastChordForSpanner(Score* score, const int staff, const Fract
 
 void MnxParserPart::parsePartAndAppendToScore()
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "part");
-    _logger->logDebugTrace("MnxParserPart::parsePartAndAppendToScore");
-
     auto measureNr = 0;
     const auto ksig = _global.keySig(measureNr);            // TODO: when to check for valid ksig ?
     const auto tsig = _global.timeSig(measureNr);           // TODO: when to check for valid tsig ?
@@ -2021,12 +1960,12 @@ void MnxParserPart::parsePartAndAppendToScore()
             measure(measureNr);
             measureNr++;
         } else if (_e.name() == "part-name") {
-            auto partName = _e.readElementText();
+            auto partName = _e.handleElementText();
             _logger->logDebugTrace(QString("part-name '%1'").arg(partName));
             _part->setPlainLongName(partName);
             _part->setPartName(partName);
         } else {
-            skipLogCurrElem();
+            _e.handleUnknownChild();
         }
     }
 
@@ -2088,8 +2027,6 @@ void MnxParserPart::parsePartAndAppendToScore()
             lastMeas->setEndBarLineType(BarLineType::NORMAL, track);
         }
     }
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "part");
 }
 
 //---------------------------------------------------------
@@ -2102,15 +2039,9 @@ void MnxParserPart::parsePartAndAppendToScore()
 
 Rest* MnxParserPart::rest(Measure* measure, const bool measureRest, const QString& value, const int seqNr)
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "rest");
-    _logger->logDebugTrace("MnxParserPart::rest");
-
     _logger->logDebugTrace(QString("- rest"));
 
-    // TODO _e.readNext();
-    _e.skipCurrentElement();
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "rest");
+    _e.handleEmptyElement();
 
     return measureRest
            ? createCompleteMeasureRest(measure, seqNr)
@@ -2127,14 +2058,11 @@ Rest* MnxParserPart::rest(Measure* measure, const bool measureRest, const QStrin
 
 void MnxParserPart::sequence(Measure* measure, const Fraction sTime, std::vector<int>& staffSeqCount)
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "sequence");
-    _logger->logDebugTrace("MnxParserPart::sequence");
-
     bool ok = false;
     auto staff = readStaff(_e, _logger, ok);
 
     if (!ok) {
-        skipLogCurrElem();
+        _e.handleIgnoredChild(); // TODO check
     } else {
         Fraction seqTime(0, 1);           // time in this sequence
         auto track = determineTrack(_part, staff, staffSeqCount.at(staff));
@@ -2151,13 +2079,11 @@ void MnxParserPart::sequence(Measure* measure, const Fraction sTime, std::vector
             } else if (_e.name() == "tuplet") {
                 seqTime += parseTuplet(measure, sTime + seqTime, track);
             } else {
-                skipLogCurrElem();
+                _e.handleUnknownChild();
             }
         }
         staffSeqCount.at(staff)++;
     }
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "sequence");
 }
 
 //---------------------------------------------------------
@@ -2170,9 +2096,6 @@ void MnxParserPart::sequence(Measure* measure, const Fraction sTime, std::vector
 
 void MnxParserPart::slur(ChordRest* cr1)
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "slur");
-    _logger->logDebugTrace("MnxParserPart::slur");
-
     const auto endNote = _e.attributes().value("end-note").toString();
     const auto location = _e.attributes().value("location").toString();
     const auto startNote = _e.attributes().value("start-note").toString();
@@ -2196,9 +2119,7 @@ void MnxParserPart::slur(ChordRest* cr1)
         _slurs.push_back(std::move(slurdesc));
     }
 
-    _e.skipCurrentElement();
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "slur");
+    _e.handleEmptyElement();
 }
 
 //---------------------------------------------------------
@@ -2218,13 +2139,10 @@ void MnxParserPart::slur(ChordRest* cr1)
 
 int MnxParserPart::staves()
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "staves");
-    _logger->logDebugTrace("MnxParserPart::staves");
-
     auto number = _e.attributes().value("number").toString();
     auto index = _e.attributes().value("index").toString();
 
-    _e.skipCurrentElement();
+    _e.handleEmptyElement();
 
     bool ok = false;
     auto res = number.toInt(&ok);
@@ -2236,8 +2154,6 @@ int MnxParserPart::staves()
                           .arg(number)
                           .arg(index));
     }
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "staves");
 
     return res;
 }
@@ -2252,14 +2168,9 @@ int MnxParserPart::staves()
 
 QString MnxParserPart::tied()
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "tied");
-    _logger->logDebugTrace("MnxParserPart::tied");
-
     auto target = _e.attributes().value("target").toString();
 
-    _e.skipCurrentElement();
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "tied");
+    _e.handleEmptyElement();
 
     return target;
 }
@@ -2274,9 +2185,6 @@ QString MnxParserPart::tied()
 
 Fraction MnxParserPart::parseTuplet(Measure* measure, const Fraction sTime, const int track)
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "tuplet");
-    _logger->logDebugTrace("MnxParserPart::tuplet");
-
     auto actual = _e.attributes().value("actual").toString();
     auto normal = _e.attributes().value("normal").toString();
     _logger->logDebugTrace(QString("tuplet actual '%1' normal '%2'").arg(actual).arg(normal));
@@ -2294,13 +2202,11 @@ Fraction MnxParserPart::parseTuplet(Measure* measure, const Fraction sTime, cons
         } else if (_e.name() == "event") {
             tupTime += event(measure, sTime + tupTime, track, tuplet);
         } else {
-            skipLogCurrElem();
+            _e.handleUnknownChild();
         }
     }
 
     setTupletTicks(tuplet);
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "tuplet");
 
     return tupTime;
 }
@@ -2315,9 +2221,6 @@ Fraction MnxParserPart::parseTuplet(Measure* measure, const Fraction sTime, cons
 
 void MnxParserPart::wedge()
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "wedge");
-    _logger->logDebugTrace("MnxParserPart::wedge");
-
     auto end = _e.attributes().value("end").toString();
     auto location = _e.attributes().value("location").toString();
     auto start = _e.attributes().value("start").toString();
@@ -2329,9 +2232,7 @@ void MnxParserPart::wedge()
            qPrintable(type)
            );
 
-    _e.skipCurrentElement();
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "wedge");
+    _e.handleEmptyElement();
 }
 
 //---------------------------------------------------------
@@ -2348,11 +2249,11 @@ void MnxParserPart::wedge()
 
 void MnxParser::creator()
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "creator");
-    _logger->logDebugTrace("MnxParser::creator");
+    //Q_ASSERT(_e.isStartElement() && _e.name() == "creator");
+    //_logger->logDebugTrace("MnxParser::creator");
 
     auto creatorType = _e.attributes().value("type").toString();
-    auto creatorValue = _e.readElementText();
+    auto creatorValue = _e.handleElementText();
     _logger->logDebugTrace(QString("creator '%1' '%2'").arg(creatorType).arg(creatorValue));
 
     if (!creatorValue.isEmpty()) {
@@ -2363,7 +2264,7 @@ void MnxParser::creator()
         }
     }
 
-    Q_ASSERT(_e.isEndElement() && _e.name() == "creator");
+    //Q_ASSERT(_e.isEndElement() && _e.name() == "creator");
 }
 
 //---------------------------------------------------------
@@ -2376,8 +2277,8 @@ void MnxParser::creator()
 
 void MnxParser::head()
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "head");
-    _logger->logDebugTrace("MnxParser::head");
+    //Q_ASSERT(_e.isStartElement() && _e.name() == "head");
+    //_logger->logDebugTrace("MnxParser::head");
 
     while (_e.readNextStartElement()) {
         if (_e.name() == "creator") {
@@ -2389,14 +2290,14 @@ void MnxParser::head()
         } else if (_e.name() == "title") {
             title();
         } else {
-            skipLogCurrElem();
+            _e.handleUnknownChild();
         }
     }
 
     addVBoxWithMetaData(_score, _composer, _lyricist, _subtitle, _title);
     addMetaData(_score, _composer, _lyricist, _rights, _subtitle, _title);
 
-    Q_ASSERT(_e.isEndElement() && _e.name() == "head");
+    //Q_ASSERT(_e.isEndElement() && _e.name() == "head");
 }
 
 //---------------------------------------------------------
@@ -2409,9 +2310,6 @@ void MnxParser::head()
 
 void MnxParser::mnx()
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "mnx");
-    _logger->logDebugTrace("MnxParser::mnx");
-
     bool hasHead = false;
     while (_e.readNextStartElement()) {
         if (_e.name() == "head") {
@@ -2425,11 +2323,9 @@ void MnxParser::mnx()
             }
             score();
         } else {
-            skipLogCurrElem();
+            _e.handleUnknownChild();
         }
     }
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "mnx");
 }
 
 //---------------------------------------------------------
@@ -2442,9 +2338,6 @@ void MnxParser::mnx()
 
 void MnxParser::mnxCommon()
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "mnx-common");
-    _logger->logDebugTrace("MnxParser::mnxCommon");
-
     while (_e.readNextStartElement()) {
         if (_e.name() == "global") {
             _global.parse();
@@ -2452,11 +2345,9 @@ void MnxParser::mnxCommon()
             MnxParserPart part(_e, _score, _logger, _global);
             part.parsePartAndAppendToScore();
         } else {
-            skipLogCurrElem();
+            _e.handleUnknownChild();
         }
     }
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "mnx-common");
 }
 
 //---------------------------------------------------------
@@ -2469,17 +2360,12 @@ void MnxParser::mnxCommon()
 
 void MnxParser::rights()
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "rights");
-    _logger->logDebugTrace("MnxParser::rights");
-
-    auto rightsValue = _e.readElementText();
+    auto rightsValue = _e.handleElementText();
     _logger->logDebugTrace(QString("rights '%1'").arg(rightsValue));
 
     if (!rightsValue.isEmpty()) {
         _rights = rightsValue;
     }
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "rights");
 }
 
 //---------------------------------------------------------
@@ -2492,18 +2378,13 @@ void MnxParser::rights()
 
 void MnxParser::score()
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "score");
-    _logger->logDebugTrace("MnxParser::score");
-
     while (_e.readNextStartElement()) {
         if (_e.name() == "mnx-common") {
             mnxCommon();
         } else {
-            skipLogCurrElem();
+            _e.handleUnknownChild();
         }
     }
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "score");
 }
 
 //---------------------------------------------------------
@@ -2516,13 +2397,8 @@ void MnxParser::score()
 
 void MnxParser::subtitle()
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "subtitle");
-    _logger->logDebugTrace("MnxParser::subtitle");
-
-    _subtitle = _e.readElementText();
+    _subtitle = _e.handleElementText();
     _logger->logDebugTrace(QString("subtitle '%1'").arg(_title));
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "subtitle");
 }
 
 //---------------------------------------------------------
@@ -2535,54 +2411,7 @@ void MnxParser::subtitle()
 
 void MnxParser::title()
 {
-    Q_ASSERT(_e.isStartElement() && _e.name() == "title");
-    _logger->logDebugTrace("MnxParser::title");
-
-    _title = _e.readElementText();
+    _title = _e.handleElementText();
     _logger->logDebugTrace(QString("title '%1'").arg(_title));
-
-    Q_ASSERT(_e.isEndElement() && _e.name() == "title");
-}
-
-//---------------------------------------------------------
-//   skipLogCurrElem
-//---------------------------------------------------------
-
-/**
- Skip the current element, log debug as info.
- */
-
-void MnxParser::skipLogCurrElem()
-{
-    _logger->logDebugInfo(QString("skipping '%1'").arg(_e.name().toString()), &_e);
-    _e.skipCurrentElement();
-}
-
-//---------------------------------------------------------
-//   skipLogCurrElem
-//---------------------------------------------------------
-
-/**
- Skip the current element, log debug as info.
- */
-
-void MnxParserGlobal::skipLogCurrElem()
-{
-    _logger->logDebugInfo(QString("skipping '%1'").arg(_e.name().toString()), &_e);
-    _e.skipCurrentElement();
-}
-
-//---------------------------------------------------------
-//   skipLogCurrElem
-//---------------------------------------------------------
-
-/**
- Skip the current element, log debug as info.
- */
-
-void MnxParserPart::skipLogCurrElem()
-{
-    _logger->logDebugInfo(QString("skipping '%1'").arg(_e.name().toString()), &_e);
-    _e.skipCurrentElement();
 }
 } // namespace Ms
