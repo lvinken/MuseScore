@@ -948,6 +948,7 @@ extern Score::FileError loadAndImportMSMR(MasterScore*, const QString& name);
 extern Score::FileError importMidi(MasterScore*, const QString& name);
 extern Score::FileError importGTP(MasterScore*, const QString& name);
 extern Score::FileError importBww(MasterScore*, const QString& path);
+extern Score::FileError importMnx(MasterScore*, const QString& name);
 extern Score::FileError importMusicXml(MasterScore*, const QString&);
 extern Score::FileError importCompressedMusicXml(MasterScore*, const QString&);
 extern Score::FileError importMuseData(MasterScore*, const QString& name);

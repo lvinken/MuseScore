@@ -246,18 +246,41 @@ static Score::FileError doValidateAndImport(Score* score, const QString& name, Q
 //---------------------------------------------------------
 
 static QString topLevelElement(QIODevice* dev)
-      {
-      QString res;
-      QXmlStreamReader e(dev);
+{
+    QString res;
+    QXmlStreamReader e(dev);
 
-      if (e.readNextStartElement())
-            res = e.name().toString();
+    if (e.readNextStartElement()) {
+        res = e.name().toString();
+    }
 
-      dev->seek(0);      // move back for later parsing
+    dev->seek(0);        // move back for later parsing
 
-      return res;
-      }
+    return res;
+}
 
+//---------------------------------------------------------
+//   importMnx
+//    import an MNX-Common file
+//    return Score::FileError::FILE_* errors
+//---------------------------------------------------------
+
+Score::FileError importMnx(MasterScore* score, const QString& name)
+{
+    ScoreLoad sl;             // suppress warnings for undo push/pop
+
+    QFile xmlFile(name);
+    if (!xmlFile.exists()) {
+        return Score::FileError::FILE_NOT_FOUND;
+    }
+    if (!xmlFile.open(QIODevice::ReadOnly)) {
+        qDebug("importMusicXml() could not open MNX-Common file '%s'", qPrintable(name));
+        MScore::lastError = QObject::tr("Could not open MNX-Common file\n%1").arg(name);
+        return Score::FileError::FILE_OPEN_ERROR;
+    }
+
+    return importMnxFromBuffer(score, name, &xmlFile);
+}
 
 //---------------------------------------------------------
 //   importMusicXml
@@ -300,13 +323,14 @@ Score::FileError importMusicXml(MasterScore* score, const QString& name)
         return Score::FileError::FILE_OPEN_ERROR;
     }
 
-      QString type = topLevelElement(&xmlFile);
+    QString type = topLevelElement(&xmlFile);
 
-      // and import it
-      if (type == "mnx")
-            return importMnxFromBuffer(score, name, &xmlFile);
-      else
-            return doValidateAndImport(score, name, &xmlFile);
+    // and import it
+    if (type == "mnx") {
+        return importMnxFromBuffer(score, name, &xmlFile);
+    } else {
+        return doValidateAndImport(score, name, &xmlFile);
+    }
 }
 
 //---------------------------------------------------------
