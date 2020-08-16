@@ -62,6 +62,22 @@ namespace Ms {
 const int MAX_LYRICS       = 16;
 
 //---------------------------------------------------------
+//   RepeatDescription
+//---------------------------------------------------------
+
+struct RepeatDescription
+{
+    bool start { false };
+    bool end { false };
+    int times { 0 };
+    RepeatDescription() = default;                                                              // Constructor
+    RepeatDescription(const RepeatDescription&) = delete;                                       // Copy constructor
+    RepeatDescription(RepeatDescription&&) = default;                                           // Move constructor
+    RepeatDescription& operator=(const RepeatDescription&) = delete;                            // Copy assignment operator
+    RepeatDescription& operator=(RepeatDescription&&) = default;                                // Move assignment operator
+};
+
+//---------------------------------------------------------
 //   SlurDescription
 //---------------------------------------------------------
 
@@ -115,6 +131,7 @@ private:
     void dirgroup(const int measureNr, const Fraction sTime, const int paramStaff = -1);
     void parseInstruction();
     void parseKey(const int measureNr);
+    void parseRepeat(const int measureNr);
     void measure(const int measureNr);
     void tempo();
     void time(const int measureNr);
@@ -129,6 +146,7 @@ private:
     TDuration::DurationType _tempoValue { TDuration::DurationType::V_INVALID };     ///< initial tempo beat value
     std::map<int, KeySigEvent> _keySigs;                    ///< keysig changes (measure based)
     std::map<int, Fraction> _timeSigs;                      ///< timesig changes (measure based)
+    std::map<int, RepeatDescription> _repeats;              ///< repeats (measure based)
 };
 
 //---------------------------------------------------------
@@ -1261,6 +1279,8 @@ void MnxParserGlobal::directions(const int measureNr, const Fraction sTime, cons
             parseInstruction();
         } else if (_e.name() == "key") {
             parseKey(measureNr);
+        } else if (_e.name() == "repeat") {
+            parseRepeat(measureNr);
         } else if (_e.name() == "tempo") {
             tempo();
         } else if (_e.name() == "time") {
@@ -1350,6 +1370,29 @@ void MnxParserGlobal::parseKey(const int measureNr)
 }
 
 //---------------------------------------------------------
+//   parseRepeat
+//---------------------------------------------------------
+
+/**
+ Parse the /mnx/score/cwmnx/global/measure/directions/repeat node.
+ */
+
+void MnxParserGlobal::parseRepeat(const int measureNr)
+{
+    const auto times = _e.attributes().value("times").toInt();
+    const auto type = _e.attributes().value("type");
+    _logger->logDebugTrace(QString("repeat type '%1' times '%2'").arg(type.toString()).arg(times));
+    _e.handleEmptyElement();
+
+    if (type == "start") {
+        _repeats[measureNr].start = true;
+    } else if (type == "end") {
+        _repeats[measureNr].end = true;
+        _repeats[measureNr].times = times > 0 ? times : 2;
+    }
+}
+
+//---------------------------------------------------------
 //   measure
 //---------------------------------------------------------
 
@@ -1410,7 +1453,15 @@ void MnxParserGlobal::parse()
         if (it != _timeSigs.end()) {
             timeSig = it->second;
         }
-        addMeasure(_score, cTime, timeSig, i + 1);
+        Measure* const m = addMeasure(_score, cTime, timeSig, i + 1);
+        if (_repeats.count(i)) {
+            const auto& repeat = _repeats.at(i);
+            _logger->logDebugTrace(QString("measure index %1 repeat start %2 end %3 times %4")
+                                   .arg(i).arg(repeat.start).arg(repeat.end).arg(repeat.times));
+            m->setRepeatStart(repeat.start);
+            m->setRepeatEnd(repeat.end);
+            m->setRepeatCount(repeat.times);
+        }
         cTime += timeSig;
     }
 }
