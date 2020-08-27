@@ -2141,6 +2141,11 @@ static void setStaffLines(Score* score, int staffIdx, int stafflines)
  Parse the /score-partwise/part/measure/attributes/staff-details node.
  */
 
+// notes:
+// staff-tuning is read in pass 1, to enable deciding on the correct staff type at the start of pass 2
+// (future change, required to import TuxGuitar tab files)
+// for a mixed standard / tab part, there is only one instrument, thus staff tuning does not depend on staff number
+
 void MusicXMLParserPass2::staffDetails(const QString& partId)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "staff-details");
@@ -2163,27 +2168,15 @@ void MusicXMLParserPass2::staffDetails(const QString& partId)
 
       int staffIdx = _score->staffIdx(part) + n;
 
-      StringData* t = nullptr;
-      if (_score->staff(staffIdx)->isTabStaff(Fraction(0,1))) {
-            t = new StringData;
-            t->setFrets(25);  // sensible default
-            }
-
       int staffLines = 0;
       while (_e.readNextStartElement()) {
             if (_e.name() == "staff-lines") {
                   // save staff lines for later
                   staffLines = _e.readElementText().toInt();
-                  // for a TAB staff also resize the string table and init with zeroes
-                  if (t) {
-                        if (0 < staffLines)
-                              t->stringList() = QVector<instrString>(staffLines).toList();
-                        else
-                              _logger->logError(QString("illegal staff-lines %1").arg(staffLines), &_e);
-                        }
                   }
             else if (_e.name() == "staff-tuning")
-                  staffTuning(t);
+                  skipLogCurrElem();
+
             else
                   skipLogCurrElem();
             }
@@ -2192,17 +2185,15 @@ void MusicXMLParserPass2::staffDetails(const QString& partId)
             setStaffLines(_score, staffIdx, staffLines);
             }
 
-      if (t) {
-            Instrument* i = part->instrument();
-            if (i->stringData()->strings() == 0) {
-                  // string data not set yet
-                  if (t->strings() > 0)
-                        i->setStringData(*t);
-                  else
-                        _logger->logError("trying to change string data (not supported)", &_e);
-                  }
+      Instrument* i = part->instrument();
+      if (i->stringData()->strings() == 0) {
+            // string data not set yet
+            const auto stringData = _pass1.getMusicXmlPart(partId).stringData();
+            if (stringData.stringList().size() > 0)
+                  i->setStringData(stringData);
             }
       }
+
 //---------------------------------------------------------
 //   staffTuning
 //---------------------------------------------------------
@@ -3669,6 +3660,13 @@ void MusicXMLParserPass2::clef(const QString& partId, Measure* measure, const Fr
       clefs->setTrack(track);
       Segment* s = measure->getSegment(tick.isNotZero() ? SegmentType::Clef : SegmentType::HeaderClef, tick);
       s->add(clefs);
+
+      // fix for TuxGuitar, which generates TAB files using the G clef
+      if (_pass1.getMusicXmlPart(partId).stringData().stringList().size() > 0
+          && _pass1.getMusicXmlPart(partId).stringDataStaffNumber() == clefno
+          && clef == ClefType::G) {
+            st= StaffTypes::TAB_DEFAULT;
+            }
 
       // set the correct staff type
       // note that clef handling should probably done in pass1

@@ -2147,7 +2147,7 @@ void MusicXMLParserPass1::attributes(const QString& partId, const Fraction cTime
             else if (_e.name() == "instruments")
                   _e.skipCurrentElement();  // skip but don't log
             else if (_e.name() == "staff-details")
-                  _e.skipCurrentElement();  // skip but don't log
+                  staffDetails(partId);
             else if (_e.name() == "staves")
                   staves(partId);
             else if (_e.name() == "time")
@@ -2249,6 +2249,164 @@ static bool determineTimeSig(MxmlLogger* logger, const QXmlStreamReader* const x
             }
 
       return true;
+      }
+
+//---------------------------------------------------------
+//   staffDetails
+//---------------------------------------------------------
+
+/**
+ Parse the /score-partwise/part/measure/attributes/staff-details node.
+ */
+
+// notes:
+// staff-tuning is read in pass 1, to enable deciding on the correct staff type at the start of pass 2
+// (future change, required to import TuxGuitar tab files)
+// for a mixed standard / tab part, there is only one instrument, thus staff tuning does not depend on staff number
+// staff lines handling done in pass 2
+
+void MusicXMLParserPass1::staffDetails(const QString& partId)
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "staff-details");
+      _logger->logDebugTrace("MusicXMLParserPass1::staffDetails");
+
+      Part* part = getPart(partId);
+      Q_ASSERT(part);
+      int staves = part->nstaves();
+
+      QString number = _e.attributes().value("number").toString();
+      int n = 1;        // default
+      if (number != "") {
+            n = number.toInt();
+            if (n <= 0 || n > staves) {
+                  _logger->logError(QString("invalid staff-details number %1").arg(number), &_e);
+                  n = 1;
+                  }
+            }
+      n--;               // make zero-based
+      qDebug("partId '%s' part %p staff details number %d", qPrintable(partId), part, n + 1);
+
+      int staffLines = 0;       // TODO: default is 5
+      StringData stringData;
+      stringData.setFrets(25);        // sensible default
+
+      while (_e.readNextStartElement()) {
+            if (_e.name() == "staff-lines") {
+                  // save staff lines for later
+                  staffLines = _e.readElementText().toInt();
+                  // for a TAB staff also resize the string table and init with zeroes
+                  if (0 < staffLines)
+                        stringData.stringList() = QVector<instrString>(staffLines).toList();
+                  else
+                        _logger->logError(QString("illegal staff-lines %1").arg(staffLines), &_e);
+                  }
+            else if (_e.name() == "staff-tuning")
+                  staffTuning(partId, stringData);
+            else
+                  skipLogCurrElem();
+            }
+
+      // dump result
+      /*
+      qDebug("begin string data staff %d", n + 1);
+      qDebug("frets %d", stringData.frets());
+      for (const auto& x : stringData.stringList())
+            qDebug("pitch %d", x.pitch);
+      qDebug("end string data");
+       */
+
+      // TODO: check consistency (a.o. staffLines versus actually defined strings)
+
+      // if read, copy to MusicXmlPart
+      if (stringData.stringList().size() > 0) {
+            if (_parts[partId].stringData().stringList().size() == 0) {
+                  _parts[partId].setStringDataStaffNumber(n);
+                  _parts[partId].setStringData(stringData);
+                  }
+            else {
+                  _logger->logError("trying to change string data (not supported)", &_e);
+                  }
+            }
+      }
+
+//---------------------------------------------------------
+//   MusicXMLStepAltOct2Pitch
+//---------------------------------------------------------
+
+/**
+ Convert MusicXML \a step (0=C, 1=D, etc.) / \a alter / \a octave to midi pitch.
+ Note: same code is in pass 1 and in pass 2.
+ TODO: combine
+ */
+
+static int MusicXMLStepAltOct2Pitch(int step, int alter, int octave)
+      {
+      //                       c  d  e  f  g  a   b
+      static int table[7]  = { 0, 2, 4, 5, 7, 9, 11 };
+      if (step < 0 || step > 6) {
+            qDebug("MusicXMLStepAltOct2Pitch: illegal step %d", step);
+            return -1;
+            }
+      int pitch = table[step] + alter + (octave+1) * 12;
+
+      if (pitch < 0)
+            pitch = -1;
+      if (pitch > 127)
+            pitch = -1;
+
+      return pitch;
+      }
+
+//---------------------------------------------------------
+//   staffTuning
+//---------------------------------------------------------
+
+/**
+ Parse the /score-partwise/part/measure/attributes/staff-details/staff-tuning node.
+ */
+
+void MusicXMLParserPass1::staffTuning(const QString& partId, StringData& stringData)
+      {
+      Q_ASSERT(_e.isStartElement() && _e.name() == "staff-tuning");
+      _logger->logDebugTrace("MusicXMLParserPass2::staffTuning");
+      /*
+                  // ignore <staff-tuning> if not a TAB staff
+                  if (!t) {
+                        _logger->logError("<staff-tuning> on non-TAB staff", &_e);
+                        skipLogCurrElem();
+                        return;
+                  }
+      */
+      int line   = _e.attributes().value("line").toInt();
+      int step   = 0;
+      int alter  = 0;
+      int octave = 0;
+      while (_e.readNextStartElement()) {
+            if (_e.name() == "tuning-alter")
+                  alter = _e.readElementText().toInt();
+            else if (_e.name() == "tuning-octave")
+                  octave = _e.readElementText().toInt();
+            else if (_e.name() == "tuning-step") {
+                  QString strStep = _e.readElementText();
+                  int pos = QString("CDEFGAB").indexOf(strStep);
+                  if (strStep.size() == 1 && pos >=0 && pos < 7)
+                        step = pos;
+                  else
+                        _logger->logError(QString("invalid step '%1'").arg(strStep), &_e);
+                  }
+            else
+                  skipLogCurrElem();
+            }
+      qDebug("string %d tuning step/alter/oct %d/%d/%d", line, step, alter, octave);
+      if (0 < line && line <= stringData.stringList().size()) {
+            int pitch = MusicXMLStepAltOct2Pitch(step, alter, octave);
+            if (pitch >= 0)
+                  stringData.stringList()[line - 1].pitch = pitch;
+            else
+                  _logger->logError(QString("invalid string %1 tuning step/alter/oct %2/%3/%4")
+                                    .arg(line).arg(step).arg(alter).arg(octave),
+                                    &_e);
+            }
       }
 
 //---------------------------------------------------------

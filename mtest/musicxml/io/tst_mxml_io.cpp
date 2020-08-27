@@ -172,6 +172,7 @@ private slots:
       void tablature3() { mxmlIoTest("testTablature3"); }
       void tablature4() { mxmlIoTest("testTablature4"); }
       void tablature5() { mxmlIoTestRef("testTablature5"); }
+      void tablature6() { mxmlIoTestRef("testTablature6"); }
       void tboxAboveBelow1() { mxmlMscxExportTestRef("testTboxAboveBelow1"); }
       void tboxAboveBelow2() { mxmlMscxExportTestRef("testTboxAboveBelow2"); }
       void tboxAboveBelow3() { mxmlMscxExportTestRef("testTboxAboveBelow3"); }

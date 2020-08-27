@@ -14,6 +14,7 @@
 #define __IMPORTXMLFIRSTPASS_H__
 
 #include "libmscore/fraction.h"
+#include "libmscore/stringdata.h"
 #include "musicxmlsupport.h"
 
 namespace Ms {
@@ -71,6 +72,10 @@ public:
       const LyricNumberHandler& lyricNumberHandler() const { return _lyricNumberHandler; }
       void setMaxStaff(const int staff);
       int maxStaff() const { return _maxStaff; }
+      void setStringData(const StringData& stringData) { _stringData = stringData; }
+      const StringData& stringData() const { return _stringData; }
+      void setStringDataStaffNumber(const int stringDataStaffNumber) { _stringDataStaffNumber = stringDataStaffNumber; }
+      int stringDataStaffNumber() const { return _stringDataStaffNumber; }
 private:
       QString id;
       QString name;
@@ -82,6 +87,8 @@ private:
       QVector<MusicXmlOctaveShiftList> octaveShifts; // octave shift list for every staff
       LyricNumberHandler _lyricNumberHandler;
       int _maxStaff = 0;                      // maximum staff value found (1 based), 0 = none
+      StringData _stringData;                 // note: changing string data within a part not (yet) supported
+      int _stringDataStaffNumber = 0;            // zero based staff number for which staff details were read
       };
 
 } // namespace Ms

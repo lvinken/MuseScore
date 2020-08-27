@@ -167,6 +167,8 @@ public:
 private:
       // functions
       void setFirstInstr(const QString& id, const Fraction stime);
+      void staffDetails(const QString& partId);
+      void staffTuning(const QString& partId, StringData& stringData);
 
       // generic pass 1 data
       QXmlStreamReader _e;
