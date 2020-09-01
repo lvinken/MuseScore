@@ -4915,19 +4915,26 @@ static void figuredBass(XmlWriter& xml, int strack, int etrack, int track, const
                   if (track == wtrack) {
                         if (e->type() == ElementType::FIGURED_BASS) {
                               const FiguredBass* fb = dynamic_cast<const FiguredBass*>(e);
-                              //qDebug("figuredbass() track %d seg %p fb %p seg %p tick %d ticks %d cr %p tick %d ticks %d",
-                              //       track, seg, fb, fb->segment(), fb->segment()->tick(), fb->ticks(), cr, cr->tick(), cr->actualTicks());
+                              /*
+                              qDebug("figuredbass() track %d seg %p fb %p seg %p tick %s ticks %s cr %p tick %s ticks %s",
+                                     track, seg, fb, fb->segment(),
+                                     qPrintable(fb->segment()->tick().print()), qPrintable(fb->ticks().print()),
+                                     cr, qPrintable(cr->tick().print()), qPrintable(cr->actualTicks().print()));
+                               */
                               bool extend = fb->ticks() > cr->actualTicks();
                               if (extend) {
-                                    //qDebug("figuredbass() extend to %d + %d = %d",
-                                    //       cr->tick(), fb->ticks(), cr->tick() + fb->ticks());
+                                    /*
+                                    qDebug("figuredbass() extend to %s + %s = %s",
+                                           qPrintable(cr->tick().print()),
+                                           qPrintable(fb->ticks().print()), qPrintable((cr->tick() + fb->ticks()).print()));
+                                     */
                                     fbMap.insert(strack, fb);
                                     }
                               else
                                     fbMap.remove(strack);
                               const Fraction crEndTick = cr->tick() + cr->actualTicks();
                               const Fraction fbEndTick = fb->segment()->tick() + fb->ticks();
-                              const bool writeDuration = fb->ticks() < cr->actualTicks();
+                              const bool writeDuration = fb->ticks().isNotZero() && fb->ticks() < cr->actualTicks();
                               fb->writeMusicXML(xml, true, crEndTick.ticks(), fbEndTick.ticks(),
                                                 writeDuration, divisions);
 
@@ -4952,11 +4959,11 @@ static void figuredBass(XmlWriter& xml, int strack, int etrack, int track, const
                   Fraction fbEndTick = fb->segment()->tick() + fb->ticks();
                   bool writeDuration = fb->ticks() < cr->actualTicks();
                   if (cr->tick() < fbEndTick) {
-                        //qDebug("figuredbass() at tick %d extend only", cr->tick());
+                        //qDebug("figuredbass() at tick %s extend only", qPrintable(cr->tick().print()));
                         fb->writeMusicXML(xml, false, crEndTick.ticks(), fbEndTick.ticks(), writeDuration, divisions);
                         }
                   if (fbEndTick <= crEndTick) {
-                        //qDebug("figuredbass() at tick %d extend done", cr->tick() + cr->actualTicks());
+                        //qDebug("figuredbass() at tick %s extend done", qPrintable((cr->tick() + cr->actualTicks()).print()));
                         fbMap.remove(strack);
                         }
                   }
