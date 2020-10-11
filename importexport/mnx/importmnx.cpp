@@ -182,7 +182,6 @@ public:
 
 private:
     // functions
-    Fraction beamed(Measure* measure, const Fraction sTime, const int track, Tuplet* tuplet);
     void clef(const int paramStaff);
     void debugDumpData();
     void directions(const Fraction sTime, const int paramStaff = -1);
@@ -1552,33 +1551,6 @@ Fraction MnxParserGlobal::timeSig(const int measureNr) const
 //---------------------------------------------------------
 
 //---------------------------------------------------------
-//   beamed
-//---------------------------------------------------------
-
-/**
- Parse the /mnx/score/cwmnx/part/measure/sequence/beamed node.
- */
-
-// TODO: actually set the beam (currently the notes are read, but beam handling is still automatic)
-
-Fraction MnxParserPart::beamed(Measure* measure, const Fraction sTime, const int track, Tuplet* tuplet)
-{
-    Fraction seqTime(0, 1);         // time in this sequence
-
-    while (_e.readNextStartElement()) {
-        if (_e.name() == "event") {
-            seqTime += event(measure, sTime + seqTime, track, tuplet);
-        } else if (_e.name() == "tuplet") {
-            seqTime += parseTuplet(measure, sTime + seqTime, track);
-        } else {
-            _e.handleUnknownChild();
-        }
-    }
-
-    return seqTime;
-}
-
-//---------------------------------------------------------
 //   debugDumpData
 //---------------------------------------------------------
 
@@ -2119,9 +2091,7 @@ void MnxParserPart::sequence(Measure* measure, const Fraction sTime, std::vector
         auto track = determineTrack(_part, staff, staffSeqCount.at(staff));
 
         while (_e.readNextStartElement()) {
-            if (_e.name() == "beamed") {
-                seqTime += beamed(measure, sTime + seqTime, track, nullptr);
-            } else if (_e.name() == "directions") {
+            if (_e.name() == "directions") {
                 directions(sTime + seqTime, staff);
             } else if (_e.name() == "dynamics") {
                 dynamics(sTime + seqTime, staff);
@@ -2248,9 +2218,7 @@ Fraction MnxParserPart::parseTuplet(Measure* measure, const Fraction sTime, cons
     setTupletParameters(tuplet, actual, normal);
 
     while (_e.readNextStartElement()) {
-        if (_e.name() == "beamed") {
-            tupTime += beamed(measure, sTime + tupTime, track, tuplet);
-        } else if (_e.name() == "event") {
+        if (_e.name() == "event") {
             tupTime += event(measure, sTime + tupTime, track, tuplet);
         } else {
             _e.handleUnknownChild();
