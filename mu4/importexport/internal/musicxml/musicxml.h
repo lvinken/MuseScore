@@ -53,25 +53,29 @@ const int MAX_NUMBER_LEVEL = 6; // maximum number of overlapping MusicXML object
 //    a single parsed MusicXML credit-words element
 //---------------------------------------------------------
 
-struct CreditWords {
-    int page;
-    double defaultX;
-    double defaultY;
-    QString justify;
-    QString hAlign;
-    QString vAlign;
-    QString words;
-    CreditWords(int p, double a, double b, QString c, QString d, QString e, QString f)
-    {
-        page = p;
-        defaultX = a;
-        defaultY = b;
-        justify  = c;
-        hAlign   = d;
-        vAlign   = e;
-        words    = f;
-    }
-};
+      struct CreditWords {
+            int page;
+            QString type;
+            double defaultX;
+            double defaultY;
+            double fontSize;
+            QString justify;
+            QString hAlign;
+            QString vAlign;
+            QString words;
+            CreditWords(int p, QString tp, double dx, double dy, double fs, QString j, QString ha, QString va, QString w)
+            {
+                  page = p;
+                  type = tp;
+                  defaultX = dx;
+                  defaultY = dy;
+                  fontSize = fs;
+                  justify  = j;
+                  hAlign   = ha;
+                  vAlign   = va;
+                  words    = w;
+            }
+      };
 
 typedef  QList<CreditWords*> CreditWordsList;
 typedef  CreditWordsList::iterator iCreditWords;
