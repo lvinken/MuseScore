@@ -251,6 +251,32 @@ void domNotImplemented(const QDomElement& e)
             qDebug("  text node <%s>", qPrintable(e.toText().data()));
       }
 
+//---------------------------------------------------------
+//   xmlReaderLocation
+//---------------------------------------------------------
+
+QString xmlReaderLocation(const QXmlStreamReader& e)
+      {
+      return QObject::tr("line %1 column %2").arg(e.lineNumber()).arg(e.columnNumber());
+      }
+
+//---------------------------------------------------------
+//   checkAtEndElement
+//---------------------------------------------------------
+
+QString checkAtEndElement(const QXmlStreamReader& e, const QString& expName)
+      {
+      if (e.isEndElement() && e.name() == expName) {
+            return "";
+            }
+
+      QString res = QObject::tr("expected: 'EndElement %1' actual: '%2 %3'")
+            .arg(expName)
+            .arg(e.tokenString())
+            .arg(e.name().toString());
+      return res;
+      }
+
 
 //---------------------------------------------------------
 //   stringToInt
