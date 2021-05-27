@@ -4577,10 +4577,13 @@ Note* MusicXMLParserPass2::note(const QString& partId,
 
             if (mnd.calculatedDuration().isValid()
                 && mnd.specifiedDuration().isValid()
-                && mnd.calculatedDuration().isNotZero()) {
+                && mnd.calculatedDuration().isNotZero()
+                && mnd.calculatedDuration() != mnd.specifiedDuration()) {
+
                   const Fraction frDurationMult { mnd.specifiedDuration() / mnd.calculatedDuration() };
                   const double dblDurationMult { 1.0 * frDurationMult.numerator() / frDurationMult.denominator() };
                   const int iDurationMult { static_cast<int>(round(1000 * dblDurationMult + 0.5)) }; // TODO: fix rounding error
+
                   qDebug("spec %s calc %s frdurmult %s %g %d",
                          qPrintable(mnd.specifiedDuration().print()),
                          qPrintable(mnd.calculatedDuration().print()),
@@ -4596,7 +4599,7 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                   note->setPlayEvents(nel);
                   if (c)
                         c->setPlayEventType(PlayEventType::User);
-            }
+                  }
 
             if (velocity > 0) {
                   note->setVeloType(Note::ValueType::USER_VAL);
