@@ -4580,21 +4580,24 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                 && mnd.calculatedDuration().isNotZero()
                 && mnd.calculatedDuration() != mnd.specifiedDuration()) {
 
+                  // TODO: prevent overflow by using reduce
+                  // -> probably ow risk
+                  // TODO: check Sibelius / MuseScore rounding errors (don't set duration in that case)
                   const Fraction frDurationMult { mnd.specifiedDuration() / mnd.calculatedDuration() };
-                  const double dblDurationMult { 1.0 * frDurationMult.numerator() / frDurationMult.denominator() };
-                  const int iDurationMult { static_cast<int>(round(1000 * dblDurationMult + 0.5)) }; // TODO: fix rounding error
+                  const Fraction altfrDurationMult = 1000 * frDurationMult;
+                  const int iAltfrDurationMult = altfrDurationMult.numerator() / altfrDurationMult.denominator();
 
-                  qDebug("spec %s calc %s frdurmult %s %g %d",
+                  qDebug("spec %s calc %s frdurmult %s altfrDurationMult %s %d",
                          qPrintable(mnd.specifiedDuration().print()),
                          qPrintable(mnd.calculatedDuration().print()),
                          qPrintable(frDurationMult.print()),
-                         dblDurationMult,
-                         iDurationMult
+                         qPrintable(altfrDurationMult.print()),
+                         iAltfrDurationMult
                         );
 
                   NoteEventList nel;
                   NoteEvent ne;
-                  ne.setLen(iDurationMult);
+                  ne.setLen(iAltfrDurationMult);
                   nel.append(ne);
                   note->setPlayEvents(nel);
                   if (c)
