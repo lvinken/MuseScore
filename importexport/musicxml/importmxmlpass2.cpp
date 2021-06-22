@@ -4326,20 +4326,20 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                   beam(bm);
             else if (_e.name() == "chord") {
                   chord = true;
-                  _e.readNext();
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             else if (_e.name() == "cue") {
                   cue = true;
-                  _e.readNext();
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             else if (_e.name() == "grace") {
                   grace = true;
                   graceSlash = _e.attributes().value("slash") == "yes";
-                  _e.readNext();
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             else if (_e.name() == "instrument") {
                   instrumentId = _e.attributes().value("id").toString();
-                  _e.readNext();
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             else if (_e.name() == "lyric") {
                   // lyrics on grace notes not (yet) supported by MuseScore
@@ -4692,16 +4692,16 @@ void MusicXMLParserPass2::notePrintSpacingNo(Fraction& dura)
       while (_e.readNextStartElement()) {
             if (_e.name() == "chord") {
                   chord = true;
-                  _e.readNext();
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             else if (_e.name() == "duration")
                   duration(dura);
             else if (_e.name() == "grace") {
                   grace = true;
-                  _e.readNext();
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             else
-                  _e.skipCurrentElement();        // skip but don't log
+                  _e.skipCurrentElement();  // skip but don't log
             }
 
       // don't count chord or grace note duration
@@ -5270,7 +5270,7 @@ void MusicXMLParserLyric::parse()
             else if (_e.name() == "extend") {
                   hasExtend = true;
                   extendType = _e.attributes().value("type").toString();
-                  _e.readNext();
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             else if (_e.name() == "syllabic") {
                   auto syll = _e.readElementText();
@@ -5342,7 +5342,7 @@ void MusicXMLParserNotations::slur()
             _slurStop = true;
             }
 
-      _e.readNext();
+      _e.skipCurrentElement();  // skip but don't log
       }
 
 //---------------------------------------------------------
@@ -5449,7 +5449,7 @@ void MusicXMLParserNotations::tied()
             _logger->logError(QString("unknown tied type %1").arg(tiedType), &_e);
             }
 
-      _e.readNext();
+      _e.skipCurrentElement();  // skip but don't log
       }
 
 //---------------------------------------------------------
@@ -5469,7 +5469,7 @@ void MusicXMLParserNotations::dynamics()
                   _dynamicsList.push_back(_e.readElementText());
             else {
                   _dynamicsList.push_back(_e.name().toString());
-                  _e.readNext();
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             }
       }
@@ -5493,8 +5493,7 @@ void MusicXMLParserNotations::articulations()
                   Notation artic = Notation::notationWithAttributes(_e.name().toString(),
                                                                     _e.attributes(), "articulations", id);
                   _notations.push_back(artic);
-                  _e.readNext();
-                  continue;
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             else if (_e.name() == "breath-mark") {
                   _breath = SymId::breathMarkComma;
@@ -5503,7 +5502,7 @@ void MusicXMLParserNotations::articulations()
                   }
             else if (_e.name() == "caesura") {
                   _breath = SymId::caesura;
-                  _e.readNext();
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             else if (_e.name() == "doit"
                      || _e.name() == "falloff"
@@ -5513,7 +5512,7 @@ void MusicXMLParserNotations::articulations()
                                                                     _e.attributes(), "articulations");
                   artic.setSubType(_e.name().toString());
                   _notations.push_back(artic);
-                  _e.readNext();
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             else {
                   skipLogCurrElem();
@@ -5539,12 +5538,11 @@ void MusicXMLParserNotations::ornaments()
                   Notation notation = Notation::notationWithAttributes(_e.name().toString(),
                                                                        _e.attributes(), "articulations", id);
                   _notations.push_back(notation);
-                  _e.readNext();
-                  continue;
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             else if (_e.name() == "trill-mark") {
                   trillMark = true;
-                  _e.readNext();
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             else if (_e.name() == "wavy-line") {
                   auto wavyLineTypeWasStart = (_wavyLineType == "start");
@@ -5561,7 +5559,7 @@ void MusicXMLParserNotations::ornaments()
                   if (wavyLineTypeWasStart && _wavyLineType == "stop") {
                         _wavyLineType = "startstop";
                         }
-                  _e.readNext();
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             else if (_e.name() == "tremolo") {
                   _tremoloType = _e.attributes().value("type").toString();
@@ -5600,8 +5598,7 @@ void MusicXMLParserNotations::technical()
                   Notation notation = Notation::notationWithAttributes(_e.name().toString(),
                                                                        _e.attributes(), "technical", id);
                   _notations.push_back(notation);
-                  _e.readNext();
-                  continue;
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             else if (_e.name() == "fingering" || _e.name() == "fret" || _e.name() == "pluck" || _e.name() == "string") {
                   Notation notation = Notation::notationWithAttributes(_e.name().toString(),
@@ -5611,7 +5608,6 @@ void MusicXMLParserNotations::technical()
                   }
             else if (_e.name() == "harmonic") {
                   harmonic();
-                  _e.readNext();
                   }
             else {
                   skipLogCurrElem();
@@ -5636,7 +5632,7 @@ void MusicXMLParserNotations::harmonic()
             QString name = _e.name().toString();
             if (name == "natural") {
                   notation.setSubType(name);
-                  _e.readNext();
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             else { // TODO: add artificial harmonic when supported by musescore
                   _logger->logError(QString("unsupported harmonic type/pitch '%1'").arg(name), &_e);
@@ -6078,7 +6074,7 @@ void MusicXMLParserNotations::parse()
             if (_e.name() == "arpeggiate") {
                   _arpeggioType = _e.attributes().value("direction").toString();
                   if (_arpeggioType == "") _arpeggioType = "none";
-                  _e.readNext();
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             else if (_e.name() == "articulations") {
                   articulations();
@@ -6094,7 +6090,7 @@ void MusicXMLParserNotations::parse()
                   }
             else if (_e.name() == "non-arpeggiate") {
                   _arpeggioType = "non-arpeggiate";
-                  _e.readNext();
+                  _e.skipCurrentElement();  // skip but don't log
                   }
             else if (_e.name() == "ornaments") {
                   ornaments();
