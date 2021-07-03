@@ -926,8 +926,10 @@ static void handleTupletStart(const ChordRest* const cr, Tuplet*& tuplet,
       tuplet->setTrack(cr->track());
       tuplet->setRatio(Fraction(actualNotes, normalNotes));
       tuplet->setTick(cr->tick());
-      tuplet->setBracketType(tupletDesc.bracket);
-      tuplet->setNumberType(tupletDesc.shownumber);
+      tuplet->setProperty(Pid::BRACKET_TYPE, static_cast<int>(tupletDesc.bracket));
+      tuplet->setPropertyFlags(Pid::BRACKET_TYPE, PropertyFlags::UNSTYLED);
+      tuplet->setProperty(Pid::NUMBER_TYPE, static_cast<int>(tupletDesc.shownumber));
+      tuplet->setPropertyFlags(Pid::NUMBER_TYPE, PropertyFlags::UNSTYLED);
       // TODO type, placement, bracket
       tuplet->setParent(cr->measure());
       }
