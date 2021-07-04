@@ -5841,8 +5841,10 @@ static void addGlissandoSlide(const Notation& notation, Note* note,
                   gliss->setTick(tick);
                   gliss->setTrack(track);
                   gliss->setParent(note);
-                  if (glissandoColor.isValid())
-                        gliss->setColor(glissandoColor);
+                  if (glissandoColor.isValid()) {
+                        gliss->setProperty(Pid::COLOR, glissandoColor);
+                        gliss->setPropertyFlags(Pid::COLOR, PropertyFlags::UNSTYLED);
+                        }
                   gliss->setProperty(Pid::GLISS_TEXT, glissandoText);
                   gliss->setPropertyFlags(Pid::GLISS_TEXT, PropertyFlags::UNSTYLED);
                   gliss->setGlissandoType(glissandoTag == 0 ? GlissandoType::STRAIGHT : GlissandoType::WAVY);
