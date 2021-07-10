@@ -2479,14 +2479,18 @@ void MusicXMLParserDirection::direction(const QString& partId,
 
             if (t) {
                   if (_enclosure == "circle") {
-                        t->setFrameType(FrameType::CIRCLE);
+                        t->setProperty(Pid::FRAME_TYPE, static_cast<int>(FrameType::CIRCLE));
+                        t->setPropertyFlags(Pid::FRAME_TYPE, PropertyFlags::UNSTYLED);
                         }
                   else if (_enclosure == "none") {
-                        t->setFrameType(FrameType::NO_FRAME);
+                        t->setProperty(Pid::FRAME_TYPE, static_cast<int>(FrameType::NO_FRAME));
+                        t->setPropertyFlags(Pid::FRAME_TYPE, PropertyFlags::UNSTYLED);
                         }
                   else if (_enclosure == "rectangle") {
-                        t->setFrameType(FrameType::SQUARE);
-                        t->setFrameRound(0);
+                        t->setProperty(Pid::FRAME_TYPE, static_cast<int>(FrameType::SQUARE));
+                        t->setPropertyFlags(Pid::FRAME_TYPE, PropertyFlags::UNSTYLED);
+                        t->setProperty(Pid::FRAME_ROUND, 0);
+                        t->setPropertyFlags(Pid::FRAME_ROUND, PropertyFlags::UNSTYLED);
                         }
 
 //TODO:ws            if (_hasDefaultY) t->textStyle().setYoff(_defaultY);
