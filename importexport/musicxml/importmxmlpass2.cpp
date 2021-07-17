@@ -986,6 +986,27 @@ static void addArticulationToChord(const Notation& notation, ChordRest* cr)
       const QString place = notation.attribute("placement");
       Articulation* na = new Articulation(articSym, cr->score());
 
+            if (notation.name() == "strong-accent") {
+                  // MusicXML spec: default value is up
+                  if (dir == "" || dir == "up") {
+                        na->setProperty(Pid::DIRECTION, QVariant::fromValue<Direction>(Direction::UP));
+                  }
+                  else {
+                        na->setProperty(Pid::DIRECTION, QVariant::fromValue<Direction>(Direction::DOWN));
+                  }
+                  na->setPropertyFlags(Pid::DIRECTION, PropertyFlags::UNSTYLED);
+                  // MusicXML spec provides no default value, use MuseScore default if not set
+                  if (place == "above") {
+                        na->setProperty(Pid::ARTICULATION_ANCHOR, 0); // AboveStaff, no definition found
+                        na->setPropertyFlags(Pid::ARTICULATION_ANCHOR,PropertyFlags::UNSTYLED);
+                  }
+                  else if (place == "below") {
+                        na->setProperty(Pid::ARTICULATION_ANCHOR, 1); // BelowStaff, no definition found
+                        na->setPropertyFlags(Pid::ARTICULATION_ANCHOR,PropertyFlags::UNSTYLED);
+                  }
+            }
+            else {
+                  // for now, original code for all other articulations
       if (!dir.isNull()) // Only for case where XML attribute is present (isEmpty wouldn't work)
             na->setUp(dir.isEmpty() || dir == "up");
       setElementPropertyFlags(na, Pid::DIRECTION, dir);
@@ -995,6 +1016,7 @@ static void addArticulationToChord(const Notation& notation, ChordRest* cr)
       else if (place == "below" || dir == "down")
             na->setAnchor(ArticulationAnchor::BOTTOM_STAFF);
       setElementPropertyFlags(na, Pid::DIRECTION, dir, place);
+            }
 
       cr->add(na);
       }
