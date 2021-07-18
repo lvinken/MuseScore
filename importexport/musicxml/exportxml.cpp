@@ -576,8 +576,19 @@ void Technical::etag(XmlWriter& xml)
 
 static QString color2xml(const Element* el)
       {
-      if (el->color() != MScore::defaultColor)
-            return QString(" color=\"%1\"").arg(el->color().name().toUpper());
+      const auto prop = el->getProperty(Pid::COLOR);
+      const auto color = prop.value<QColor>();
+#if 0
+      qDebug("el %p color() %s (%s) Pid::COLOR %d %s",
+                   el,
+                   qPrintable(el->color().name().toUpper()),
+                   el->color() == MScore::defaultColor ? "default" : "custom",
+                   Pid::COLOR,
+                   qPrintable(color.name().toUpper())
+                   );
+#endif
+      if (color != MScore::defaultColor)
+            return QString(" color=\"%1\"").arg(color.name().toUpper());
       else
             return "";
       }
