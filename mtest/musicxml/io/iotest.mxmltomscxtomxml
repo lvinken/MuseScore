@@ -1,0 +1,88 @@
+#!/bin/bash
+
+# simple standalone iotest for MusicXML import
+# run in mtest/musicxml/io directory as "./iotest.msxmltomscxtomxml"
+#
+# read a list of MusicXML files
+# one by one:
+# - convert to MuseScore format
+# - read MuseScore file
+# - convert to MusicXML format
+# - and compare with original
+
+# Linux
+#MSCORE=../../../build.debug/mscore/mscore
+# OS X terminal build
+#MSCORE=../../../applebuild/mscore.app/Contents/MacOS/mscore
+# OS X Xcode build
+#MSCORE=../../../build.xcode/mscore/Debug/mscore.app/Contents/MacOS/mscore
+# OS X Xcode build (since early 2020)
+MSCORE=../../../build.xcode/main/Debug/mscore.app/Contents/MacOS/mscore
+
+echo "----------------------------------------------"
+echo "Regression Tests for MuseScore MusicXML import"
+echo "----------------------------------------------"
+echo
+$MSCORE -v
+echo
+
+#musicxml_files=`cat tst_mxml_to_mscx.txt`
+musicxml_files="testArpGliss1 testArpGliss3 testNoteAttributes1"
+testcount=0
+failures=0
+
+rwtestXml() {
+      echo -n "testing load/save $1";
+      $MSCORE $1 -d -o mops.mscx &> /dev/null
+      $MSCORE mops.mscx -d -o mops.xml &> /dev/null
+      if diff -q $1 mops.xml &> /dev/null; then
+            echo -e "\r\t\t\t\t\t\t...OK";
+      else
+            echo -e "\r\t\t\t\t\t\t...FAILED";
+            failures=$(($failures+1));
+            #echo "+++++++++DIFF++++++++++++++"
+            diff $1 mops.xml
+            #echo "+++++++++++++++++++++++++++"
+      fi
+      rm mops.mscx
+      rm mops.xml
+      testcount=$(($testcount+1))
+      }
+
+rwtestXmlRef() {
+      echo -n "testing load/save $1";
+      REF=`basename $1 .xml`_ref.mscx
+      $MSCORE $1 -d -o mops.mscx &> /dev/null
+      if diff -q $REF mops.mscx &> /dev/null; then
+            echo -e "\r\t\t\t\t\t\t...OK";
+      else
+            echo -e "\r\t\t\t\t\t\t...FAILED";
+            failures=$(($failures+1));
+            echo "+++++++++DIFF++++++++++++++"
+            diff $REF mops.mscx
+            echo "+++++++++++++++++++++++++++"
+      fi
+      rm mops.mscx
+      testcount=$(($testcount+1))
+      }
+
+rwtestAllXml() {
+      for f in $musicxml_files; do
+            rwtestXml ${f}.xml
+      done
+      }
+
+usage() {
+      echo "usage: $0"
+      echo
+      exit 1
+      }
+
+if [ $# -eq 0 ]; then
+      rwtestAllXml
+else
+      usage
+fi
+
+echo
+echo "$testcount test(s), $failures failure(s)"
