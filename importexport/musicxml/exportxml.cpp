@@ -2704,12 +2704,10 @@ void ExportMusicXml::chordAttributes(Chord* chord, Notations& notations, Technic
             auto mxmlArtic = symIdToArtic(sid);
 
             if (mxmlArtic != "") {
-                  if (sid == SymId::articMarcatoAbove || sid == SymId::articMarcatoBelow) {
-                        if (a->up())
-                              mxmlArtic += " type=\"up\"";
-                        else
-                              mxmlArtic += " type=\"down\"";
-                        }
+                  if (sid == SymId::articMarcatoAbove)
+                        mxmlArtic += " type=\"up\"";
+                  else if (sid == SymId::articMarcatoBelow)
+                        mxmlArtic += " type=\"down\"";
 
                   notations.tag(_xml);
                   articulations.tag(_xml);
