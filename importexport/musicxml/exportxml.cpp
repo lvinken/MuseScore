@@ -3857,9 +3857,7 @@ static bool findMetronome(const QList<TextFragment>& list,
 static void beatUnit(XmlWriter& xml, const TDuration dur)
       {
       int dots = dur.dots();
-      QString unit;
-      findUnit(dur.type(), unit);
-      xml.tag("beat-unit", unit);
+      xml.tag("beat-unit", dur.name());
       while (dots > 0) {
             xml.tagE("beat-unit-dot");
             --dots;
