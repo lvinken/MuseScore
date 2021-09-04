@@ -224,7 +224,9 @@ void Beam::draw(QPainter* painter) const
             d = M_PI/6.0;
       double ww = lw2 / sin(M_PI_2 - atan(d));
 
+            //int i = 0;
       for (const QLineF* bs1 : beamSegments) {
+            //qDebug("beam %p segment %d x1 %g y1 %g x2 %g y2 %g", this, i, bs1->x1(), bs1->y1(), bs1->x2(), bs1->y2());
             painter->drawPolygon(
                QPolygonF({
                   QPointF(bs1->x1(), bs1->y1() - ww),
@@ -233,6 +235,7 @@ void Beam::draw(QPainter* painter) const
                   QPointF(bs1->x1(), bs1->y1() + ww),
                   }),
             Qt::OddEvenFill);
+            //i++;
             }
       }
 
@@ -1540,6 +1543,7 @@ void Beam::computeStemLen(const std::vector<ChordRest*>& cl, qreal& py1, int bea
 
 void Beam::layout2(std::vector<ChordRest*>crl, SpannerSegmentType, int frag)
       {
+      qDebug("beam %p", this);
       if (_distribute)
             score()->respace(&crl);       // fix horizontal spacing of stems
 
@@ -1723,8 +1727,18 @@ void Beam::layout2(std::vector<ChordRest*>crl, SpannerSegmentType, int frag)
 
             // loop through the different groups for this beam level
             // inner loop will advance through chordrests within each group
+#if 0
+            for (size_t i = 0; i < n; ++i) {
+                  qDebug("beam %p i %zu crl[i] %p", this, i, crl[i]);
+            }
+#endif
             for (size_t i = 0; i < n;) {
+                  // the body of this for loop may create a single BeamSegment either starting at cr1
+                  // or as a broken segment connected to cr1
+                  // when more than 2 ChordRest are connect to a beam, a single BeamSegment is created
                   ChordRest* cr1 = crl[i];
+                  const size_t i_for_cr1 = i;
+                  //qDebug("beam %p i %zu cr1 %p", this, i, cr1);
                   int l1 = cr1->durationType().hooks() - 1;
 
                   if ((cr1->type() == ElementType::REST && i) || l1 < beamLevel) {
@@ -1757,6 +1771,7 @@ void Beam::layout2(std::vector<ChordRest*>crl, SpannerSegmentType, int frag)
                   // found end of group
                   size_t chordRestEndGroupIndex = i;
                   ChordRest* cr2 = crl[chordRestEndGroupIndex - 1];
+                  //qDebug("beam %p i %zu cr2 %p", this, i, cr2);
 
                   // if group covers whole beam, we are still at base level
                   if (currentChordRestIndex == 0 && chordRestEndGroupIndex == n)
@@ -1805,12 +1820,22 @@ void Beam::layout2(std::vector<ChordRest*>crl, SpannerSegmentType, int frag)
 
                   qreal stemWidth  = (cr1->isChord() && toChord(cr1)->stem()) ? toChord(cr1)->stem()->lineWidthMag() : 0.0;
                   qreal x2         = cr1->stemPosX() + cr1->pageX() - _pagePos.x();
+                  //qDebug("beam %p x2 %g based on cr1 %p", this, x2, cr1);
                   qreal x3;
 
                   if ((chordRestEndGroupIndex - currentChordRestIndex) > 1) {
                         ChordRest* chordRest2 = crl[chordRestEndGroupIndex-1];
                         // create segment
                         x3 = chordRest2->stemPosX() + chordRest2->pageX() - _pagePos.x();
+                        //qDebug("beam %p x3 %g based on cr2 %p", this, x3, cr2);
+                        // a beam segment has to be created between cr1 and cr2 (a.k.a. chordRest2)
+                        // dump all affected ChordRests
+                        for (size_t ii = i_for_cr1; ii < chordRestEndGroupIndex; ++ii) {
+                              QString beamValue { "continue" };
+                              if (ii == i_for_cr1) beamValue = "begin";
+                              if (ii == (chordRestEndGroupIndex-1)) beamValue = "end";
+                              qDebug("cr %p musicxml number %d value %s", crl[ii], beamLevel + 1, qPrintable(beamValue));
+                        }
 
                         if (tab) {
                               x2 -= stemWidth * 0.5;
@@ -1943,6 +1968,10 @@ void Beam::layout2(std::vector<ChordRest*>crl, SpannerSegmentType, int frag)
                                     x2 += stemWidth;
                               }
                         x3 = x2 + len;
+                        //qDebug("beam %p x3 %g based on x2 %g and len %g", this, x3, x2, len);
+                        // a broken beam segment has to be created attached to cr1
+                        // dump the affected ChordRest
+                        qDebug("cr %p musicxml number %d value %s hook", crl[i_for_cr1], beamLevel + 1, len > 0 ? "forward" : "backward");
                         }
                   //feathered beams
                   qreal yo   = py1 + bl * _beamDist * _grow1;
@@ -1955,6 +1984,7 @@ void Beam::layout2(std::vector<ChordRest*>crl, SpannerSegmentType, int frag)
                         qDebug("bad beam segment: slope %f", slope);
                         }
                   else {
+                        //qDebug("beam %p beamLevel %d add segment %d x2 %g ly1 %g x3 %g ly2 %g", this, beamLevel, beamSegments.size(), x2, ly1, x3, ly2);
                         beamSegments.push_back(new QLineF(x2, ly1, x3, ly2));
                         }
                   }
