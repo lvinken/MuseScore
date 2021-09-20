@@ -5865,7 +5865,9 @@ static void addGlissandoSlide(const Notation& notation, Note* note,
             if (glissandoColor.isValid()) {
                 gliss->setColor(glissandoColor);
             }
-            gliss->setText(glissandoText);
+            //gliss->setText(glissandoText);
+            gliss->setProperty(Pid::GLISS_TEXT, glissandoText);
+            gliss->setPropertyFlags(Pid::GLISS_TEXT, PropertyFlags::UNSTYLED);
             gliss->setGlissandoType(glissandoTag == 0 ? GlissandoType::STRAIGHT : GlissandoType::WAVY);
             spanners[gliss] = QPair<int, int>(tick.ticks(), -1);
             // qDebug("glissando/slide=%p inserted at first tick %d", gliss, tick);
