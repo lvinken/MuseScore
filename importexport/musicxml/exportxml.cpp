@@ -1020,7 +1020,7 @@ static void divideBy(int d)
 
 static void addInteger(int len)
       {
-      if (!integers.contains(len)) {
+      if (len > 0 && !integers.contains(len)) {
             integers.append(len);
             }
       }
@@ -1117,6 +1117,7 @@ void ExportMusicXml::calcDivisions()
                                           //       track, seg, fb, fb->segment(), fb->segment()->tick(), fb->ticks(), cr, cr->tick(), cr->actualTicks());
                                           qDebug("figuredbass tick %d duration %d",
                                                  fb->tick().ticks(), fb->ticks().ticks());
+                                          addInteger(fb->ticks().ticks());
                                     }
                               }
 
