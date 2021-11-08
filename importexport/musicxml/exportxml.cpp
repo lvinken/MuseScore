@@ -1110,6 +1110,16 @@ void ExportMusicXml::calcDivisions()
 
                         for (Segment* seg = m->first(); seg; seg = seg->next()) {
 
+                              for (const Element* e : seg->annotations()) {
+                                    if (e->track() == st && e->type() == ElementType::FIGURED_BASS) {
+                                          const FiguredBass* fb = dynamic_cast<const FiguredBass*>(e);
+                                          //qDebug("figuredbass() track %d seg %p fb %p seg %p tick %d ticks %d cr %p tick %d ticks %d",
+                                          //       track, seg, fb, fb->segment(), fb->segment()->tick(), fb->ticks(), cr, cr->tick(), cr->actualTicks());
+                                          qDebug("figuredbass tick %d duration %d",
+                                                 fb->tick().ticks(), fb->ticks().ticks());
+                                    }
+                              }
+
                               Element* el = seg->element(st);
                               if (!el)
                                     continue;
@@ -1130,6 +1140,7 @@ void ExportMusicXml::calcDivisions()
 #ifdef DEBUG_TICK
                                     qDebug("chordrest %d", l);
 #endif
+                                    qDebug("chordrest tick %d duration %d", _tick.ticks(), l.ticks());
                                     addInteger(l.ticks());
                                     _tick += l;
                                     }
