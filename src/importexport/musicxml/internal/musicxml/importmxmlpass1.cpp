@@ -2716,11 +2716,19 @@ void MusicXMLParserPass1::notations(MxmlStartStop& tupletStartStop)
 
     while (_e.readNextStartElement()) {
         if (_e.name() == "tuplet") {
+            int tupletNumber         = _e.attributes().value("number").toInt(); // TODO: error handling ?
             QString tupletType       = _e.attributes().value("type").toString();
 
             // ignore possible children (currently not supported)
             _e.skipCurrentElement();
 
+#if 1
+            // TODO: for a first try, handle start/stop only for number==1
+            // this change leads to a "Open Error" / "Cannot open file ..." dialog
+            // logging: Score | sanityCheck: "Measure 1, staff 1 incomplete. Expected: 2/4; Found: 27/36"
+            // most like by bool Score::sanityCheck(const QString& name) in src/engraving/libmscore/check.cpp
+            if (tupletNumber == 0 /* invalid */ || tupletNumber == 1) {
+#endif
             if (tupletType == "start") {
                 tupletStartStop = MxmlStartStop::START;
             } else if (tupletType == "stop") {
@@ -2728,6 +2736,9 @@ void MusicXMLParserPass1::notations(MxmlStartStop& tupletStartStop)
             } else if (tupletType != "" && tupletType != "start" && tupletType != "stop") {
                 _logger->logError(QString("unknown tuplet type '%1'").arg(tupletType), &_e);
             }
+#if 1
+            }
+#endif
         } else {
             _e.skipCurrentElement();              // skip but don't log
         }
