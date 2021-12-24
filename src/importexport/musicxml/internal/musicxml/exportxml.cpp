@@ -3621,12 +3621,17 @@ void ExportMusicXml::chord(Chord* chord, int staff, const std::vector<Lyrics*>* 
     int partNr = _score->parts().indexOf(part);
     int instNr = instrMap.value(part->instrument(_tick), -1);
     /*
-    qDebug("chord() %p parent %p isgrace %d #gracenotes %d graceidx %d",
-           chord, chord->parent(), chord->isGrace(), chord->graceNotes().size(), chord->graceIndex());
-    qDebug("track %d tick %d part %p nr %d instr %p nr %d",
-           chord->track(), chord->tick(), part, partNr, part->instrument(tick), instNr);
+    qDebug("chord() %p parent %p tuplet %p isgrace %d #gracenotes %d graceidx %d",
+           chord, chord->parent(), chord->tuplet(), chord->isGrace(), chord->graceNotes().size(), chord->graceIndex());
+    qDebug("track %d tick %s part %p nr %d instr %p nr %d",
+           chord->track(), qPrintable(chord->tick().toString()), part, partNr, part->instrument(_tick), instNr);
     for (EngravingItem* e : chord->el())
           qDebug("chord %p el %p", chord, e);
+    if (chord->tuplet()) {
+        for (const auto elem : chord->tuplet()->elements()) {
+            qDebug("chord %p tuplet %p el %p", chord, chord->tuplet(), elem);
+        }
+    }
      */
     std::vector<Note*> nl = chord->notes();
     bool grace = chord->isGrace();
