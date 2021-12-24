@@ -118,7 +118,7 @@ Err EngravingProject::doSetupMasterScore(Ms::MasterScore* score)
     score->update();
 
     if (!score->sanityCheck(QString())) {
-        return Err::FileCorrupted;
+        // ignore: return Err::FileCorrupted;
     }
 
     return Err::NoError;
