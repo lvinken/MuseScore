@@ -2744,11 +2744,13 @@ void MusicXMLParserPass1::notations(MxmlStartStop& tupletStartStop)
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "tuplet") {
+                  int tupletNumber         = _e.attributes().value("number").toInt(); // TODO: error handling ?
                   QString tupletType       = _e.attributes().value("type").toString();
 
                   // ignore possible children (currently not supported)
                   _e.skipCurrentElement();
 
+                  if (tupletNumber == 0 /* invalid */ || tupletNumber == 1) { // handle start/stop only for number==1 TODO better solution
                   if (tupletType == "start")
                         tupletStartStop = MxmlStartStop::START;
                   else if (tupletType == "stop")
@@ -2757,6 +2759,7 @@ void MusicXMLParserPass1::notations(MxmlStartStop& tupletStartStop)
                         _logger->logError(QString("unknown tuplet type '%1'").arg(tupletType), &_e);
                         }
                   }
+            } // TODO better solution
             else {
                   _e.skipCurrentElement();        // skip but don't log
                   }
