@@ -4644,7 +4644,7 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                               }
                         if (tupletAction & MxmlTupletFlag::STOP_CURRENT) {
                               if (missingCurr.isValid() && missingCurr > Fraction(0, 1)) {
-                                    qDebug("add missing %s to current tuplet", qPrintable(missingCurr.print()));
+                                    qDebug("add missing %s to current %s tuplet", qPrintable(missingCurr.print()), qPrintable(tuplet->ratio().print()));
                                     const auto track = msTrack + msVoice;
                                     const auto extraRest = addRest(_score, measure, noteStartTime + dura, track, msMove,
                                                                    TDuration { missingCurr* tuplet->ratio() }, missingCurr);
@@ -6368,6 +6368,42 @@ void MusicXMLParserNotations::fermata()
       }
 
 //---------------------------------------------------------
+//   parseTupletActualNormal
+// TODO: may also have to support cases where e.g. note type is mising
+//---------------------------------------------------------
+
+static Fraction parseTupletActualNormal(QXmlStreamReader& e)
+      {
+      int dots { 0 };
+      int number { 1 };
+      bool ok { true };
+      QString type;
+      while (e.readNextStartElement()) {
+            if (e.name() == "tuplet-dots") {
+                  ++dots;
+                  }
+            else if (e.name() == "tuplet-number") {
+                  number = e.readElementText().toInt(&ok);
+                  if (number <= 0) {
+                        ok = false;
+                        }
+                  }
+            else if (e.name() == "tuplet-type") {
+                  type = e.readElementText();
+                  }
+            else {
+                  e.skipCurrentElement();
+                  }
+            }
+      if (ok && !type.isEmpty()) {
+            return mxmlNoteDuration::calculateFraction(type, dots, Fraction { number, 1 });
+            }
+      else {
+            return Fraction { 0, 0 };
+            }
+      }
+
+//---------------------------------------------------------
 //   tuplet
 //---------------------------------------------------------
 
@@ -6383,9 +6419,21 @@ void MusicXMLParserNotations::tuplet()
       // QString tupletPlacement  = _e.attributes().value("placement").toString(); not used (TODO)
       QString tupletBracket    = _e.attributes().value("bracket").toString();
       QString tupletShowNumber = _e.attributes().value("show-number").toString();
+      QString tupletNumber = _e.attributes().value("number").toString();
 
-      // ignore possible children (currently not supported)
-      _e.skipCurrentElement();
+      while (_e.readNextStartElement()) {
+            if (_e.name() == "tuplet-actual") {
+                  auto f = parseTupletActualNormal(_e);
+                  qDebug("tuplet number '%s' actual %s", qPrintable(tupletNumber), qPrintable(f.print()));
+                  }
+            else if (_e.name() == "tuplet-normal") {
+                  auto f = parseTupletActualNormal(_e);
+                  qDebug("tuplet number '%s' normal %s", qPrintable(tupletNumber), qPrintable(f.print()));
+                  }
+            else {
+                  skipLogCurrElem();
+                  }
+            }
 
       if (tupletType == "start")
             _tupletDesc.type = MxmlStartStop::START;
