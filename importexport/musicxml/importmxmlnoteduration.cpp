@@ -67,7 +67,7 @@ static Fraction noteTypeToFraction(const QString& type)
  Convert note type, number of dots and actual and normal notes into a duration
  */
 
-static Fraction calculateFraction(const QString& type, const int dots, const Fraction timeMod)
+Fraction mxmlNoteDuration::calculateFraction(const QString& type, const int dots, const Fraction timeMod)
       {
       // type
       Fraction f = noteTypeToFraction(type);
