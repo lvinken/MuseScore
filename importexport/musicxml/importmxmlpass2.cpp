@@ -438,16 +438,16 @@ static Instrument createInstrument(const MusicXMLInstrument& mxmlInstr, const In
 
       InstrumentTemplate* it = nullptr;
       if (!mxmlInstr.sound.isEmpty()) {
-          it = Ms::searchTemplateForMusicXmlId(mxmlInstr.sound);
-      }
+            it = Ms::searchTemplateForMusicXmlId(mxmlInstr.sound);
+            }
 
       if (!it) {
-          it = Ms::searchTemplateForInstrNameList({mxmlInstr.name});
-      }
+            it = Ms::searchTemplateForInstrNameList({ mxmlInstr.name });
+            }
 
       if (!it) {
-          it = Ms::searchTemplateForMidiProgram(mxmlInstr.midiProgram);
-      }
+            it = Ms::searchTemplateForMidiProgram(mxmlInstr.midiProgram);
+            }
 
       if (it) {
             // initialize from template with matching MusicXmlId
@@ -822,7 +822,7 @@ static void addLyrics(MxmlLogger* logger, const QXmlStreamReader* const xmlreade
 static void addElemOffset(Element* el, int track, const QString& placement, Measure* measure, const Fraction& tick)
       {
       if (!measure)
-          return;
+            return;
       /*
        qDebug("addElem el %p track %d placement %s tick %d",
        el, track, qPrintable(placement), tick);
@@ -2486,7 +2486,7 @@ void MusicXMLParserDirection::direction(const QString& partId,
                         t->setFrameRound(0);
                         }
 
-//TODO:ws            if (_hasDefaultY) t->textStyle().setYoff(_defaultY);
+                  //TODO:ws            if (_hasDefaultY) t->textStyle().setYoff(_defaultY);
                   addElemOffset(t, track, placement, measure, tick + _offset);
                   }
             }
@@ -2524,7 +2524,7 @@ void MusicXMLParserDirection::direction(const QString& partId,
                         dynaValue = 0;
                   dyn->setVelocity( dynaValue );
                   }
-//TODO:ws            if (_hasDefaultY) dyn->textStyle().setYoff(_defaultY);
+            //TODO:ws            if (_hasDefaultY) dyn->textStyle().setYoff(_defaultY);
             addElemOffset(dyn, track, placement, measure, tick + _offset);
             }
 
@@ -3210,7 +3210,7 @@ static bool determineBarLineType(const QString& barStyle, const QString& repeat,
       else if (barStyle == "light-heavy" && repeat.isEmpty())
             type = BarLineType::END;
       else if (barStyle == "heavy-light" && repeat.isEmpty())
-                  type = BarLineType::REVERSE_END;
+            type = BarLineType::REVERSE_END;
       else if (barStyle == "regular")
             type = BarLineType::NORMAL;
       else if (barStyle == "dashed")
@@ -5024,7 +5024,7 @@ void MusicXMLParserPass2::harmony(const QString& partId, Measure* measure, const
 
       FretDiagram* fd = 0;
       Harmony* ha = new Harmony(_score);
-//TODO:ws      ha->setUserOff(QPointF(rx, ry + dy - styleYOff));
+      //TODO:ws      ha->setUserOff(QPointF(rx, ry + dy - styleYOff));
       Fraction offset;
       while (_e.readNextStartElement()) {
             if (_e.name() == "root") {
@@ -6291,7 +6291,7 @@ void MusicXMLParserNotations::addToScore(ChordRest* const cr, Note* const note, 
       for (const auto& d : qAsConst(_dynamicsList)) {
             auto dynamic = new Dynamic(_score);
             dynamic->setDynamicType(d);
-//TODO:ws            if (hasYoffset) dyn->textStyle().setYoff(yoffset);
+            //TODO:ws            if (hasYoffset) dyn->textStyle().setYoff(yoffset);
             addElemOffset(dynamic, cr->track(), _dynamicsPlacement, cr->measure(), Fraction::fromTicks(tick));
             }
       }
