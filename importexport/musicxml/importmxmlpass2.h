@@ -198,7 +198,7 @@ public:
       void addToScore(ChordRest* const cr, Note* const note, const int tick, SlurStack& slurs,
                       Glissando* glissandi[MAX_NUMBER_LEVEL][2], MusicXmlSpannerMap& spanners, TrillStack& trills,
                       Tie*& tie);
-      MusicXmlTupletDesc tupletDesc() const { return _tupletDesc; }
+      const std::map<int, MusicXmlTupletDesc>& tupletDescs() const { return _tupletDescs; }
       QString tremoloType() const { return _tremoloType; }
       int tremoloNr() const { return _tremoloNr; }
       bool mustStopGraceAFter() const { return _slurStop || _wavyLineStop; }
@@ -220,7 +220,7 @@ private:
       QXmlStreamReader& _e;
       Score* const _score;                      // the score
       MxmlLogger* _logger;                            // the error logger
-      MusicXmlTupletDesc _tupletDesc;
+      std::map<int, MusicXmlTupletDesc> _tupletDescs;
       QString _dynamicsPlacement;
       QStringList _dynamicsList;
       std::vector<Notation> _notations;

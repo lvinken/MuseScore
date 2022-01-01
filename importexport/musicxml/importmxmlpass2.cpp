@@ -4455,7 +4455,10 @@ Note* MusicXMLParserPass2::note(const QString& partId,
       if (!chord && !grace) {
             auto& tuplet = tuplets[voice];
             auto& tupletState = tupletStates[voice];
-            tupletAction = tupletState.determineTupletAction(mnd.dura(), timeMod, notations.tupletDesc().type, mnd.normalType(), missingPrev, missingCurr);
+            // (hack) get the state for tuplet number 1
+            auto res = notations.tupletDescs().find(0);
+            const MxmlStartStop tupletType = (res != notations.tupletDescs().end()) ? res->second.type : MxmlStartStop::NONE;
+            tupletAction = tupletState.determineTupletAction(mnd.dura(), timeMod, tupletType, mnd.normalType(), missingPrev, missingCurr);
             if (tupletAction & MxmlTupletFlag::STOP_PREVIOUS) {
                   // tuplet start while already in tuplet
                   if (missingPrev.isValid() && missingPrev > Fraction(0, 1)) {
@@ -4636,7 +4639,13 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                         const auto normalNotes = timeMod.numerator();
                         if (tupletAction & MxmlTupletFlag::START_NEW) {
                               // create a new tuplet
-                              handleTupletStart(cr, tuplet, actualNotes, normalNotes, notations.tupletDesc());
+                              // (hack) get the state for tuplet number 1
+                              auto res = notations.tupletDescs().find(0);
+                              MusicXmlTupletDesc tupletDesc;
+                              if (res != notations.tupletDescs().end()) {
+                                    tupletDesc = res->second;
+                                    }
+                              handleTupletStart(cr, tuplet, actualNotes, normalNotes, tupletDesc);
                               }
                         if (tupletAction & MxmlTupletFlag::ADD_CHORD) {
                               cr->setTuplet(tuplet);
@@ -6435,27 +6444,30 @@ void MusicXMLParserNotations::tuplet()
                   }
             }
 
+      MusicXmlTupletDesc tupletDesc;
       if (tupletType == "start")
-            _tupletDesc.type = MxmlStartStop::START;
+            tupletDesc.type = MxmlStartStop::START;
       else if (tupletType == "stop")
-            _tupletDesc.type = MxmlStartStop::STOP;
+            tupletDesc.type = MxmlStartStop::STOP;
       else if (tupletType != "" && tupletType != "start" && tupletType != "stop") {
             _logger->logError(QString("unknown tuplet type '%1'").arg(tupletType), &_e);
             }
 
       // set bracket, leave at default if unspecified
       if (tupletBracket == "yes")
-            _tupletDesc.bracket = TupletBracketType::SHOW_BRACKET;
+            tupletDesc.bracket = TupletBracketType::SHOW_BRACKET;
       else if (tupletBracket == "no")
-            _tupletDesc.bracket = TupletBracketType::SHOW_NO_BRACKET;
+            tupletDesc.bracket = TupletBracketType::SHOW_NO_BRACKET;
 
       // set number, default is "actual" (=NumberType::SHOW_NUMBER)
       if (tupletShowNumber == "both")
-            _tupletDesc.shownumber = TupletNumberType::SHOW_RELATION;
+            tupletDesc.shownumber = TupletNumberType::SHOW_RELATION;
       else if (tupletShowNumber == "none")
-            _tupletDesc.shownumber = TupletNumberType::NO_TEXT;
+            tupletDesc.shownumber = TupletNumberType::NO_TEXT;
       else
-            _tupletDesc.shownumber = TupletNumberType::SHOW_NUMBER;
+            tupletDesc.shownumber = TupletNumberType::SHOW_NUMBER;
+
+      _tupletDescs.insert({ tupletNumber.toInt() - 1, tupletDesc });
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "tuplet");
       }
