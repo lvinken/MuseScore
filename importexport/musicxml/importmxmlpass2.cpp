@@ -4278,6 +4278,20 @@ static void setDrumset(Chord* c, MusicXMLParserPass1& pass1, const QString& part
       }
 
 //---------------------------------------------------------
+//   dumpTupletDescs
+//---------------------------------------------------------
+
+static void dumpTupletDescs(const std::map<int, MusicXmlTupletDesc>& descs)
+      {
+      for (const auto& desc : descs) {
+            QString res;
+            res += QString("tuplet number %1").arg(desc.first);
+            res += QString(" type %1").arg((int) desc.second.type);
+            qDebug("%s", qPrintable(res));
+            }
+      }
+
+//---------------------------------------------------------
 //   note
 //---------------------------------------------------------
 
@@ -4450,6 +4464,9 @@ Note* MusicXMLParserPass2::note(const QString& partId,
 
       // determine tuplet state, used twice (before and after note allocation)
       MxmlTupletFlags tupletAction;
+
+      // (temp) debug
+      dumpTupletDescs(notations.tupletDescs());
 
       // handle tuplet state for the previous chord or rest
       if (!chord && !grace) {
@@ -6467,7 +6484,9 @@ void MusicXMLParserNotations::tuplet()
       else
             tupletDesc.shownumber = TupletNumberType::SHOW_NUMBER;
 
-      _tupletDescs.insert({ tupletNumber.toInt() - 1, tupletDesc });
+      // handle missing number (defaults to "1")
+      int number = tupletNumber.isEmpty() ? 1 : tupletNumber.toInt();
+      _tupletDescs.insert({ number - 1, tupletDesc });
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "tuplet");
       }
