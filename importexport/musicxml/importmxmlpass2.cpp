@@ -1347,6 +1347,8 @@ static Rest* addRest(Score* score, Measure* m,
 
 static void resetTuplets(Tuplets& tuplets)
       {
+#if 0
+// TODO: fix for nested tuplets and enable again
       for (auto& pair : tuplets) {
             auto tuplet = pair.second;
             if (tuplet) {
@@ -1371,6 +1373,7 @@ static void resetTuplets(Tuplets& tuplets)
                   handleTupletStop(tuplet, normalNotes);
                   }
             }
+#endif
       }
 
 //---------------------------------------------------------
@@ -4469,8 +4472,15 @@ Note* MusicXMLParserPass2::note(const QString& partId,
       dumpTupletDescs(notations.tupletDescs());
 
       // handle tuplet state for the previous chord or rest
+      // note: to be done for every level ???
+      // check when exactly this is executed (assume only when finding a start while the previous tuplet is still active)
       if (!chord && !grace) {
-            auto& tuplet = tuplets[voice];
+            if (tuplets[voice].empty()) {
+                  // for now, make sure we always have at least one tuplet pointer (for tuplet number="1")
+                  // may not be required for tuplet stop handling
+                  tuplets[voice].push_back(nullptr);
+            }
+            auto& tuplet = tuplets[voice].at(0);
             auto& tupletState = tupletStates[voice];
             // (hack) get the state for tuplet number 1
             auto res = notations.tupletDescs().find(0);
@@ -4646,9 +4656,15 @@ Note* MusicXMLParserPass2::note(const QString& partId,
             }
 
       // handle tuplet state for the current chord or rest
+      // note: to be done for every level
       if (cr) {
             if (!chord && !grace) {
-                  auto& tuplet = tuplets[voice];
+                  if (tuplets[voice].empty()) {
+                        // for now, make sure we always have at least one tuplet pointer (for tuplet number="1")
+                        // may not be required for tuplet (stop) handling
+                        tuplets[voice].push_back(nullptr);
+                  }
+                  auto& tuplet = tuplets[voice].at(0);
                   // do tuplet if valid time-modification is not 1/1 and is not 1/2 (tremolo)
                   // TODO: check interaction tuplet and tremolo handling
                   if (timeMod.isValid() && timeMod != Fraction(1, 1) && timeMod != Fraction(1, 2)) {

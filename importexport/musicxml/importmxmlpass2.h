@@ -39,7 +39,7 @@ using GraceChordList = QList<Chord*>;
 using FiguredBassList = QVector<FiguredBass*>;
 //      typedef QList<Chord*> GraceChordList;
 //      typedef QVector<FiguredBass*> FiguredBassList;
-using Tuplets = std::map<QString, Tuplet*>;
+using Tuplets = std::map<QString, std::vector<Tuplet*> >; // stack of tuplets for each voice
 
 //---------------------------------------------------------
 //   MxmlStartStop
