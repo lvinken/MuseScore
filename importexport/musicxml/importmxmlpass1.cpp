@@ -3254,7 +3254,18 @@ void MusicXMLParserPass1::note(const QString& partId,
             // do tuplet
             auto timeMod = mnd.timeMod();
             auto& tupletState = tupletStates[voice];
-            tupletState.determineTupletAction(mnd.dura(), timeMod, tupletStartStop, mnd.normalType(), missingPrev, missingCurr);
+            //(tupletAction & MxmlTupletFlag::STOP_PREVIOUS)
+            const auto tupletAction = tupletState.determineTupletAction(mnd.dura(), timeMod, tupletStartStop, mnd.normalType(), missingPrev, missingCurr);
+#if 1
+            qDebug("tick %s (%d) STOP_PREVIOUS %d START_NEW %d ADD_CHORD %d STOP_CURRENT %d",
+                   qPrintable(sTime.print()),
+                   sTime.ticks(),
+                   (tupletAction & MxmlTupletFlag::STOP_PREVIOUS) ? 1 : 0,
+                   (tupletAction & MxmlTupletFlag::START_NEW) ? 1 : 0,
+                   (tupletAction & MxmlTupletFlag::ADD_CHORD) ? 1 : 0,
+                   (tupletAction & MxmlTupletFlag::STOP_CURRENT) ? 1 : 0
+                   );
+#endif
             }
 
       // store result
