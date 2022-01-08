@@ -4656,8 +4656,7 @@ Note* MusicXMLParserPass2::note(const QString& partId,
             }
 
       // handle tuplet state for the current chord or rest
-      // note: current code seems to create a mostly correct nested tuplet
-      //       but L2 tuplet starts and stops one note too late
+      // note: to be done for every level
       if (cr) {
             if (!chord && !grace) {
                   if (tuplets[voice].empty()) {
@@ -4665,80 +4664,71 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                         // may not be required for tuplet (stop) handling
                         tuplets[voice].push_back(nullptr);
                         }
-                  //auto& tuplet = tuplets[voice].at(0);
-                  qDebug("tuplet number=1 %p", tuplets[voice].at(0));
-                  {
-                        // slightly modified tuplet number="1" handling
-
-                        // do tuplet if valid time-modification is not 1/1 and is not 1/2 (tremolo)
-                        // TODO: check interaction tuplet and tremolo handling
-                        if (timeMod.isValid() && timeMod != Fraction(1, 1) && timeMod != Fraction(1, 2)) {
-                              const auto actualNotes = timeMod.denominator();
-                              const auto normalNotes = timeMod.numerator();
-                              if (tupletAction & MxmlTupletFlag::START_NEW) {
-                                    // create a new tuplet
-                                    // (hack) get the state for tuplet number 1
-                                    auto res = notations.tupletDescs().find(0);
-                                    MusicXmlTupletDesc tupletDesc;
-                                    if (res != notations.tupletDescs().end()) {
-                                          tupletDesc = res->second;
-                                          }
-                                    handleTupletStart(cr, tuplets[voice].at(0), actualNotes, normalNotes, tupletDesc);
-                                    }
-                              if (tupletAction & MxmlTupletFlag::ADD_CHORD) {
-                                    // note: chord must always be added to the top-level tuplet
-                                    // instead of simply to number="1"
-                                    // implies that a number="2" tuplet must already have been created
-                                    const auto level = tuplets[voice].size() - 1;
-                                    cr->setTuplet(tuplets[voice].at(level));
-                                    tuplets[voice].at(level)->add(cr);
-                                    }
-                              if (tupletAction & MxmlTupletFlag::STOP_CURRENT) {
-                                    if (missingCurr.isValid() && missingCurr > Fraction(0, 1)) {
-                                          const auto ratio = tuplets[voice].at(0)->ratio();
-                                          qDebug("add missing %s to current %s tuplet", qPrintable(missingCurr.print()), qPrintable(ratio.print()));
-                                          const auto track = msTrack + msVoice;
-                                          const auto extraRest = addRest(_score, measure, noteStartTime + dura, track, msMove,
-                                                                         TDuration { missingCurr* ratio }, missingCurr);
-                                          if (extraRest) {
-                                                extraRest->setTuplet(tuplets[voice].at(0));
-                                                tuplets[voice].at(0)->add(extraRest);
-                                                }
-                                          }
-                                    handleTupletStop(tuplets[voice].at(0), normalNotes);
-                                    }
-                              }
-                        else if (tuplets[voice].at(0)) {
-                              // stop any still incomplete tuplet
-                              handleTupletStop(tuplets[voice].at(0), 2);
-                              }
-                        // end of unmodified tuplet number="1" handling
-                        }
-                  // tuplet number="2" handling
-                        {
+                  auto& tuplet = tuplets[voice].at(0);
+                  // do tuplet if valid time-modification is not 1/1 and is not 1/2 (tremolo)
+                  // TODO: check interaction tuplet and tremolo handling
+                  if (timeMod.isValid() && timeMod != Fraction(1, 1) && timeMod != Fraction(1, 2)) {
+                        const auto actualNotes = timeMod.denominator();
+                        const auto normalNotes = timeMod.numerator();
                         // (hack) get the state for tuplet number 2
-                        auto res = notations.tupletDescs().find(1);
-                        MusicXmlTupletDesc tupletDesc;
-                        if (res != notations.tupletDescs().end()) {
-                              tupletDesc = res->second;
+                        auto res2 = notations.tupletDescs().find(1);
+                        MusicXmlTupletDesc tupletDesc2;
+                        if (res2 != notations.tupletDescs().end()) {
+                              tupletDesc2 = res2->second;
                               }
-                        if (tupletDesc.type == MxmlStartStop::START) {
+                        if (tupletAction & MxmlTupletFlag::START_NEW) {
+                              // create a new L1 tuplet
+                              // (hack) get the state for tuplet number 1
+                              auto res = notations.tupletDescs().find(0);
+                              MusicXmlTupletDesc tupletDesc;
+                              if (res != notations.tupletDescs().end()) {
+                                    tupletDesc = res->second;
+                                    }
+                              handleTupletStart(cr, tuplet, actualNotes, normalNotes, tupletDesc);
+                              }
+                        if (tupletDesc2.type == MxmlStartStop::START) {
                               qDebug("tuplet number=2 start: 1");
                               if (tuplets[voice].size() == 1) {
                                     // assume exactly one tuplet pointer (for tuplet number="1") already in place
                                     // append another one for tuplet number="2"
                                     tuplets[voice].push_back(nullptr);
                                     }
-                              handleTupletStart(cr, tuplets[voice].at(1), 3 /* TODO actualNotes */, 2 /* TODO normalNotes */, tupletDesc);
+                              handleTupletStart(cr, tuplets[voice].at(1), 3 /* TODO actualNotes */, 2 /* TODO normalNotes */, tupletDesc2);
                               qDebug("tuplet number=2 start: 2 tuplet number=1 %p", tuplets[voice].at(0));
                               tuplets[voice].at(0)->add(tuplets[voice].at(1)); // add to number="1" tuplet
                               qDebug("tuplet number=2 start: new tuplet %p added to tuplet %p", tuplets[voice].at(1), tuplets[voice].at(0));
                               }
-                        if (tupletDesc.type == MxmlStartStop::STOP) {
+                        if (tupletAction & MxmlTupletFlag::ADD_CHORD) {
+                              // note: chord must always be added to the top-level tuplet
+                              // instead of simply to number="1"
+                              // implies that a number="2" tuplet must already have been created
+                              const auto level = tuplets[voice].size() - 1;
+                              cr->setTuplet(tuplets[voice].at(level));
+                              tuplets[voice].at(level)->add(cr);
+                              }
+                        if (tupletDesc2.type == MxmlStartStop::STOP) {
                               qDebug("tuplet number=2 stop");
+                              handleTupletStop(tuplets[voice].at(/* TODO */ 1), /* TODO: correct value for L2 */ normalNotes);
+                              tuplets[voice].pop_back();
+                              }
+                        if (tupletAction & MxmlTupletFlag::STOP_CURRENT) {
+                              if (missingCurr.isValid() && missingCurr > Fraction(0, 1)) {
+                                    qDebug("add missing %s to current %s tuplet", qPrintable(missingCurr.print()), qPrintable(tuplet->ratio().print()));
+                                    const auto track = msTrack + msVoice;
+                                    const auto extraRest = addRest(_score, measure, noteStartTime + dura, track, msMove,
+                                                                   TDuration { missingCurr* tuplet->ratio() }, missingCurr);
+                                    if (extraRest) {
+                                          extraRest->setTuplet(tuplet);
+                                          tuplet->add(extraRest);
+                                          }
+                                    }
+                              handleTupletStop(tuplet, normalNotes);
                               }
                         }
-                  // end of tuplet number="2" handling
+                  else if (tuplet) {
+                        // stop any still incomplete tuplet
+                        handleTupletStop(tuplet, 2);
+                        }
                   }
             }
 
