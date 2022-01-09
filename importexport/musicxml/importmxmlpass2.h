@@ -69,6 +69,7 @@ enum class MusicXmlSlash : char {
 
 struct MusicXmlTupletDesc {
       MusicXmlTupletDesc();
+      Fraction ratio { 0, 0 };
       MxmlStartStop type;
       Placement placement;
       TupletBracketType bracket;

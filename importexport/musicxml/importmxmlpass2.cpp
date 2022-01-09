@@ -951,6 +951,7 @@ static void handleTupletStop(Tuplet*& tuplet, const int normalNotes)
       int totalDuration = 0;
       foreach (DurationElement* de, tuplet->elements()) {
             if (de->type() == ElementType::CHORD || de->type() == ElementType::REST) {
+                  //qDebug("de %p ticks %s", de, qPrintable(de->globalTicks().print()));
                   totalDuration+=de->globalTicks().ticks();
                   }
             }
@@ -4290,8 +4291,34 @@ static void dumpTupletDescs(const std::map<int, MusicXmlTupletDesc>& descs)
             QString res;
             res += QString("tuplet number %1").arg(desc.first);
             res += QString(" type %1").arg((int) desc.second.type);
+            res += QString(" ratio %1/%2").arg(desc.second.ratio.numerator()).arg(desc.second.ratio.denominator());
             qDebug("%s", qPrintable(res));
             }
+      }
+
+//---------------------------------------------------------
+// findRatio
+// find the tuplet ratio (actual notes / normal notes)
+// which, for a non-nested tuplet, is the inverse of the MusicXML time modification
+//---------------------------------------------------------
+
+static Fraction findRatio(const int level, const Fraction timeMod, const std::map<int, MusicXmlTupletDesc>& tupletDescs)
+      {
+      qDebug("level %d timeMod numer %d denom %d", level, timeMod.numerator(), timeMod.denominator());
+      Fraction res { 0, 0 };
+      auto it = tupletDescs.find(level);
+      MusicXmlTupletDesc tupletDesc;
+      if (it != tupletDescs.end()) {
+            tupletDesc = it->second;
+            if (tupletDesc.ratio.isValid()) {
+                  res = tupletDesc.ratio;
+                  }
+            }
+      if (!res.isValid() && level == 0) {
+            res = timeMod;
+            }
+      qDebug("level %d res numer %d denom %d", level, res.numerator(), res.denominator());
+      return res;
       }
 
 //---------------------------------------------------------
@@ -4320,6 +4347,7 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                                 )
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "note");
+      qDebug("lineNumber %lld sTime %s", _e.lineNumber(), qPrintable(sTime.print()));
 
       if (_e.attributes().value("print-spacing") == "no") {
             notePrintSpacingNo(dura);
@@ -4684,7 +4712,9 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                               if (res != notations.tupletDescs().end()) {
                                     tupletDesc = res->second;
                                     }
-                              handleTupletStart(cr, tuplet, actualNotes, normalNotes, tupletDesc);
+                              const auto ratio = findRatio(0, Fraction { actualNotes, normalNotes }, notations.tupletDescs());
+                              qDebug("1 numer %d denom %d", ratio.numerator(), ratio.denominator());
+                              handleTupletStart(cr, tuplet, ratio.numerator(), ratio.denominator(), tupletDesc);
                               }
                         if (tupletDesc2.type == MxmlStartStop::START) {
                               qDebug("tuplet number=2 start: 1");
@@ -4693,7 +4723,9 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                                     // append another one for tuplet number="2"
                                     tuplets[voice].push_back(nullptr);
                                     }
-                              handleTupletStart(cr, tuplets[voice].at(1), 3 /* TODO actualNotes */, 2 /* TODO normalNotes */, tupletDesc2);
+                              const auto ratio = findRatio(1, Fraction { actualNotes, normalNotes }, notations.tupletDescs());
+                              qDebug("2 numer %d denom %d", ratio.numerator(), ratio.denominator());
+                              handleTupletStart(cr, tuplets[voice].at(1), ratio.numerator(), ratio.denominator(), tupletDesc2);
                               qDebug("tuplet number=2 start: 2 tuplet number=1 %p", tuplets[voice].at(0));
                               tuplets[voice].at(0)->add(tuplets[voice].at(1)); // add to number="1" tuplet
                               qDebug("tuplet number=2 start: new tuplet %p added to tuplet %p", tuplets[voice].at(1), tuplets[voice].at(0));
@@ -6490,14 +6522,16 @@ void MusicXMLParserNotations::tuplet()
       QString tupletShowNumber = _e.attributes().value("show-number").toString();
       QString tupletNumber = _e.attributes().value("number").toString();
 
+      Fraction actual { 0, 0 };
+      Fraction normal { 0, 0 };
       while (_e.readNextStartElement()) {
             if (_e.name() == "tuplet-actual") {
-                  auto f = parseTupletActualNormal(_e);
-                  qDebug("tuplet number '%s' actual %s", qPrintable(tupletNumber), qPrintable(f.print()));
+                  actual = parseTupletActualNormal(_e);
+                  qDebug("tuplet number '%s' actual %s", qPrintable(tupletNumber), qPrintable(actual.print()));
                   }
             else if (_e.name() == "tuplet-normal") {
-                  auto f = parseTupletActualNormal(_e);
-                  qDebug("tuplet number '%s' normal %s", qPrintable(tupletNumber), qPrintable(f.print()));
+                  normal = parseTupletActualNormal(_e);
+                  qDebug("tuplet number '%s' normal %s", qPrintable(tupletNumber), qPrintable(normal.print()));
                   }
             else {
                   skipLogCurrElem();
@@ -6505,6 +6539,12 @@ void MusicXMLParserNotations::tuplet()
             }
 
       MusicXmlTupletDesc tupletDesc;
+
+      if (actual.isValid() && normal.isValid()) {
+            tupletDesc.ratio = (actual / normal).reduced();
+            qDebug("tuplet number '%s' ratio %s", qPrintable(tupletNumber), qPrintable(tupletDesc.ratio.print()));
+            }
+
       if (tupletType == "start")
             tupletDesc.type = MxmlStartStop::START;
       else if (tupletType == "stop")
