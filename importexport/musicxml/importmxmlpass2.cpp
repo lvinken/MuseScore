@@ -876,9 +876,13 @@ static Fraction calculateTupletDuration(const Tuplet* const t)
             if (de->type() == ElementType::CHORD || de->type() == ElementType::REST) {
                   const auto cr = static_cast<ChordRest*>(de);
                   const auto fraction = cr->ticks(); // TODO : take care of nested tuplets
+                  qDebug("cr %p fraction %s", cr, qPrintable(fraction.print()));
                   if (fraction.isValid()) {
                         res += fraction;
                         }
+                  }
+            else if (de->isTuplet()) {
+                  res += calculateTupletDuration(toTuplet(de));
                   }
             }
       res /= t->ratio();
@@ -902,14 +906,14 @@ static TDuration determineTupletBaseLen(const Tuplet* const t)
       determineTupletFractionAndFullDuration(calculateTupletDuration(t), tupletFraction, tupletFullDuration);
 
       auto baseLen = tupletFullDuration * Fraction(1, t->ratio().denominator());
-      /*
+#if 1
       qDebug("tupletFraction %s tupletFullDuration %s ratio %s baseLen %s",
              qPrintable(tupletFraction.toString()),
              qPrintable(tupletFullDuration.toString()),
              qPrintable(t->ratio().toString()),
              qPrintable(baseLen.toString())
              );
-       */
+#endif
 
       return TDuration(baseLen);
       }
@@ -943,6 +947,7 @@ static void handleTupletStop(Tuplet*& tuplet, const int normalNotes)
 
       // set baselen
       TDuration td = determineTupletBaseLen(tuplet);
+      qDebug("baselen %s", qPrintable(td.name()));
       tuplet->setBaseLen(td);
       Fraction f(normalNotes, td.fraction().denominator());
       f.reduce();
