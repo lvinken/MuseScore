@@ -97,6 +97,8 @@ struct MxmlTupletState {
       };
 
 using MxmlTupletStates = std::map<QString, MxmlTupletState>;
+// construction below does not work because the (possible) previous tuplet's state is used
+//using MxmlTupletStates = std::map<QString, std::vector<MxmlTupletState> >; // stack of tuplet states for each voice
 
 //---------------------------------------------------------
 //   declarations
