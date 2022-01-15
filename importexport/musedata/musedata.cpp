@@ -416,24 +416,6 @@ void MuseData::readNote(Part* part, const QString& s)
 
 QString MuseData::diacritical(QString s)
       {
-      struct TAB {
-            const char* a;
-            const char* b;
-            } tab[] = {
-                { "\\\\", "\\" },
-                { "\\2s", "ß" },
-                { "\\3a", "ä" },
-                { "\\3o", "ö" },
-                { "\\3u", "ü" },
-
-                { "\\s2", "ß" },
-                { "\\a3", "ä" },
-                { "\\o3", "ö" },
-                { "\\u3", "ü" },
-            };
-      for (unsigned int i = 0; i < sizeof(tab)/sizeof(*tab); ++i) {
-            s = s.replace(tab[i].a, QString::fromUtf8(tab[i].b));
-            }
       return s;
       }
 
