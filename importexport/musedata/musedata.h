@@ -59,7 +59,7 @@ class MuseData {
       void closeSlur(int idx, const Fraction& tick, Staff* staff, int voice);
       QString diacritical(QString);
 
-   public:
+public:
       MuseData(Score* s) { score = s; }
       bool read(const QString&);
       void convert();
