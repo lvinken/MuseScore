@@ -429,6 +429,7 @@ Fraction TDuration::fraction() const
 // Longest TDuration that fits into Fraction. Must fit exactly if truncate = false.
 TDuration::TDuration(const Fraction& l, bool truncate, int maxDots, DurationType maxType)
       {
+      qDebug("l %s truncate %d maxDots %d maxType %hhd", qPrintable(l.print()), truncate, maxDots, maxType);
 #ifdef NDEBUG
       Q_UNUSED(truncate);
 #endif

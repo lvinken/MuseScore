@@ -4522,6 +4522,8 @@ Note* MusicXMLParserPass2::note(const QString& partId,
             if (tupletAction & MxmlTupletFlag::STOP_PREVIOUS) {
                   // tuplet start while already in tuplet
                   if (missingPrev.isValid() && missingPrev > Fraction(0, 1)) {
+                        qDebug("line %lld missingPrev %s ratio %s",
+                               _e.lineNumber(), qPrintable(missingPrev.print()), qPrintable(tuplet->ratio().print()));
                         const auto track = msTrack + msVoice;
                         const auto extraRest = addRest(_score, measure, noteStartTime, track, msMove,
                                                        TDuration { missingPrev* tuplet->ratio() }, missingPrev);
