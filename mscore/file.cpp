@@ -2310,7 +2310,7 @@ Score::FileError readScore(MasterScore* score, QString name, bool ignoreVersionE
                   { "mid",  &importMidi               },
                   { "midi", &importMidi               },
                   { "kar",  &importMidi               },
-                  { "md",   &importMuseData           },
+                  { "dbg",  &importMuseData           },
                   { "mgu",  &importBB                 },
                   { "sgu",  &importBB                 },
                   { "cap",  &importCapella            },
