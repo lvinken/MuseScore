@@ -719,9 +719,9 @@ void MuseData::convert()
 //   createChord
 //---------------------------------------------------------
 
-Chord* createChord(Score* score, const QString& /*value*/)
+Chord* createChord(Score* score, const QString& value)
       {
-      auto dur = TDuration { "whole" };
+      auto dur = TDuration { value };
       auto chord = new Chord(score);
       chord->setTrack(0);             // TODO
       chord->setDurationType(dur);
@@ -734,11 +734,11 @@ Chord* createChord(Score* score, const QString& /*value*/)
 //   createNote
 //---------------------------------------------------------
 
-Note* createNote(Score* score, const QString& /*pitch*/)
+Note* createNote(Score* score, const int pitch)
       {
       auto note = new Note(score);
       note->setTrack(0);            // TODO
-      note->setPitch(60);           // TODO
+      note->setPitch(pitch);
       note->setTpcFromPitch();
       return note;
       }
@@ -767,13 +767,31 @@ Score::FileError importMuseData(MasterScore* score, const QString& name)
       staff->setPart(part);
       part->staves()->push_back(staff);
       score->staves().push_back(staff);
+      // meaure 1
       auto m = new Measure(score);
       m->setTick({ 0, 1 });
       m->setTimesig({ 4, 4 });
       score->measures()->add(m);
-      auto cr = createChord(score, "");
-      cr->add(createNote(score, ""));
-      auto s = score->firstMeasure()->getSegment(SegmentType::ChordRest, { 0, 1 });
+      auto cr = createChord(score, "half");
+      cr->add(createNote(score, 67));
+      auto s = score->firstMeasure()->getSegment(SegmentType::ChordRest, { 0, 2 });
+      s->add(cr);
+      cr = createChord(score, "half");
+      cr->add(createNote(score, 69));
+      s = m->getSegment(SegmentType::ChordRest, { 1, 2 });
+      s->add(cr);
+      // meaure 2
+      m = new Measure(score);
+      m->setTick({ 1, 1 });
+      m->setTimesig({ 4, 4 });
+      score->measures()->add(m);
+      cr = createChord(score, "half");
+      cr->add(createNote(score, 71));
+      s = m->getSegment(SegmentType::ChordRest, { 2, 2 });
+      s->add(cr);
+      cr = createChord(score, "half");
+      cr->add(createNote(score, 72));
+      s = m->getSegment(SegmentType::ChordRest, { 3, 2 });
       s->add(cr);
       qDebug("Score::importMuseData() done");
       return Score::FileError::FILE_NO_ERROR;
