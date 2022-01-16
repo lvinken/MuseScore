@@ -719,13 +719,13 @@ void MuseData::convert()
 //   createChord
 //---------------------------------------------------------
 
-Chord* createChord(Score* score, const QString& value)
+Chord* createChord(Score* score, const QString& value, const Fraction& ticks)
       {
       auto dur = TDuration { value };
       auto chord = new Chord(score);
       chord->setTrack(0);             // TODO
       chord->setDurationType(dur);
-      chord->setTicks(dur.fraction());
+      chord->setTicks(ticks);
       chord->setDots(dur.dots());
       return chord;
       }
@@ -772,11 +772,11 @@ Score::FileError importMuseData(MasterScore* score, const QString& name)
       m->setTick({ 0, 1 });
       m->setTimesig({ 4, 4 });
       score->measures()->add(m);
-      auto cr = createChord(score, "half");
+      auto cr = createChord(score, "half", { 1, 2 });
       cr->add(createNote(score, 67));
       auto s = score->firstMeasure()->getSegment(SegmentType::ChordRest, { 0, 2 });
       s->add(cr);
-      cr = createChord(score, "half");
+      cr = createChord(score, "half", { 1, 2 });
       cr->add(createNote(score, 69));
       s = m->getSegment(SegmentType::ChordRest, { 1, 2 });
       s->add(cr);
@@ -785,11 +785,11 @@ Score::FileError importMuseData(MasterScore* score, const QString& name)
       m->setTick({ 1, 1 });
       m->setTimesig({ 4, 4 });
       score->measures()->add(m);
-      cr = createChord(score, "half");
+      cr = createChord(score, "half", { 1, 2 });
       cr->add(createNote(score, 71));
       s = m->getSegment(SegmentType::ChordRest, { 2, 2 });
       s->add(cr);
-      cr = createChord(score, "half");
+      cr = createChord(score, "half", { 1, 2 });
       cr->add(createNote(score, 72));
       s = m->getSegment(SegmentType::ChordRest, { 3, 2 });
       s->add(cr);
