@@ -744,6 +744,18 @@ Note* createNote(Score* score, const int pitch)
       }
 
 //---------------------------------------------------------
+//   createTimeSig
+//---------------------------------------------------------
+
+TimeSig* createTimeSig(Score* score, const Fraction& sig)
+      {
+      auto timesig = new TimeSig(score);
+      timesig->setSig(sig);
+      timesig->setTrack(0);                  // TODO
+      return timesig;
+      }
+
+//---------------------------------------------------------
 //   importMuseData
 //    return true on success
 //---------------------------------------------------------
@@ -772,9 +784,12 @@ Score::FileError importMuseData(MasterScore* score, const QString& name)
       m->setTick({ 0, 1 });
       m->setTimesig({ 4, 4 });
       score->measures()->add(m);
+      auto timesig = createTimeSig(score, { 4, 4 });
+      auto s = m->getSegment(SegmentType::TimeSig, { 0, 1 });
+      s->add(timesig);
       auto cr = createChord(score, "half", { 9, 20 });
       cr->add(createNote(score, 67));
-      auto s = score->firstMeasure()->getSegment(SegmentType::ChordRest, { 0, 2 });
+      s = score->firstMeasure()->getSegment(SegmentType::ChordRest, { 0, 2 });
       s->add(cr);
       cr = createChord(score, "half", { 1, 2 });
       cr->add(createNote(score, 69));
