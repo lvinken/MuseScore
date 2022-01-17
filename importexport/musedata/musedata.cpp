@@ -716,6 +716,16 @@ void MuseData::convert()
       }
 
 //---------------------------------------------------------
+//   addCrToTuplet
+//---------------------------------------------------------
+
+static void addCrToTuplet(ChordRest* cr, Tuplet* tuplet)
+      {
+      cr->setTuplet(tuplet);
+      tuplet->add(cr);
+      }
+
+//---------------------------------------------------------
 //   createChord
 //---------------------------------------------------------
 
@@ -756,6 +766,27 @@ TimeSig* createTimeSig(Score* score, const Fraction& sig)
       }
 
 //---------------------------------------------------------
+//   createTuplet
+//---------------------------------------------------------
+
+Tuplet* createTuplet(Score* score, const int track)
+      {
+      auto tuplet = new Tuplet(score);
+      tuplet->setTrack(track);
+      return tuplet;
+      }
+
+//---------------------------------------------------------
+//   setTupletParameters
+//---------------------------------------------------------
+
+static void setTupletParameters(Tuplet* tuplet, const int actual, const int normal, const TDuration::DurationType base)
+      {
+      tuplet->setRatio({ actual, normal });
+      tuplet->setBaseLen(base);
+      }
+
+//---------------------------------------------------------
 //   importMuseData
 //    return true on success
 //---------------------------------------------------------
@@ -782,32 +813,24 @@ Score::FileError importMuseData(MasterScore* score, const QString& name)
       // meaure 1
       auto m = new Measure(score);
       m->setTick({ 0, 1 });
-      m->setTimesig({ 4, 4 });
+      m->setTimesig({ 3, 4 });
       score->measures()->add(m);
-      auto timesig = createTimeSig(score, { 4, 4 });
+      auto timesig = createTimeSig(score, { 3, 4 });
       auto s = m->getSegment(SegmentType::TimeSig, { 0, 1 });
       s->add(timesig);
-      auto cr = createChord(score, "half", { 9, 20 });
+      auto cr = createChord(score, "quarter", { 1, 4 });
       cr->add(createNote(score, 67));
-      s = score->firstMeasure()->getSegment(SegmentType::ChordRest, { 0, 2 });
+      s = score->firstMeasure()->getSegment(SegmentType::ChordRest, { 0, 24 });
       s->add(cr);
-      cr = createChord(score, "half", { 1, 2 });
+      cr = createChord(score, "quarter", { 1, 4 });
       cr->add(createNote(score, 69));
-      s = m->getSegment(SegmentType::ChordRest, { 9, 20 });
+      s = m->getSegment(SegmentType::ChordRest, { 6, 24 });
       s->add(cr);
-      // meaure 2
-      m = new Measure(score);
-      m->setTick({ 1, 1 });
-      m->setTimesig({ 4, 4 });
-      score->measures()->add(m);
-      cr = createChord(score, "half", { 11, 20 });
+      cr = createChord(score, "quarter", { 1, 4 });
       cr->add(createNote(score, 71));
-      s = m->getSegment(SegmentType::ChordRest, { 2, 2 });
+      s = m->getSegment(SegmentType::ChordRest, { 12, 24 });
       s->add(cr);
-      cr = createChord(score, "half", { 1, 2 });
-      cr->add(createNote(score, 72));
-      s = m->getSegment(SegmentType::ChordRest, { 31, 20 });
-      s->add(cr);
+      // all done
       qDebug("Score::importMuseData() done");
       return Score::FileError::FILE_NO_ERROR;
       }
