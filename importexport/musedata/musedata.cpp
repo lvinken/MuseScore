@@ -787,6 +787,83 @@ static void setTupletParameters(Tuplet* tuplet, const int actual, const int norm
       }
 
 //---------------------------------------------------------
+//   JsonNote
+//---------------------------------------------------------
+
+class JsonNote
+      {
+public:
+      JsonNote() {}
+      void read(const QJsonObject& json);
+private:
+      };
+
+//---------------------------------------------------------
+//   JsonScore
+//---------------------------------------------------------
+
+class JsonEvent
+      {
+public:
+      JsonEvent() {}
+      void read(const QJsonObject& json);
+private:
+      QList<JsonNote> mNotes;
+      };
+
+//---------------------------------------------------------
+//   JsonSequence
+//---------------------------------------------------------
+
+class JsonSequence
+      {
+public:
+      JsonSequence() {}
+      void read(const QJsonObject& json);
+private:
+      QList<JsonEvent> mEvents;
+      };
+
+//---------------------------------------------------------
+//   JsonMeasure
+//---------------------------------------------------------
+
+class JsonMeasure
+      {
+public:
+      JsonMeasure() {}
+      void read(const QJsonObject& json) { qDebug("JsonMeasure::read()"); }
+private:
+      QList<JsonSequence> mSequences;
+      };
+
+//---------------------------------------------------------
+//   JsonScore
+//---------------------------------------------------------
+
+class JsonScore
+      {
+public:
+      JsonScore() {}
+      void read(const QJsonObject& json);
+private:
+      QList<JsonMeasure> mMeasures;
+      };
+
+void JsonScore::read(const QJsonObject& json)
+      {
+      qDebug("JsonScore::read()");
+      mMeasures.clear();
+      QJsonArray array = json["measures"].toArray();
+      for (int i = 0; i < array.size(); ++i) {
+            QJsonObject object = array[i].toObject();
+            JsonMeasure measure;
+            measure.read(object);
+            mMeasures.append(measure);
+            }
+      }
+
+//---------------------------------------------------------
 //   importMuseData
 //    return true on success
 //---------------------------------------------------------
@@ -802,6 +879,14 @@ Score::FileError importMuseData(MasterScore* score, const QString& name)
             return Score::FileError::FILE_ERROR;
       md.convert();
 #endif
+      QFile file(name);
+      if (!file.open(QIODevice::ReadOnly)) {
+            return Score::FileError::FILE_ERROR;
+            }
+      QByteArray data = file.readAll();
+      QJsonDocument doc = QJsonDocument::fromJson(data);
+      JsonScore jsonScore;
+      jsonScore.read(doc.object());
       // TODO move temporary part / staff creation
       auto part = new Part(score);
       part->setId("dbg");
@@ -810,6 +895,7 @@ Score::FileError importMuseData(MasterScore* score, const QString& name)
       staff->setPart(part);
       part->staves()->push_back(staff);
       score->staves().push_back(staff);
+#if 0
       // meaure 1
       auto m = new Measure(score);
       m->setTick({ 0, 1 });
@@ -830,6 +916,7 @@ Score::FileError importMuseData(MasterScore* score, const QString& name)
       cr->add(createNote(score, 71));
       s = m->getSegment(SegmentType::ChordRest, { 12, 24 });
       s->add(cr);
+#endif
       // all done
       qDebug("Score::importMuseData() done");
       return Score::FileError::FILE_NO_ERROR;
