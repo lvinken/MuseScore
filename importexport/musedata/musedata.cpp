@@ -808,8 +808,12 @@ public:
       JsonEvent() {}
       void read(const QJsonObject& json);
 private:
-      QList<JsonNote> mNotes;
       };
+
+void JsonEvent::read(const QJsonObject& json)
+      {
+      qDebug("JsonEvent::read() value '%s' pitch '%s'", qPrintable(json["value"].toString()), qPrintable(json["pitch"].toString()));
+      }
 
 //---------------------------------------------------------
 //   JsonSequence
@@ -821,8 +825,18 @@ public:
       JsonSequence() {}
       void read(const QJsonObject& json);
 private:
-      QList<JsonEvent> mEvents;
       };
+
+void JsonSequence::read(const QJsonObject& json)
+      {
+      qDebug("JsonSequence::read()");
+      QJsonArray array = json["events"].toArray();
+      for (int i = 0; i < array.size(); ++i) {
+            QJsonObject object = array[i].toObject();
+            JsonEvent event;
+            event.read(object);
+            }
+      }
 
 //---------------------------------------------------------
 //   JsonMeasure
@@ -832,10 +846,20 @@ class JsonMeasure
       {
 public:
       JsonMeasure() {}
-      void read(const QJsonObject& json) { qDebug("JsonMeasure::read()"); }
+      void read(const QJsonObject& json);
 private:
-      QList<JsonSequence> mSequences;
       };
+
+void JsonMeasure::read(const QJsonObject& json)
+      {
+      qDebug("JsonMeasure::read()");
+      QJsonArray array = json["sequences"].toArray();
+      for (int i = 0; i < array.size(); ++i) {
+            QJsonObject object = array[i].toObject();
+            JsonSequence sequence;
+            sequence.read(object);
+            }
+      }
 
 //---------------------------------------------------------
 //   JsonScore
@@ -847,19 +871,16 @@ public:
       JsonScore() {}
       void read(const QJsonObject& json);
 private:
-      QList<JsonMeasure> mMeasures;
       };
 
 void JsonScore::read(const QJsonObject& json)
       {
       qDebug("JsonScore::read()");
-      mMeasures.clear();
       QJsonArray array = json["measures"].toArray();
       for (int i = 0; i < array.size(); ++i) {
             QJsonObject object = array[i].toObject();
             JsonMeasure measure;
             measure.read(object);
-            mMeasures.append(measure);
             }
       }
 
