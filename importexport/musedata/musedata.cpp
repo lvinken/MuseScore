@@ -787,18 +787,6 @@ static void setTupletParameters(Tuplet* tuplet, const int actual, const int norm
       }
 
 //---------------------------------------------------------
-//   JsonNote
-//---------------------------------------------------------
-
-class JsonNote
-      {
-public:
-      JsonNote() {}
-      void read(const QJsonObject& json);
-private:
-      };
-
-//---------------------------------------------------------
 //   JsonScore
 //---------------------------------------------------------
 
@@ -806,13 +794,22 @@ class JsonEvent
       {
 public:
       JsonEvent() {}
-      void read(const QJsonObject& json);
+      Fraction read(const QJsonObject& json, Measure* const measure, const Fraction& tick);
 private:
       };
 
-void JsonEvent::read(const QJsonObject& json)
+// read a single event and return its length
+// TBD: is pitch 0-based or 1-based ?
+Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const Fraction& tick)
       {
-      qDebug("JsonEvent::read() value '%s' pitch '%s'", qPrintable(json["value"].toString()), qPrintable(json["pitch"].toString()));
+      qDebug("JsonEvent::read() rtick %s value '%s' pitch '%s'",
+             qPrintable(tick.print()),
+             qPrintable(json["value"].toString()), qPrintable(json["pitch"].toString()));
+      auto cr = createChord(measure->score(), "quarter", { 1, 4 }); // HACK
+      cr->add(createNote(measure->score(), 67)); // HACK
+      auto s = measure->getSegment(SegmentType::ChordRest, tick);
+      s->add(cr);
+      return { 1, 4 };       // HACK: assume all events are 1/4
       }
 
 //---------------------------------------------------------
@@ -823,19 +820,23 @@ class JsonSequence
       {
 public:
       JsonSequence() {}
-      void read(const QJsonObject& json);
+      Fraction read(const QJsonObject& json, Measure* const measure, const Fraction& startTick);
 private:
       };
 
-void JsonSequence::read(const QJsonObject& json)
+// read a single sequence (a.k.a. voice)
+// assume all voices start at relative tick 0 in its measure
+Fraction JsonSequence::read(const QJsonObject& json, Measure* const measure, const Fraction& startTick)
       {
       qDebug("JsonSequence::read()");
+      Fraction tick { startTick };
       QJsonArray array = json["events"].toArray();
       for (int i = 0; i < array.size(); ++i) {
             QJsonObject object = array[i].toObject();
             JsonEvent event;
-            event.read(object);
+            tick += event.read(object, measure, tick);
             }
+      return {};       // TODO to suppurt nested sequences
       }
 
 //---------------------------------------------------------
@@ -846,19 +847,30 @@ class JsonMeasure
       {
 public:
       JsonMeasure() {}
-      void read(const QJsonObject& json);
+      Fraction read(MasterScore* score, const QJsonObject& json, const Fraction& startTick);
 private:
       };
 
-void JsonMeasure::read(const QJsonObject& json)
+// read a single measure and return its length
+Fraction JsonMeasure::read(MasterScore* const score, const QJsonObject& json, const Fraction& startTick)
       {
       qDebug("JsonMeasure::read()");
+      auto m = new Measure(score);
+      m->setTick(startTick);
+      m->setTimesig({ 3, 4 });       // HACK: assume all measures are 3/4
+      score->measures()->add(m);
+      if (startTick == Fraction { 0, 1 }) {
+            auto timesig = createTimeSig(score, { 3, 4 });
+            auto s = m->getSegment(SegmentType::TimeSig, { 0, 1 });
+            s->add(timesig);
+            }
       QJsonArray array = json["sequences"].toArray();
       for (int i = 0; i < array.size(); ++i) {
             QJsonObject object = array[i].toObject();
             JsonSequence sequence;
-            sequence.read(object);
+            sequence.read(object, m, startTick);
             }
+      return { 3, 4 };       // HACK: assume all measures are 3/4
       }
 
 //---------------------------------------------------------
@@ -869,18 +881,26 @@ class JsonScore
       {
 public:
       JsonScore() {}
-      void read(const QJsonObject& json);
+      void read(MasterScore* score, const QJsonObject& json);
 private:
       };
 
-void JsonScore::read(const QJsonObject& json)
+void JsonScore::read(MasterScore* const score, const QJsonObject& json)
       {
       qDebug("JsonScore::read()");
+      // TODO move temporary part / staff creation
+      auto part = new Part(score);
+      part->setId("dbg");
+      score->appendPart(part);
+      auto staff = new Staff(score);
+      staff->setPart(part);
+      part->staves()->push_back(staff);
+      score->staves().push_back(staff);
       QJsonArray array = json["measures"].toArray();
       for (int i = 0; i < array.size(); ++i) {
             QJsonObject object = array[i].toObject();
             JsonMeasure measure;
-            measure.read(object);
+            measure.read(score, object, Fraction { 3 * i, 4 }); // HACK: assume all measures are 3/4
             }
       }
 
@@ -899,7 +919,7 @@ Score::FileError importMuseData(MasterScore* score, const QString& name)
       if (!md.read(name))
             return Score::FileError::FILE_ERROR;
       md.convert();
-#endif
+#else
       QFile file(name);
       if (!file.open(QIODevice::ReadOnly)) {
             return Score::FileError::FILE_ERROR;
@@ -907,36 +927,7 @@ Score::FileError importMuseData(MasterScore* score, const QString& name)
       QByteArray data = file.readAll();
       QJsonDocument doc = QJsonDocument::fromJson(data);
       JsonScore jsonScore;
-      jsonScore.read(doc.object());
-      // TODO move temporary part / staff creation
-      auto part = new Part(score);
-      part->setId("dbg");
-      score->appendPart(part);
-      auto staff = new Staff(score);
-      staff->setPart(part);
-      part->staves()->push_back(staff);
-      score->staves().push_back(staff);
-#if 0
-      // meaure 1
-      auto m = new Measure(score);
-      m->setTick({ 0, 1 });
-      m->setTimesig({ 3, 4 });
-      score->measures()->add(m);
-      auto timesig = createTimeSig(score, { 3, 4 });
-      auto s = m->getSegment(SegmentType::TimeSig, { 0, 1 });
-      s->add(timesig);
-      auto cr = createChord(score, "quarter", { 1, 4 });
-      cr->add(createNote(score, 67));
-      s = score->firstMeasure()->getSegment(SegmentType::ChordRest, { 0, 24 });
-      s->add(cr);
-      cr = createChord(score, "quarter", { 1, 4 });
-      cr->add(createNote(score, 69));
-      s = m->getSegment(SegmentType::ChordRest, { 6, 24 });
-      s->add(cr);
-      cr = createChord(score, "quarter", { 1, 4 });
-      cr->add(createNote(score, 71));
-      s = m->getSegment(SegmentType::ChordRest, { 12, 24 });
-      s->add(cr);
+      jsonScore.read(score, doc.object());
 #endif
       // all done
       qDebug("Score::importMuseData() done");
