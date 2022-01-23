@@ -777,6 +777,74 @@ Tuplet* createTuplet(Score* score, const int track)
       }
 
 //---------------------------------------------------------
+//   mnxValueUnitToDurationType
+//---------------------------------------------------------
+
+/**
+ * Convert MNX note value unit to MuseScore DurationType.
+ */
+
+static TDuration::DurationType mnxValueUnitToDurationType(const QString& s)
+      {
+      if (s == "/4")
+            return TDuration::DurationType::V_QUARTER;
+      else if (s == "/8")
+            return TDuration::DurationType::V_EIGHTH;
+      else if (s == "/1024")
+            return TDuration::DurationType::V_1024TH;
+      else if (s == "/512")
+            return TDuration::DurationType::V_512TH;
+      else if (s == "/256")
+            return TDuration::DurationType::V_256TH;
+      else if (s == "/128")
+            return TDuration::DurationType::V_128TH;
+      else if (s == "/64")
+            return TDuration::DurationType::V_64TH;
+      else if (s == "/32")
+            return TDuration::DurationType::V_32ND;
+      else if (s == "/16")
+            return TDuration::DurationType::V_16TH;
+      else if (s == "/2")
+            return TDuration::DurationType::V_HALF;
+      else if (s == "/1")
+            return TDuration::DurationType::V_WHOLE;
+      else if (s == "*2")
+            return TDuration::DurationType::V_BREVE;
+      else if (s == "*4")
+            return TDuration::DurationType::V_LONG;
+      else {
+            qDebug("mnxValueUnitToDurationType(%s): unknown", qPrintable(s));
+            return TDuration::DurationType::V_INVALID;
+            }
+      }
+
+//---------------------------------------------------------
+//   mnxEventValueToTDuration
+//---------------------------------------------------------
+
+/**
+ * Convert MNX note value (unit plus optional dots) to MuseScore TDuration.
+ */
+
+static TDuration mnxEventValueToTDuration(const QString& value)
+      {
+      int dots = 0;
+      QString valueWithoutDots = value;
+
+      while (valueWithoutDots.endsWith('d')) {
+            ++dots;
+            valueWithoutDots.resize(valueWithoutDots.size() - 1);
+            }
+
+      auto val = mnxValueUnitToDurationType(valueWithoutDots);
+
+      TDuration res(val);
+      res.setDots(dots);
+
+      return res;
+      }
+
+//---------------------------------------------------------
 //   setTupletParameters
 //---------------------------------------------------------
 
