@@ -1960,6 +1960,19 @@ static bool hasTempoTextAtTick(const TempoMap* const tempoMap, const int tick)
 //   measure
 //---------------------------------------------------------
 
+static void dumpBeams(const char* const where, const std::vector<Beam*>& beams)
+      {
+      QString res;
+      for (auto beam : beams) {
+            res += QString::asprintf(" 0x%p", beam);
+            }
+      qDebug("%s %s", where, qPrintable(res));
+      }
+
+//---------------------------------------------------------
+//   measure
+//---------------------------------------------------------
+
 /**
  Parse the /score-partwise/part/measure node.
  */
@@ -1986,13 +1999,17 @@ void MusicXMLParserPass2::measure(const QString& partId,
       measure->setRepeatStart(false);
       measure->setRepeatEnd(false);
 
+      // beam state for every MuseScore track in this part
+      Part* const part = _pass1.getPart(partId); // should not fail, we only get here if the part exists
+      std::vector<Beam*> beams(VOICES * part->nstaves(), nullptr);
+      //dumpBeams("init", beams);
+
       Fraction mTime; // current time stamp within measure
       Fraction prevTime; // time stamp within measure previous chord
       Chord* prevChord = 0;       // previous chord
       Fraction mDura; // current total measure duration
       GraceChordList gcl; // grace chords collected sofar
       int gac = 0;       // grace after count in the grace chord list
-      Beam* beam = 0;       // current beam
       QString cv = "1";       // current voice for chords, default is 1
       FiguredBassList fbl;               // List of figured bass elements under a single note
       MxmlTupletStates tupletStates;       // Tuplet state for each voice in the current part
@@ -2022,7 +2039,7 @@ void MusicXMLParserPass2::measure(const QString& partId,
                   int alt = -10;                    // any number outside range of xml-tag "alter"
                   // note: chord and grace note handling done in note()
                   // dura > 0 iff valid rest or first note of chord found
-                  Note* n = note(partId, measure, time + mTime, time + prevTime, missingPrev, dura, missingCurr, cv, gcl, gac, beam, fbl, alt, tupletStates, tuplets);
+                  Note* n = note(partId, measure, time + mTime, time + prevTime, missingPrev, dura, missingCurr, cv, gcl, gac, beams, fbl, alt, tupletStates, tuplets);
                   if (n && !n->chord()->isGrace())
                         prevChord = n->chord();  // remember last non-grace chord
                   if (n && n->accidental() && n->accidental()->accidentalType() != AccidentalType::NONE)
@@ -2120,12 +2137,14 @@ void MusicXMLParserPass2::measure(const QString& partId,
       resetTuplets(tuplets);
 
       // fill possible gaps in voice 1
-      Part* part = _pass1.getPart(partId); // should not fail, we only get here if the part exists
       fillGapsInFirstVoices(measure, part);
 
       // can't have beams extending into the next measure
-      if (beam)
-            removeBeam(beam);
+      // TODO: yes, we can
+      for (auto beam : beams) {
+            if (beam)
+                  removeBeam(beam);
+            }
 
       // TODO:
       // - how to handle _timeSigDura.isZero (shouldn't happen ?)
@@ -4295,7 +4314,7 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                                 QString& currentVoice,
                                 GraceChordList& gcl,
                                 int& gac,
-                                Beam*& currBeam,
+                                std::vector<Beam*>& beams,
                                 FiguredBassList& fbl,
                                 int& alt,
                                 MxmlTupletStates& tupletStates,
@@ -4303,6 +4322,7 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                                 )
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "note");
+      //dumpBeams("note() entry", beams);
 
       if (_e.attributes().value("print-spacing") == "no") {
             notePrintSpacingNo(dura);
@@ -4531,6 +4551,10 @@ Note* MusicXMLParserPass2::note(const QString& partId,
             }
       // end allocation
 
+      const auto beamIndex = msTrack + msVoice - _pass1.trackForPart(partId);
+      //qDebug("beamIndex %d", beamIndex);
+      Beam*& currBeam = beams.at(beamIndex);
+
       if (rest) {
             const auto track = msTrack + msVoice;
             if (cr) {
@@ -4692,6 +4716,7 @@ Note* MusicXMLParserPass2::note(const QString& partId,
             qDebug("name %s line %lld", qPrintable(_e.name().toString()), _e.lineNumber());
       Q_ASSERT(_e.isEndElement() && _e.name() == "note");
 
+      //dumpBeams("note() exit", beams);
       return note;
       }
 
