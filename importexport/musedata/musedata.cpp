@@ -716,67 +716,6 @@ void MuseData::convert()
       }
 
 //---------------------------------------------------------
-//   addCrToTuplet
-//---------------------------------------------------------
-
-static void addCrToTuplet(ChordRest* cr, Tuplet* tuplet)
-      {
-      cr->setTuplet(tuplet);
-      tuplet->add(cr);
-      }
-
-//---------------------------------------------------------
-//   createChord
-//---------------------------------------------------------
-
-Chord* createChord(Score* score, const QString& value, const Fraction& ticks)
-      {
-      auto dur = TDuration { value };
-      auto chord = new Chord(score);
-      chord->setTrack(0);             // TODO
-      chord->setDurationType(dur);
-      chord->setTicks(ticks);
-      chord->setDots(dur.dots());
-      return chord;
-      }
-
-//---------------------------------------------------------
-//   createNote
-//---------------------------------------------------------
-
-Note* createNote(Score* score, const int pitch)
-      {
-      auto note = new Note(score);
-      note->setTrack(0);            // TODO
-      note->setPitch(pitch);
-      note->setTpcFromPitch();
-      return note;
-      }
-
-//---------------------------------------------------------
-//   createTimeSig
-//---------------------------------------------------------
-
-TimeSig* createTimeSig(Score* score, const Fraction& sig)
-      {
-      auto timesig = new TimeSig(score);
-      timesig->setSig(sig);
-      timesig->setTrack(0);                  // TODO
-      return timesig;
-      }
-
-//---------------------------------------------------------
-//   createTuplet
-//---------------------------------------------------------
-
-Tuplet* createTuplet(Score* score, const int track)
-      {
-      auto tuplet = new Tuplet(score);
-      tuplet->setTrack(track);
-      return tuplet;
-      }
-
-//---------------------------------------------------------
 //   mnxValueUnitToDurationType
 //---------------------------------------------------------
 
@@ -845,6 +784,67 @@ static TDuration mnxEventValueToTDuration(const QString& value)
       }
 
 //---------------------------------------------------------
+//   addCrToTuplet
+//---------------------------------------------------------
+
+static void addCrToTuplet(ChordRest* cr, Tuplet* tuplet)
+      {
+      cr->setTuplet(tuplet);
+      tuplet->add(cr);
+      }
+
+//---------------------------------------------------------
+//   createChord
+//---------------------------------------------------------
+
+Chord* createChord(Score* score, const QString& value, const Fraction& duration)
+      {
+      auto dur = mnxEventValueToTDuration(value);
+      auto chord = new Chord(score);
+      chord->setTrack(0);             // TODO
+      chord->setDurationType(dur);
+      chord->setTicks(dur.fraction());
+      chord->setDots(dur.dots());
+      return chord;
+      }
+
+//---------------------------------------------------------
+//   createNote
+//---------------------------------------------------------
+
+Note* createNote(Score* score, const int pitch)
+      {
+      auto note = new Note(score);
+      note->setTrack(0);            // TODO
+      note->setPitch(pitch);
+      note->setTpcFromPitch();
+      return note;
+      }
+
+//---------------------------------------------------------
+//   createTimeSig
+//---------------------------------------------------------
+
+TimeSig* createTimeSig(Score* score, const Fraction& sig)
+      {
+      auto timesig = new TimeSig(score);
+      timesig->setSig(sig);
+      timesig->setTrack(0);                  // TODO
+      return timesig;
+      }
+
+//---------------------------------------------------------
+//   createTuplet
+//---------------------------------------------------------
+
+Tuplet* createTuplet(Score* score, const int track)
+      {
+      auto tuplet = new Tuplet(score);
+      tuplet->setTrack(track);
+      return tuplet;
+      }
+
+//---------------------------------------------------------
 //   setTupletParameters
 //---------------------------------------------------------
 
@@ -873,11 +873,14 @@ Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const 
       qDebug("JsonEvent::read() rtick %s value '%s' pitch '%s'",
              qPrintable(tick.print()),
              qPrintable(json["value"].toString()), qPrintable(json["pitch"].toString()));
-      auto cr = createChord(measure->score(), "quarter", { 1, 4 }); // HACK
-      cr->add(createNote(measure->score(), 67)); // HACK
+      auto cr = createChord(measure->score(), json["value"].toString(), tick);
+      bool ok { true };
+      int pitch { json["pitch"].toString().toInt(&ok) };
+      qDebug("ok %d pitch %d", ok, pitch);
+      cr->add(createNote(measure->score(), pitch));
       auto s = measure->getSegment(SegmentType::ChordRest, tick);
       s->add(cr);
-      return { 1, 4 };       // HACK: assume all events are 1/4
+      return cr->ticks();
       }
 
 //---------------------------------------------------------
