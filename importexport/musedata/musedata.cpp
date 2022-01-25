@@ -867,7 +867,8 @@ private:
       };
 
 // read a single event and return its length
-// TBD: is pitch 0-based or 1-based ?
+// pitch is 0-based, see pitchIsValid() in pitchspelling.h
+// => C4 = 60
 Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const Fraction& tick)
       {
       qDebug("JsonEvent::read() rtick %s value '%s' pitch '%s'",
@@ -918,22 +919,22 @@ class JsonMeasure
       {
 public:
       JsonMeasure() {}
-      Fraction read(MasterScore* score, const QJsonObject& json, const Fraction& startTick);
+      Fraction read(MasterScore* score, const QJsonObject& json, const Fraction& timeSig, const Fraction& startTick);
 private:
       };
 
 // read a single measure and return its length
-Fraction JsonMeasure::read(MasterScore* const score, const QJsonObject& json, const Fraction& startTick)
+Fraction JsonMeasure::read(MasterScore* const score, const QJsonObject& json, const Fraction& timeSig, const Fraction& startTick)
       {
       qDebug("JsonMeasure::read()");
       auto m = new Measure(score);
       m->setTick(startTick);
-      m->setTimesig({ 3, 4 });       // HACK: assume all measures are 3/4
+      m->setTimesig(timeSig);
       score->measures()->add(m);
       if (startTick == Fraction { 0, 1 }) {
-            auto timesig = createTimeSig(score, { 3, 4 });
+            auto ts = createTimeSig(score, timeSig);
             auto s = m->getSegment(SegmentType::TimeSig, { 0, 1 });
-            s->add(timesig);
+            s->add(ts);
             }
       QJsonArray array = json["sequences"].toArray();
       for (int i = 0; i < array.size(); ++i) {
@@ -941,7 +942,7 @@ Fraction JsonMeasure::read(MasterScore* const score, const QJsonObject& json, co
             JsonSequence sequence;
             sequence.read(object, m, startTick);
             }
-      return { 3, 4 };       // HACK: assume all measures are 3/4
+            return timeSig;       // TODO: use real length instead ?
       }
 
 //---------------------------------------------------------
@@ -967,11 +968,16 @@ void JsonScore::read(MasterScore* const score, const QJsonObject& json)
       staff->setPart(part);
       part->staves()->push_back(staff);
       score->staves().push_back(staff);
+      Fraction timeSig { 4, 4 };       // default: assume all measures are 4/4
+      if (json.contains("time")) {
+            timeSig = Fraction::fromString(json["time"].toString());
+            qDebug("timesig %s", qPrintable(timeSig.print()));
+            }
       QJsonArray array = json["measures"].toArray();
       for (int i = 0; i < array.size(); ++i) {
             QJsonObject object = array[i].toObject();
             JsonMeasure measure;
-            measure.read(score, object, Fraction { 3 * i, 4 }); // HACK: assume all measures are 3/4
+            measure.read(score, object, timeSig, timeSig * i);
             }
       }
 
