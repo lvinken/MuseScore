@@ -942,7 +942,9 @@ Fraction JsonMeasure::read(MasterScore* const score, const QJsonObject& json, co
             JsonSequence sequence;
             sequence.read(object, m, startTick);
             }
-            return timeSig;       // TODO: use real length instead ?
+      const auto length = timeSig;             // TODO: use real length instead ?
+      m->setTicks(length);
+      return length;
       }
 
 //---------------------------------------------------------
