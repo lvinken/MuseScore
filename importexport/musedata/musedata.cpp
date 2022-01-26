@@ -803,7 +803,7 @@ Chord* createChord(Score* score, const QString& value, const Fraction& duration)
       auto chord = new Chord(score);
       chord->setTrack(0);             // TODO
       chord->setDurationType(dur);
-      chord->setTicks(dur.fraction());
+      chord->setTicks(duration.isValid() ? duration : dur.fraction());        // specified duration overrules value-based
       chord->setDots(dur.dots());
       return chord;
       }
@@ -871,10 +871,17 @@ private:
 // => C4 = 60
 Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const Fraction& tick)
       {
-      qDebug("JsonEvent::read() rtick %s value '%s' pitch '%s'",
+      qDebug("JsonEvent::read() rtick %s value '%s' duration '%s' pitch '%s'",
              qPrintable(tick.print()),
-             qPrintable(json["value"].toString()), qPrintable(json["pitch"].toString()));
-      auto cr = createChord(measure->score(), json["value"].toString(), tick);
+             qPrintable(json["value"].toString()),
+             qPrintable(json["duration"].toString()),
+             qPrintable(json["pitch"].toString()));
+      Fraction duration { 0, 0 };         // initialize invalid to catch missing duration
+      if (json.contains("duration")) {
+            duration = Fraction::fromString(json["duration"].toString());
+            qDebug("duration %s", qPrintable(duration.print()));
+            }
+      auto cr = createChord(measure->score(), json["value"].toString(), duration);
       bool ok { true };
       int pitch { json["pitch"].toString().toInt(&ok) };
       qDebug("ok %d pitch %d", ok, pitch);
