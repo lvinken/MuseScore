@@ -862,33 +862,63 @@ class JsonEvent
       {
 public:
       JsonEvent() {}
-      Fraction read(const QJsonObject& json, Measure* const measure, const Fraction& tick);
+      Fraction read(const QJsonObject& json, Measure* const measure, const Fraction& tick, Tuplet* tuplet);
 private:
       };
 
 // read a single event and return its length
 // pitch is 0-based, see pitchIsValid() in pitchspelling.h
 // => C4 = 60
-Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const Fraction& tick)
+Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const Fraction& tick, Tuplet* tuplet)
       {
-      qDebug("JsonEvent::read() rtick %s value '%s' duration '%s' pitch '%s'",
+      qDebug("JsonEvent::read() rtick %s value '%s' duration '%s' pitch '%s' inner '%s' outer '%s'",
              qPrintable(tick.print()),
              qPrintable(json["value"].toString()),
              qPrintable(json["duration"].toString()),
-             qPrintable(json["pitch"].toString()));
-      Fraction duration { 0, 0 };         // initialize invalid to catch missing duration
-      if (json.contains("duration")) {
-            duration = Fraction::fromString(json["duration"].toString());
-            qDebug("duration %s", qPrintable(duration.print()));
+             qPrintable(json["pitch"].toString()),
+             qPrintable(json["inner"].toString()),
+             qPrintable(json["outer"].toString())
+             );
+      if (json.contains("inner") && json.contains("outer")) {
+            // tuplet found
+            const auto inner = Fraction::fromString(json["inner"].toString());
+            const auto outer = Fraction::fromString(json["outer"].toString());
+            const auto ratio = inner / outer;
+            qDebug("ratio %s", qPrintable(ratio.print()));
+            Fraction tupTime { 0, 1 };       // time in this tuplet
+            // create the tuplet
+            auto newtuplet = createTuplet(measure->score(), 0 /* TODO track */);
+            newtuplet->setParent(measure);
+            setTupletParameters(newtuplet, ratio.numerator(), ratio.denominator(), /* TODO: calculate real value */ TDuration::DurationType::V_EIGHTH);
+            QJsonArray array = json["events"].toArray();
+            for (int i = 0; i < array.size(); ++i) {
+                  QJsonObject object = array[i].toObject();
+                  JsonEvent event;
+                  tupTime += event.read(object, measure, tick + tupTime, newtuplet);
+                  qDebug("tupTime %s", qPrintable(tupTime.print()));
+                  }
+            return tupTime;
             }
-      auto cr = createChord(measure->score(), json["value"].toString(), duration);
-      bool ok { true };
-      int pitch { json["pitch"].toString().toInt(&ok) };
-      qDebug("ok %d pitch %d", ok, pitch);
-      cr->add(createNote(measure->score(), pitch));
-      auto s = measure->getSegment(SegmentType::ChordRest, tick);
-      s->add(cr);
-      return cr->ticks();
+      else {
+            Fraction duration { 0, 0 };   // initialize invalid to catch missing duration
+            if (json.contains("duration")) {
+                  duration = Fraction::fromString(json["duration"].toString());
+                  qDebug("duration %s", qPrintable(duration.print()));
+                  }
+            auto cr = createChord(measure->score(), json["value"].toString(), duration);
+            bool ok { true };
+            int pitch { json["pitch"].toString().toInt(&ok) };
+            qDebug("ok %d pitch %d", ok, pitch);
+            cr->add(createNote(measure->score(), pitch));
+            auto s = measure->getSegment(SegmentType::ChordRest, tick);
+            s->add(cr);
+            if (tuplet) {
+                  cr->setTuplet(tuplet);
+                  tuplet->add(cr);
+                  }
+
+            return cr->actualTicks();
+            }
       }
 
 //---------------------------------------------------------
@@ -913,7 +943,7 @@ Fraction JsonSequence::read(const QJsonObject& json, Measure* const measure, con
       for (int i = 0; i < array.size(); ++i) {
             QJsonObject object = array[i].toObject();
             JsonEvent event;
-            tick += event.read(object, measure, tick);
+            tick += event.read(object, measure, tick, nullptr);
             }
       return {};       // TODO to suppurt nested sequences
       }
