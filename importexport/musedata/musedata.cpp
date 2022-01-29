@@ -855,7 +855,7 @@ static void setTupletParameters(Tuplet* tuplet, const int actual, const int norm
       }
 
 //---------------------------------------------------------
-//   JsonScore
+//   JsonTuplet
 //---------------------------------------------------------
 
 class JsonEvent
@@ -865,6 +865,34 @@ public:
       Fraction read(const QJsonObject& json, Measure* const measure, const Fraction& tick, Tuplet* tuplet);
 private:
       };
+
+class JsonTuplet
+      {
+public:
+      JsonTuplet() {}
+      Fraction read(const QJsonObject& json, Measure* const measure, const Fraction& tick, Tuplet* tuplet);
+private:
+      };
+
+Fraction JsonTuplet::read(const QJsonObject& json, Measure* const measure, const Fraction& tick, Tuplet* tuplet)
+      {
+      qDebug("JsonTuplet::read() rtick %s",
+             qPrintable(tick.print())
+             );
+      Fraction tupTime { 0, 1 };             // time in this tuplet
+      QJsonArray array = json["events"].toArray();
+      for (int i = 0; i < array.size(); ++i) {
+            QJsonObject object = array[i].toObject();
+            JsonEvent event;
+            tupTime += event.read(object, measure, tick + tupTime, tuplet);
+            //qDebug("tupTime %s", qPrintable(tupTime.print()));
+            }
+      return tupTime;
+      }
+
+//---------------------------------------------------------
+//   JsonEvent
+//---------------------------------------------------------
 
 // read a single event and return its length
 // pitch is 0-based, see pitchIsValid() in pitchspelling.h
@@ -884,20 +912,13 @@ Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const 
             const auto inner = Fraction::fromString(json["inner"].toString());
             const auto outer = Fraction::fromString(json["outer"].toString());
             const auto ratio = inner / outer;
-            qDebug("ratio %s", qPrintable(ratio.print()));
-            Fraction tupTime { 0, 1 };       // time in this tuplet
+            //qDebug("ratio %s", qPrintable(ratio.print()));
             // create the tuplet
-            auto newtuplet = createTuplet(measure->score(), 0 /* TODO track */);
-            newtuplet->setParent(measure);
-            setTupletParameters(newtuplet, ratio.numerator(), ratio.denominator(), /* TODO: calculate real value */ TDuration::DurationType::V_EIGHTH);
-            QJsonArray array = json["events"].toArray();
-            for (int i = 0; i < array.size(); ++i) {
-                  QJsonObject object = array[i].toObject();
-                  JsonEvent event;
-                  tupTime += event.read(object, measure, tick + tupTime, newtuplet);
-                  qDebug("tupTime %s", qPrintable(tupTime.print()));
-                  }
-            return tupTime;
+            auto tuplet = createTuplet(measure->score(), 0 /* TODO track */);
+            tuplet->setParent(measure);
+            setTupletParameters(tuplet, ratio.numerator(), ratio.denominator(), /* TODO: calculate real value */ TDuration::DurationType::V_EIGHTH);
+            JsonTuplet jsonTuplet;
+            return jsonTuplet.read(json, measure, tick, tuplet);
             }
       else {
             Fraction duration { 0, 0 };   // initialize invalid to catch missing duration
@@ -908,7 +929,7 @@ Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const 
             auto cr = createChord(measure->score(), json["value"].toString(), duration);
             bool ok { true };
             int pitch { json["pitch"].toString().toInt(&ok) };
-            qDebug("ok %d pitch %d", ok, pitch);
+            //qDebug("ok %d pitch %d", ok, pitch);
             cr->add(createNote(measure->score(), pitch));
             auto s = measure->getSegment(SegmentType::ChordRest, tick);
             s->add(cr);
