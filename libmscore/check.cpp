@@ -69,7 +69,7 @@ void Score::checkScore()
       for (Measure* m = firstMeasure(); m; m = m->nextMeasure())
             m->segments()->check();
 #endif
-      for (Segment* s = firstMeasure()->first(); s;) {
+      for (Segment* s = firstMeasure()->first(); s; ) {
             Segment* ns = s->next1();
 
             if (s->segmentType() & (SegmentType::ChordRest)) {
@@ -82,8 +82,8 @@ void Score::checkScore()
                         }
                   if (empty) {
                         // Measure* m = s->measure();
-qDebug("checkScore: remove empty ChordRest segment");
-//                        m->remove(s);
+                        qDebug("checkScore: remove empty ChordRest segment");
+                        //                        m->remove(s);
                         }
                   }
             s = ns;
@@ -105,15 +105,15 @@ qDebug("checkScore: remove empty ChordRest segment");
                               Fraction timeStretch = st->timeStretch(lcr->tick());
                               Fraction f = cr->globalTicks() * timeStretch;
                               qDebug("Chord/Rest gap at tick %d(%s+%d)-%d(%s) staffIdx %d measure %d (len = %d)",
-                                 tick.ticks(), lcr->name(), f.ticks(),
-                                 s->tick().ticks(), cr->name(), staffIdx, cr->measure()->no(),
-                                 (cr->tick() - tick).ticks());
+                                     tick.ticks(), lcr->name(), f.ticks(),
+                                     s->tick().ticks(), cr->name(), staffIdx, cr->measure()->no(),
+                                     (cr->tick() - tick).ticks());
                               }
                         else {
                               qDebug("Chord/Rest gap at tick %d-%d(%s) staffIdx %d measure %d (len = %d)",
-                                 tick.ticks(),
-                                 s->tick().ticks(), cr->name(), staffIdx, cr->measure()->no(),
-                                 (cr->tick() - tick).ticks());
+                                     tick.ticks(),
+                                     s->tick().ticks(), cr->name(), staffIdx, cr->measure()->no(),
+                                     (cr->tick() - tick).ticks());
                               }
 #if 0
                         if (cr->tick() > tick) {
@@ -131,7 +131,7 @@ qDebug("checkScore: remove empty ChordRest segment");
                                           len = m->tick() + m->ticks() - ttick;
                                     Fraction timeStretch = st->timeStretch(ttick);
                                     Fraction ff          = Fraction::fromTicks(len);
-qDebug("    - insert %d/%d", ff.numerator(), ff.denominator());
+                                    qDebug("    - insert %d/%d", ff.numerator(), ff.denominator());
                                     if (ff.numerator() == 0)
                                           break;
                                     Fraction fff = ff / timeStretch;
@@ -141,7 +141,7 @@ qDebug("    - insert %d/%d", ff.numerator(), ff.denominator());
                                           rest->setDurationType(d);
                                           rest->setDuration(d.fraction());
                                           rest->setColor(Qt::red);
-qDebug("    -   Rest %d/%d", d.fraction().numerator(), d.fraction().denominator());
+                                          qDebug("    -   Rest %d/%d", d.fraction().numerator(), d.fraction().denominator());
                                           rest->setTrack(track);
                                           Segment* s = m->getSegment(rest, ttick);
                                           s->add(rest);
@@ -155,7 +155,7 @@ qDebug("    -   Rest %d/%d", d.fraction().numerator(), d.fraction().denominator(
                         }
                   Fraction timeStretch = st->timeStretch(tick);
                   Fraction f = cr->globalTicks() * timeStretch;
-//                  qDebug("%s %d + %d = %d", cr->name(), tick, f.ticks(), tick + f.ticks());
+                  //                  qDebug("%s %d + %d = %d", cr->name(), tick, f.ticks(), tick + f.ticks());
                   tick      += f;
                   lcr        = cr;
                   }
@@ -269,7 +269,7 @@ bool Score::checkKeys()
                         }
                   if (staff(i)->key(m->tick()) != k) {
                         qDebug("measure %d (tick %d) : key %d, map %d", m->no(), m->tick().ticks(), int(k),
-                           int(staff(i)->key(m->tick())));
+                               int(staff(i)->key(m->tick())));
                         rc = false;
                         }
                   }
@@ -285,7 +285,7 @@ bool Score::checkKeys()
 bool Score::checkClefs()
       {
       bool rc = true;
-//TODO:ws   what about clefs not at measure start?
+      //TODO:ws   what about clefs not at measure start?
 
 #if 0
       int track = 0;
@@ -322,11 +322,11 @@ bool Score::checkClefs()
 void Measure::fillGap(const Fraction& pos, const Fraction& len, int track, const Fraction& stretch, bool useGapRests)
       {
       qDebug("measure %6d pos %d, len %d/%d, stretch %d/%d track %d",
-         tick().ticks(),
-         pos.ticks(),
-         len.numerator(), len.denominator(),
-         stretch.numerator(), stretch.denominator(),
-         track);
+             tick().ticks(),
+             pos.ticks(),
+             len.numerator(), len.denominator(),
+             stretch.numerator(), stretch.denominator(),
+             track);
       TDuration d;
       d.setVal(len.ticks());
       if (d.isValid()) {
