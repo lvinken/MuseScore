@@ -463,6 +463,7 @@ void Score::cmdAddSpanner(Spanner* spanner, int staffIdx, Segment* startSegment,
 
 void Score::expandVoice(Segment* s, int track)
       {
+            qDebug("s %p track %d", s, track);
       if (!s) {
             qDebug("expand voice: no segment");
             return;
@@ -673,6 +674,7 @@ Note* Score::setGraceNote(Chord* ch, int pitch, NoteType type, int len)
 
 void Score::createCRSequence(const Fraction& f, ChordRest* cr, const Fraction& t)
       {
+      qDebug("f %s t %s", qPrintable(f.print()), qPrintable(t.print()));
       Fraction tick(t);
       Measure* measure = cr->measure();
       ChordRest* ocr = 0;
@@ -702,6 +704,7 @@ void Score::createCRSequence(const Fraction& f, ChordRest* cr, const Fraction& t
             tick += ncr->actualTicks();
             ocr = ncr;
             }
+      qDebug("exit");
       }
 
 //---------------------------------------------------------
@@ -863,6 +866,7 @@ Segment* Score::setNoteRest(Segment* segment, int track, NoteVal nval, Fraction 
                   select(nr, SelectType::SINGLE, 0);
                   }
             }
+      qDebug("exit");
       return segment;
       }
 
@@ -880,6 +884,7 @@ Segment* Score::setNoteRest(Segment* segment, int track, NoteVal nval, Fraction 
 
 Fraction Score::makeGap(Segment* segment, int track, const Fraction& _sd, Tuplet* tuplet, bool keepChord)
       {
+      qDebug("segment->tick %s _sd %s tuplet %p", qPrintable(segment->tick().print()), qPrintable(_sd.print()), tuplet);
       Q_ASSERT(_sd.numerator());
 
       Measure* measure = segment->measure();
@@ -1040,6 +1045,7 @@ Fraction Score::makeGap(Segment* segment, int track, const Fraction& _sd, Tuplet
             deleteSpannersFromRange(t1, t2, track, track + 1, filter);
             }
 
+      qDebug("exit accumulated %s", qPrintable(accumulated.print()));
       return accumulated;
       }
 
@@ -1090,6 +1096,7 @@ bool Score::makeGap1(const Fraction& baseTick, int staffIdx, const Fraction& len
 
 bool Score::makeGapVoice(Segment* seg, int track, Fraction len, const Fraction& tick)
       {
+      qDebug("segment->tick %s len %s tick %s", qPrintable(seg->tick().print()), qPrintable(len.print()), qPrintable(tick.print()));
       ChordRest* cr = 0;
       cr = toChordRest(seg->element(track));
       if (!cr) {
@@ -1146,6 +1153,7 @@ bool Score::makeGapVoice(Segment* seg, int track, Fraction len, const Fraction& 
                   seg1 = seg1->next1(SegmentType::ChordRest);
                   if (seg1 == 0) {
                         qDebug("no segment");
+                        qDebug("exit 1");
                         return false;
                         }
                   if (seg1->element(track)) {
@@ -1158,11 +1166,13 @@ bool Score::makeGapVoice(Segment* seg, int track, Fraction len, const Fraction& 
       for (;;) {
             if (!cr) {
                   qDebug("cannot make gap");
+                  qDebug("exit 2");
                   return false;
                   }
             Fraction l = makeGap(cr->segment(), cr->track(), len, 0);
             if (l.isZero()) {
                   qDebug("returns zero gap");
+                  qDebug("exit 3");
                   return false;
                   }
             len -= l;
@@ -1176,6 +1186,7 @@ bool Score::makeGapVoice(Segment* seg, int track, Fraction len, const Fraction& 
                   m = cr->measure()->nextMeasure();
                   if (m == 0) {
                         qDebug("===EOS reached");
+                        qDebug("exit 4");
                         return true;
                         }
                   }
@@ -1188,6 +1199,7 @@ bool Score::makeGapVoice(Segment* seg, int track, Fraction len, const Fraction& 
                   cr = toChordRest(s->element(t));
                   }
             }
+      qDebug("exit 5");
       return true;
       }
 
@@ -1251,15 +1263,18 @@ void Score::changeCRlen(ChordRest* cr, const TDuration& d)
 
 void Score::changeCRlen(ChordRest* cr, const Fraction& dstF, bool fillWithRest)
       {
+      qDebug("cr->tick %s dstF %s fillWithRest %d", qPrintable(cr->tick().print()), qPrintable(dstF.print()), fillWithRest);
       if (cr->isRepeatMeasure()) {
             // it is not clear what should this
             // operation mean for measure repeats.
+            qDebug("exit 1");
             return;
             }
       Fraction srcF(cr->ticks());
       if (srcF == dstF) {
             if (cr->isFullMeasureRest())
                   undoChangeChordRestLen(cr, dstF);
+            qDebug("exit 2");
             return;
             }
 
@@ -1273,6 +1288,7 @@ void Score::changeCRlen(ChordRest* cr, const Fraction& dstF, bool fillWithRest)
             //
             // make shorter and fill with rest
             //
+            qDebug("srcF %s -> make shorter", qPrintable(srcF.print()));
             deselectAll();
             if (cr->isChord()) {
                   //
@@ -1303,16 +1319,20 @@ void Score::changeCRlen(ChordRest* cr, const Fraction& dstF, bool fillWithRest)
 
             if (selElement)
                   select(selElement, SelectType::SINGLE, 0);
+            qDebug("exit 3");
             return;
             }
 
       //
       // make longer
       //
+      qDebug("srcF %s -> make longer", qPrintable(srcF.print()));
       // split required len into Measures
       QList<Fraction> flist = splitGapToMeasureBoundaries(cr, dstF);
-      if (flist.empty())
+      if (flist.empty()) {
+            qDebug("exit 4");
             return;
+            }
 
       deselectAll();
 
@@ -1407,6 +1427,7 @@ void Score::changeCRlen(ChordRest* cr, const Fraction& dstF, bool fillWithRest)
             cr1 = toChordRest(s->element(track));
             }
       connectTies();
+      qDebug("exit 5");
       }
 
 //---------------------------------------------------------
@@ -3334,6 +3355,7 @@ void Score::cmdRealizeChordSymbols(bool literal, Voicing voicing, HDuration dura
 //---------------------------------------------------------
 Segment* Score::setChord(Segment* segment, int track, Chord* chordTemplate, Fraction dur, Direction stemDirection)
       {
+      qDebug("segment->tick %s dur %s", qPrintable(segment->tick().print()), qPrintable(dur.print()));
       Q_ASSERT(segment->segmentType() == SegmentType::ChordRest);
 
       Fraction tick = segment->tick();
@@ -3475,6 +3497,7 @@ Segment* Score::setChord(Segment* segment, int track, Chord* chordTemplate, Frac
             connectTies();
       if (nr)
             select(nr, SelectType::SINGLE, 0);
+      qDebug("exit");
       return segment;
       }
 
@@ -4007,6 +4030,9 @@ void Score::cmdAddPitch(const EditData& ed, int note, bool addFlag, bool insert)
 
 void Score::cmdAddPitch(int step, bool addFlag, bool insert)
       {
+            //qDebug("tick %s len %s", qPrintable(tick.print()), qPrintable(len.print()));
+            qDebug("step %d addFlag %d insert %d", step, addFlag, insert);
+
       insert = insert || inputState().usingNoteEntryMethod(NoteEntryMethod::TIMEWISE);
       Position pos;
       if (addFlag) {
@@ -4042,6 +4068,7 @@ void Score::cmdAddPitch(int step, bool addFlag, bool insert)
       if (inputState().usingNoteEntryMethod(NoteEntryMethod::REPITCH))
             repitchNote(pos, !addFlag);
       else {
+            qDebug("step %d addFlag %d insert %d", step, addFlag, insert);
             if (insert)
                   insertChord(pos);
             else
@@ -4320,6 +4347,7 @@ void Score::cmd(const QAction* a, EditData& ed)
                   startCmd();
                   c.cmd(this, ed);
                   endCmd();
+                  sanityCheckAndDump("");
                   return;
                   }
             }

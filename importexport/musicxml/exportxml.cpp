@@ -6550,6 +6550,7 @@ void ExportMusicXml::writeParts()
 
 void ExportMusicXml::write(QIODevice* dev)
       {
+      _score->sanityCheckAndDump();
       // must export in transposed pitch to prevent
       // losing the transposition information
       // if necessary, switch concert pitch mode off

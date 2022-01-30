@@ -165,6 +165,7 @@ Fraction Score::pos()
 
 Rest* Score::addRest(const Fraction& tick, int track, TDuration d, Tuplet* tuplet)
       {
+      qDebug("tick %s d %s tuplet %p", qPrintable(tick.print()), qPrintable(d.name()), tuplet);
       Measure* measure = tick2measure(tick);
       Rest* rest       = new Rest(this, d);
       if (d.type() == TDuration::DurationType::V_MEASURE)
@@ -183,6 +184,7 @@ Rest* Score::addRest(const Fraction& tick, int track, TDuration d, Tuplet* tuple
 
 Rest* Score::addRest(Segment* s, int track, TDuration d, Tuplet* tuplet)
       {
+      qDebug("s->tick %s d %s tuplet %p", qPrintable(s->tick().print()), qPrintable(d.ticks().print()), tuplet);
       Rest* rest = new Rest(this, d);
       if (d.type() == TDuration::DurationType::V_MEASURE)
             rest->setTicks(s->measure()->stretchedLen(staff(track/VOICES)));
@@ -205,6 +207,7 @@ Rest* Score::addRest(Segment* s, int track, TDuration d, Tuplet* tuplet)
 
 Chord* Score::addChord(const Fraction& tick, TDuration d, Chord* oc, bool genTie, Tuplet* tuplet)
       {
+      qDebug("tick %s d %s tuplet %p", qPrintable(tick.print()), qPrintable(d.name()), tuplet);
       Measure* measure = tick2measure(tick);
       if (measure->endTick() <= tick) {
             qDebug("Score::addChord(): end of score?");
@@ -277,6 +280,7 @@ ChordRest* Score::addClone(ChordRest* cr, const Fraction& tick, const TDuration&
 
 Rest* Score::setRest(const Fraction& _tick, int track, const Fraction& _l, bool useDots, Tuplet* tuplet, bool useFullMeasureRest)
       {
+      qDebug("_tick %s _l %s tuplet %p", qPrintable(_tick.print()), qPrintable(_l.print()), tuplet);
       Fraction l       = _l;
       Fraction tick    = _tick;
       Measure* measure = tick2measure(tick);
@@ -4184,6 +4188,7 @@ static Chord* findLinkedChord(Chord* c, Staff* nstaff)
 
 void Score::undoChangeChordRestLen(ChordRest* cr, const TDuration& d)
       {
+      qDebug("cr->tick %s d %s", qPrintable(cr->tick().print()), qPrintable(d.ticks().print()));
       auto sl = cr->staff()->staffList();
       for (Staff* staff : qAsConst(sl)) {
             ChordRest *ncr;

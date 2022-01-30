@@ -324,6 +324,7 @@ void Score::putNote(const QPointF& pos, bool replace, bool insert)
 
 void Score::putNote(const Position& p, bool replace)
       {
+      qDebug("segment->tick %s replace %d", qPrintable(p.segment->tick().print()),replace);
       Staff* st   = staff(p.staffIdx);
       Segment* s  = p.segment;
 
@@ -608,6 +609,7 @@ void Score::localInsertChord(const Position& pos)
       Fraction tick            = seg->tick();
       Measure* measure         = seg->measure()->isMMRest() ? seg->measure()->mmRestFirst() : seg->measure();
       const Fraction targetMeasureLen = measure->ticks() + fraction;
+            qDebug("tick %s len %s", qPrintable(tick.print()), qPrintable(len.print()));
 
       // Shift spanners, enlarge the measure.
       // The approach is similar to that in Measure::adjustToLen() but does

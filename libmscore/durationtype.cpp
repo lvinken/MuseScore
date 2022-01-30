@@ -503,6 +503,7 @@ TDuration& TDuration::operator+=(const TDuration& t)
 
 std::vector<TDuration> toDurationList(Fraction l, bool useDots, int maxDots, bool printRestRemains)
       {
+      qDebug("l %s useDots %d maxDots %d printRestRemains %d", qPrintable(l.print()), useDots, maxDots, printRestRemains);
       std::vector<TDuration> dList;
       dList.reserve(8);
 

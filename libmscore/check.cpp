@@ -251,6 +251,190 @@ bool Score::sanityCheck(const QString& name)
       }
 
 //---------------------------------------------------------
+//   sanityCheckAndDump - Simple check for score
+///    Check that voice 1 is complete
+///    Check that voices > 1 contains less than measure duration
+//---------------------------------------------------------
+
+static void addFraction(std::set<int>& set, const Fraction& f)
+      {
+      auto str = QString("f %1 reduced %2 set").arg(f.print()).arg(f.reduced().print());
+      set.insert(f.reduced().denominator());
+      for (const auto i : set) {
+            str +=QString(" %1").arg(i);
+            }
+      //qDebug() << str;
+      }
+
+static int determineDenominator(const Score* const score)
+      {
+      std::set<int> denoms;
+      //addFraction(denoms, Fraction(1,3));
+      //addFraction(denoms, Fraction(2,3));
+      // addd
+      for (Measure* m = score->firstMeasure(); m; m = m->nextMeasure()) {
+            int endStaff  = score->staves().size();
+            for (int staffIdx = 0; staffIdx < endStaff; ++staffIdx) {
+                  for (int v = 0; v < VOICES; ++v) {
+                        Fraction currentTick { m->tick() };
+                        for (Segment* s = m->first(SegmentType::ChordRest); s; s = s->next(SegmentType::ChordRest)) {
+                              ChordRest* cr = toChordRest(s->element(staffIdx * VOICES + v));
+                              if (cr == 0)
+                                    continue;
+                              addFraction(denoms, cr->tick());
+                              addFraction(denoms, cr->actualTicks());
+                              if (currentTick < cr->tick()) {
+                                    addFraction(denoms, cr->tick() - currentTick);
+                                    }
+                              if (currentTick > cr->tick()) {
+                                    addFraction(denoms, currentTick - cr->tick());
+                                    }
+                              currentTick = cr->tick() + cr->actualTicks();
+                              }
+                        }
+                  }
+            }
+      // calculate
+      Fraction f;
+      for (const auto i : denoms) {
+            f += Fraction { 1, i };
+            }
+      //qDebug() << QString("f %1 -> res %2").arg(f.print()).arg(f.denominator());
+      if (denoms.empty()) {
+            return 1;
+            }
+      else {
+            return f.denominator();
+            }
+      }
+
+static Fraction printNormalized(const Fraction& f, const int d)
+      {
+      auto fred = f.reduced();
+      auto res { fred };
+      int corr { 1 };
+      int rem { 0 };
+      if (fred == Fraction { 0, 1 }) {
+            res = Fraction { 0, d };
+            }
+      else if (fred.denominator() > d) {
+            corr = fred.denominator() / d;
+            rem =  fred.denominator() % d;
+            res = Fraction(fred.numerator() / corr, fred.denominator() / corr);
+            }
+      else if (fred.denominator() < d) {
+            corr = d / fred.denominator();
+            rem =  d % fred.denominator();
+            res = Fraction(fred.numerator() * corr, fred.denominator() * corr);
+            }
+#if 0
+      qDebug() << QString("f %1 d %2 -> corr %3 rem %4 res %5")
+      .arg(f.print())
+      .arg(d)
+      .arg(corr)
+      .arg(rem)
+      .arg(res.print())
+      ;
+#endif
+      return res;
+      }
+
+static QString printBoth(const Fraction& f, const int d)
+      {
+      QString msg = QString("%1 (%2)")
+            .arg(f.print())
+            .arg(printNormalized(f, d).print())
+      ;
+      return msg;
+      }
+
+static QString msg1(int m, int s, int v, Fraction t, const int d)
+      {
+      QString msg = QString("Measure %1 staff %2 voice %3 tick %4")
+            .arg(m)
+            .arg(s + 1)
+            .arg(v + 1)
+            .arg(printBoth(t, d))
+      ;
+      return msg;
+      }
+
+static QString msg2(Fraction start, Fraction duration, const int d)
+      {
+      QString msg = QString("start tick %1 ticks %2 end tick %3")
+            .arg(printBoth(start, d))
+            .arg(printBoth(duration, d))
+            .arg(printBoth(start + duration, d))
+      ;
+      return msg;
+      }
+
+bool Score::sanityCheckAndDump(const QString& name)
+      {
+      qDebug() << QString("sanityCheckAndDump(%1)").arg(name);
+#if 0
+      // test cases
+      printNormalized({ 0, 1 }, 4); // -> corr 1 rem 0 res 0/4
+      printNormalized({ 0, 4 }, 2); // -> corr 1 rem 0 res 0/2
+      printNormalized({ 2, 4 }, 2); // -> corr 1 rem 0 res 1/2
+      printNormalized({ 1, 4 }, 12); // -> corr 3 rem 0 res 3/12
+#endif
+      bool result = true;
+      int mNumber = 1;
+      QString error;
+      const auto denom = determineDenominator(this);
+      for (Measure* m = firstMeasure(); m; m = m->nextMeasure()) {
+            Fraction mLen = m->ticks();
+            qDebug() << QString("Measure %1 ticks %2").arg(mNumber).arg(mLen.print());
+            int endStaff = staves().size();
+            for (int staffIdx = 0; staffIdx < endStaff; ++staffIdx) {
+                  for (int v = 0; v < VOICES; ++v) {
+                        Fraction currentTick { m->tick() };
+                        for (Segment* s = m->first(SegmentType::ChordRest); s; s = s->next(SegmentType::ChordRest)) {
+                              ChordRest* cr = toChordRest(s->element(staffIdx * VOICES + v));
+                              if (cr == 0)
+                                    continue;
+                              QString location = msg1(mNumber, staffIdx, v, cr->tick(), denom);
+                              QString type = cr->isRest() ? "rest" : "chord";
+                              printNormalized(currentTick, denom);
+                              if (currentTick < cr->tick()) {
+                                    qDebug() << QString("%1: %2 %3").arg(location).arg("gap").arg(msg2(currentTick, cr->tick() - currentTick, denom));
+                                    }
+                              if (currentTick > cr->tick()) {
+                                    qDebug() << QString("%1: %2 %3").arg(location).arg("overlap").arg(msg2(cr->tick(), currentTick - cr->tick(), denom));
+                                    }
+                              qDebug() << QString("%1: %2 %3").arg(location).arg(type).arg(msg2(cr->tick(), cr->actualTicks(), denom));
+                              currentTick = cr->tick() + cr->actualTicks();
+                              }
+                        }
+                  }
+            mNumber++;
+            }
+      if (!name.isEmpty()) {
+            QJsonObject json;
+            if (result) {
+                  json["result"] = 0;
+                  }
+            else {
+                  json["result"] = 1;
+                  json["error"] = error.trimmed().replace("\n", "\\n");
+                  }
+            QJsonDocument jsonDoc(json);
+            QFile fp(name);
+            if (!fp.open(QIODevice::WriteOnly)) {
+                  qDebug("Open <%s> failed", qPrintable(name));
+                  return false;
+                  }
+            fp.write(jsonDoc.toJson(QJsonDocument::Compact));
+            fp.close();
+            }
+      else {
+            MScore::lastError = error;
+            }
+      return result;
+      }
+
+//---------------------------------------------------------
 //   checkKeys
 ///    check that key map is in sync with actual keys
 //---------------------------------------------------------

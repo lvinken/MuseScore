@@ -1213,6 +1213,7 @@ class Score : public QObject, public ScoreElement {
       //@ ??
 //      Q_INVOKABLE void cropPage(qreal margins);
       bool sanityCheck(const QString& name = QString());
+      bool sanityCheckAndDump(const QString& name = QString());
 
       bool checkKeys();
       bool checkClefs();
