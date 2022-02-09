@@ -897,12 +897,23 @@ Fraction JsonTuplet::read(const QJsonObject& json, Measure* const measure, const
 // read a single event and return its length
 // pitch is 0-based, see pitchIsValid() in pitchspelling.h
 // => C4 = 60
+// note type, duration and increment can be set (kind of) independently
+// duration: sets DurationElement::_duration (defaults to "as calculated from value")
+// set by (in order of decreasing priority):
+// - the duration specified
+// - the value specified
+// increment: sets the time increment to the next note (current to next note's Segment::_tick )
+// set by (in order of decreasing priority):
+// - the increment specified
+// - the duration specified
+// - the value specified
 Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const Fraction& tick, Tuplet* tuplet)
       {
-      qDebug("JsonEvent::read() rtick %s value '%s' duration '%s' pitch '%s' inner '%s' outer '%s'",
+      qDebug("JsonEvent::read() rtick %s value '%s' duration '%s' increment '%s' pitch '%s' inner '%s' outer '%s'",
              qPrintable(tick.print()),
              qPrintable(json["value"].toString()),
              qPrintable(json["duration"].toString()),
+             qPrintable(json["increment"].toString()),
              qPrintable(json["pitch"].toString()),
              qPrintable(json["inner"].toString()),
              qPrintable(json["outer"].toString())
@@ -926,6 +937,11 @@ Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const 
                   duration = Fraction::fromString(json["duration"].toString());
                   qDebug("duration %s", qPrintable(duration.print()));
                   }
+            Fraction increment { 0, 0 };   // initialize invalid to catch missing increment
+            if (json.contains("increment")) {
+                  increment = Fraction::fromString(json["increment"].toString());
+                  qDebug("increment %s", qPrintable(increment.print()));
+                  }
             auto cr = createChord(measure->score(), json["value"].toString(), duration);
             bool ok { true };
             int pitch { json["pitch"].toString().toInt(&ok) };
@@ -938,7 +954,15 @@ Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const 
                   tuplet->add(cr);
                   }
 
-            return cr->actualTicks();
+            // todo: check if following supports using increment in a tuplet
+            // inside a tuplet increment should (probably) be corrected for the tuplet fraction
+            // which it currently may not do while actualTicks() does
+            if (increment.isValid()) {
+                  return increment;
+                  }
+            else {
+                  return cr->actualTicks(); // duration and tuplet based
+                  }
             }
       }
 
