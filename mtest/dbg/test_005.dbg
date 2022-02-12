@@ -1,0 +1,40 @@
+{
+    "meta" : "test 3:2 tuplet of eighth notes",
+    "time": "3/4",
+    "measures": [
+        {
+            "sequences": [
+                {
+                    "events": [
+                        {
+                            "value": "/4",
+                            "pitch": "60"
+                        },
+                        {
+                            "inner": "3/8",
+                            "outer": "2/8",
+                            "events": [
+                                {
+                                    "value": "/8",
+                                    "pitch": "62"
+                                },
+                                {
+                                    "value": "/8",
+                                    "pitch": "64"
+                                },
+                                {
+                                    "value": "/8",
+                                    "pitch": "65"
+                                }
+                            ]
+                        },
+                        {
+                            "value": "/4",
+                            "pitch": "67"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

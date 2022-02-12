@@ -1,0 +1,18 @@
+{
+    "meta" : "test equivalent of MusicXML's 'Hello, World'",
+    "time": "4/4",
+    "measures": [
+        {
+            "sequences": [
+                {
+                    "events": [
+                        {
+                            "value": "/1",
+                            "pitch": "60"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

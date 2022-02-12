@@ -1,0 +1,26 @@
+{
+    "meta" : "test 3/4 time signature",
+    "time": "3/4",
+    "measures": [
+        {
+            "sequences": [
+                {
+                    "events": [
+                        {
+                            "value": "/4",
+                            "pitch": "67"
+                        },
+                        {
+                            "value": "/4",
+                            "pitch": "69"
+                        },
+                        {
+                            "value": "/4",
+                            "pitch": "71"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
