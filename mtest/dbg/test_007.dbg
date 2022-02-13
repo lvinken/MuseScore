@@ -1,5 +1,5 @@
 {
-    "meta" : "test duration and increment interaction",
+    "meta" : "test duration and increment interaction (duration <= increment)",
     "time": "4/4",
     "measures": [
         {
