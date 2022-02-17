@@ -2882,10 +2882,16 @@ void MxmlTupletState::addDurationToTuplet(const Fraction duration, const Fractio
  Split duration into two factors where fullDuration is note sized
  (i.e. the denominator is a power of 2), 1/2 < fraction <= 1/1
  and fraction * fullDuration equals duration.
+ TODO: this will hang in an endless loop when called with duration 0/1
  */
 
 void determineTupletFractionAndFullDuration(const Fraction duration, Fraction& fraction, Fraction& fullDuration)
       {
+            qDebug("duration %s fraction %s fullDuration %s",
+                   qPrintable(duration.toString()),
+                   qPrintable(fraction.toString()),
+                   qPrintable(fullDuration.toString())
+                   );
       fraction = duration;
       fullDuration = Fraction(1, 1);
       // move denominator's powers of 2 from fraction to fullDuration
@@ -2925,13 +2931,13 @@ void determineTupletFractionAndFullDuration(const Fraction duration, Fraction& f
             fraction = Fraction(1, 1);
             }
 
-      /*
+#if 1
       qDebug("duration %s fraction %s fullDuration %s",
              qPrintable(duration.toString()),
              qPrintable(fraction.toString()),
              qPrintable(fullDuration.toString())
              );
-      */
+#endif
       }
 
 //---------------------------------------------------------

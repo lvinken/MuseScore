@@ -870,6 +870,7 @@ static void addElemOffset(Element* el, int track, const QString& placement, Meas
 
 static Fraction calculateTupletDuration(const Tuplet* const t)
       {
+      qDebug("t %p", t);
       Fraction res;
 
       foreach (DurationElement* de, t->elements()) {
@@ -887,6 +888,9 @@ static Fraction calculateTupletDuration(const Tuplet* const t)
             }
       res /= t->ratio();
 
+#if 1
+      qDebug("t %p res %s", t, qPrintable(res.toString()));
+#endif
       return res;
       }
 
@@ -901,21 +905,27 @@ static Fraction calculateTupletDuration(const Tuplet* const t)
 
 static TDuration determineTupletBaseLen(const Tuplet* const t)
       {
-      Fraction tupletFraction;
-      Fraction tupletFullDuration;
-      determineTupletFractionAndFullDuration(calculateTupletDuration(t), tupletFraction, tupletFullDuration);
+      TDuration res;       // note: defaults to invalid
+      Fraction tupletDuration { calculateTupletDuration(t) };
+      if (tupletDuration > Fraction { 0, 1 }) {
+            Fraction tupletFraction;
+            Fraction tupletFullDuration;
+            determineTupletFractionAndFullDuration(tupletDuration, tupletFraction, tupletFullDuration);
 
-      auto baseLen = tupletFullDuration * Fraction(1, t->ratio().denominator());
+            auto baseLen = tupletFullDuration * Fraction(1, t->ratio().denominator());
 #if 1
-      qDebug("tupletFraction %s tupletFullDuration %s ratio %s baseLen %s",
-             qPrintable(tupletFraction.toString()),
-             qPrintable(tupletFullDuration.toString()),
-             qPrintable(t->ratio().toString()),
-             qPrintable(baseLen.toString())
-             );
+            qDebug("tupletFraction %s tupletFullDuration %s ratio %s baseLen %s",
+                   qPrintable(tupletFraction.toString()),
+                   qPrintable(tupletFullDuration.toString()),
+                   qPrintable(t->ratio().toString()),
+                   qPrintable(baseLen.toString())
+                   );
 #endif
 
-      return TDuration(baseLen);
+            res = TDuration(baseLen);
+            }
+      qDebug("isValid %d", res.isValid());
+      return res;
       }
 
 //---------------------------------------------------------
@@ -1368,6 +1378,7 @@ static void resetTuplets(Tuplets& tuplets)
                         qDebug("add missing %s to previous tuplet", qPrintable(missingDuration.print()));
                         const auto& firstElement = tuplet->elements().at(0);
                         // appended the rest to the current end of the tuplet (firstElement->tick() + actualDuration)
+                        // TODO: replace by toDurationList to prevent assert fail in durationtype.cpp, line 439
                         const auto extraRest = addRest(firstElement->score(), firstElement->measure(), firstElement->tick() + actualDuration, firstElement->track(), 0,
                                                        TDuration { missingDuration* tuplet->ratio() }, missingDuration);
                         if (extraRest) {
@@ -4525,6 +4536,8 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                         qDebug("line %lld missingPrev %s ratio %s",
                                _e.lineNumber(), qPrintable(missingPrev.print()), qPrintable(tuplet->ratio().print()));
                         const auto track = msTrack + msVoice;
+                        // TODO: replace by toDurationList to prevent assert fail in durationtype.cpp, line 439
+#if 0
                         const auto extraRest = addRest(_score, measure, noteStartTime, track, msMove,
                                                        TDuration { missingPrev* tuplet->ratio() }, missingPrev);
                         if (extraRest) {
@@ -4532,6 +4545,20 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                               tuplet->add(extraRest);
                               noteStartTime += missingPrev;
                               }
+#else
+                        const auto durations = toDurationList(missingPrev* tuplet->ratio(), true, 0, true);
+                        qDebug("add %lu rests", durations.size());
+                        for (const auto duration : durations) {
+                              qDebug("line %lld add missing %s (1)", _e.lineNumber(), qPrintable(duration.ticks().print()));
+                              const auto extraRest = addRest(_score, measure, noteStartTime, track, msMove,
+                                                             TDuration { duration }, missingPrev);
+                              if (extraRest) {
+                                    extraRest->setTuplet(tuplet);
+                                    tuplet->add(extraRest);
+                                    noteStartTime += missingPrev;
+                              }
+                        }
+#endif
                         }
                   // recover by simply stopping the current tuplet first
                   const auto normalNotes = timeMod.numerator();
@@ -4752,14 +4779,29 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                               }
                         if (tupletAction & MxmlTupletFlag::STOP_CURRENT) {
                               if (missingCurr.isValid() && missingCurr > Fraction(0, 1)) {
-                                    qDebug("add missing %s to current %s tuplet", qPrintable(missingCurr.print()), qPrintable(tuplet->ratio().print()));
+                                    qDebug("add missing %s (2) to current %s tuplet", qPrintable(missingCurr.print()), qPrintable(tuplet->ratio().print()));
                                     const auto track = msTrack + msVoice;
+                                    // TODO: replace by toDurationList to prevent assert fail in durationtype.cpp, line 439
+#if 0
                                     const auto extraRest = addRest(_score, measure, noteStartTime + dura, track, msMove,
                                                                    TDuration { missingCurr* tuplet->ratio() }, missingCurr);
                                     if (extraRest) {
                                           extraRest->setTuplet(tuplet);
                                           tuplet->add(extraRest);
                                           }
+#else
+                                    const auto durations = toDurationList(missingCurr* tuplet->ratio(), true, 0, true);
+                                    qDebug("add %lu rests", durations.size());
+                                    for (const auto duration : durations) {
+                                          qDebug("line %lld add missing %s (1)", _e.lineNumber(), qPrintable(duration.ticks().print()));
+                                          const auto extraRest = addRest(_score, measure, noteStartTime, track, msMove,
+                                                                         TDuration { duration }, missingPrev);
+                                          if (extraRest) {
+                                                extraRest->setTuplet(tuplet);
+                                                tuplet->add(extraRest);
+                                          }
+                                    }
+#endif
                                     }
                               handleTupletStop(tuplet, normalNotes);
                               }
