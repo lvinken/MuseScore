@@ -4170,7 +4170,24 @@ void ExportMusicXml::hairpin(Hairpin const* const hp, int staff, const Fraction&
                   if (n >= 0)
                         hairpins[n] = hp;
                   else {
-                        qDebug("too many overlapping hairpins (hp %p staff %d tick %d)", hp, staff, tick.ticks());
+                        qDebug("too many overlapping hairpins (hp %p staff %d tick %s)", hp, staff, qPrintable(tick.print()));
+                        // debug
+                        for (int i = 0; i < MAX_NUMBER_LEVEL; ++i) {
+                              Hairpin const* hp = hairpins[i];
+                              if (hp) {
+                                    qDebug("i %d hairpin %p tick %s tick2 %s track %d track2 %d",
+                                           i, hp,
+                                           qPrintable(hp->tick().print()),
+                                           qPrintable(hp->tick2().print()),
+                                           hp->track(),
+                                           hp->track2()
+                                           );
+                              }
+                              else {
+                                    qDebug("i %d hairpin <nullptr>", i);
+                              }
+                        }
+                        // end debug
                         return;
                         }
                   }
@@ -6444,6 +6461,24 @@ void ExportMusicXml::writeMeasure(const Measure* const m,
       // barline types need to be handled besides repeat end ("light-heavy")
       barlineRight(m, strack, etrack);
       _xml.etag();
+            // debug
+#if 1
+            qDebug("part %d end of measure%s end tick %s",
+                   partIndex + 1, qPrintable(mnsh.measureNumber()), qPrintable(m->endTick().print()));
+            for (int i = 0; i < MAX_NUMBER_LEVEL; ++i) {
+                  Hairpin const* hp = hairpins[i];
+                  if (hp && hp->tick() < m->endTick() && hp->tick2() < m->endTick()) {
+                        qDebug("i %d hairpin %p tick %s tick2 %s track %d track2 %d",
+                               i, hp,
+                               qPrintable(hp->tick().print()),
+                               qPrintable(hp->tick2().print()),
+                               hp->track(),
+                               hp->track2()
+                               );
+                  }
+            }
+#endif
+            // end debug
       }
 
 //---------------------------------------------------------
@@ -6529,6 +6564,25 @@ void ExportMusicXml::writeParts()
                         }
                   mpc.lastSystemPrevPage = mpc.prevSystem;
                   }
+
+            // debug
+            qDebug("part id=\"P%d\"", partIndex+1);
+            for (int i = 0; i < MAX_NUMBER_LEVEL; ++i) {
+                  Hairpin const* hp = hairpins[i];
+                  if (hp) {
+                  qDebug("i %d hairpin %p tick %s tick2 %s track %d track2 %d",
+                         i, hp,
+                         qPrintable(hp->tick().print()),
+                         qPrintable(hp->tick2().print()),
+                         hp->track(),
+                         hp->track2()
+                         );
+                  }
+                  else {
+                        //qDebug("i %d hairpin <nullptr>", i);
+                  }
+            }
+            // end debug
 
             staffCount += part->nstaves();
             _xml.etag();

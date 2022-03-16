@@ -49,6 +49,7 @@ struct MusicXmlPartGroup {
 const int MAX_LYRICS       = 16;
 const int MAX_PART_GROUPS  = 8;
 const int MAX_NUMBER_LEVEL = 16; // maximum number of overlapping MusicXML objects
+//const int MAX_MXML_STAVES  = 32; // TODO: replace fixed sizes by dynamic allocation
 
 //---------------------------------------------------------
 //   CreditWords

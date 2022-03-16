@@ -64,8 +64,8 @@ namespace Ms {
 static void allocateStaves(VoiceList& vcLst)
       {
       // initialize
-      int voicesAllocated[MAX_STAVES]; // number of voices allocated on each staff
-      for (int i = 0; i < MAX_STAVES; ++i)
+      int voicesAllocated[MAX_MXML_STAVES]; // number of voices allocated on each staff
+      for (int i = 0; i < MAX_MXML_STAVES; ++i)
             voicesAllocated[i] = 0;
 
       // handle regular (non-overlapping) voices
@@ -95,7 +95,7 @@ static void allocateStaves(VoiceList& vcLst)
       // handle overlapping voices
       // for every staff allocate remaining voices (if space allows)
       // the ones with the highest number of chords and rests get allocated first
-      for (int h = 0; h < MAX_STAVES; ++h) {
+      for (int h = 0; h < MAX_MXML_STAVES; ++h) {
             // note: middle loop executed vcLst.size() times, as each inner loop handles exactly one item
             for (int i = 0; i < vcLst.size(); ++i) {
                   // find the overlapping voice containing the highest number of chords and rests that has not been handled yet
@@ -133,8 +133,8 @@ static void allocateStaves(VoiceList& vcLst)
 
 static void allocateVoices(VoiceList& vcLst)
       {
-      int nextVoice[MAX_STAVES]; // number of voices allocated on each staff
-      for (int i = 0; i < MAX_STAVES; ++i)
+      int nextVoice[MAX_MXML_STAVES]; // number of voices allocated on each staff
+      for (int i = 0; i < MAX_MXML_STAVES; ++i)
             nextVoice[i] = 0;
       // handle regular (non-overlapping) voices
       // a voice is allocated on one specific staff
@@ -149,7 +149,7 @@ static void allocateVoices(VoiceList& vcLst)
       // handle overlapping voices
       // each voice may be in every staff
       for (VoiceList::const_iterator i = vcLst.constBegin(); i != vcLst.constEnd(); ++i) {
-            for (int j = 0; j < MAX_STAVES; ++j) {
+            for (int j = 0; j < MAX_MXML_STAVES; ++j) {
                   int staffAlloc = i.value().staffAlloc(j);
                   QString key   = i.key();
                   if (staffAlloc >= 0) {
@@ -2557,7 +2557,7 @@ void MusicXMLParserPass1::staves(const QString& partId)
       _logger->logDebugTrace("MusicXMLParserPass1::staves", &_e);
 
       int staves = _e.readElementText().toInt();
-      if (!(staves > 0 && staves <= MAX_STAVES)) {
+      if (!(staves > 0 && staves <= MAX_MXML_STAVES)) {
             _logger->logError("illegal staves", &_e);
             return;
             }

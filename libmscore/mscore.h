@@ -92,6 +92,7 @@ static constexpr qreal SPATIUM20 = 5.0 * (DPI / 72.0);
 static constexpr qreal DPMM      = DPI / INCH;
 
 static constexpr int MAX_STAVES  = 4;
+static constexpr int MAX_MXML_STAVES  = 32; // TODO: replace fixed sizes by dynamic allocation
 
 static const int  SHADOW_NOTE_LIGHT       = 135;
 

@@ -19,7 +19,7 @@ namespace Ms {
 MusicXmlPart::MusicXmlPart(QString id, QString name)
       : id(id), name(name)
       {
-      octaveShifts.resize(MAX_STAVES);
+      octaveShifts.resize(MAX_MXML_STAVES);
       }
 
 
@@ -69,7 +69,7 @@ Interval MusicXmlPart::interval(const Fraction f) const
 
 int MusicXmlPart::octaveShift(const int staff, const Fraction f) const
       {
-      if (staff < 0 || MAX_STAVES <= staff)
+      if (staff < 0 || MAX_MXML_STAVES <= staff)
             return 0;
       if (f < Fraction(0, 1))
             return 0;
@@ -78,7 +78,7 @@ int MusicXmlPart::octaveShift(const int staff, const Fraction f) const
 
 void MusicXmlPart::addOctaveShift(const int staff, const int shift, const Fraction f)
       {
-      if (staff < 0 || MAX_STAVES <= staff)
+      if (staff < 0 || MAX_MXML_STAVES <= staff)
             return;
       if (f < Fraction(0, 1))
             return;
@@ -87,7 +87,7 @@ void MusicXmlPart::addOctaveShift(const int staff, const int shift, const Fracti
 
 void MusicXmlPart::calcOctaveShifts()
       {
-      for (int i = 0; i < MAX_STAVES; ++i) {
+      for (int i = 0; i < MAX_MXML_STAVES; ++i) {
             octaveShifts[i].calcOctaveShiftShifts();
             }
       }
