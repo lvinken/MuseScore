@@ -5513,6 +5513,24 @@ static bool hasPageBreak(const System* const system)
       }
 
 //---------------------------------------------------------
+//  findInstrumentChangeInMeasure
+//---------------------------------------------------------
+
+static Instrument* findInstrumentChangeInMeasure(const Measure* const m, const InstrumentList* instruments)
+      {
+      qDebug("m %p begin %s (%d) end %s (%d)", m,
+             qPrintable(m->tick().print()), m->tick().ticks(),
+             qPrintable(m->endTick().print()), m->endTick().ticks());
+      for (const auto& pair : (*instruments)) {
+            if (m->tick().ticks() <= pair.first && pair.first < m->endTick().ticks()) {
+                  qDebug("tick %d: InstrumentChange found, instrument %p", pair.first, pair.second);
+                  return pair.second;
+                  }
+            }
+      return nullptr;
+      }
+
+//---------------------------------------------------------
 //  print
 //---------------------------------------------------------
 
@@ -6386,6 +6404,7 @@ void ExportMusicXml::writeMeasure(const Measure* const m,
 
       _xml.stag(measureTag);
 
+      findInstrumentChangeInMeasure(m, part->instruments()); // TODO remove, this is temporary
       print(m, partIndex, staffCount, staves, mpc);
 
       _attr.start();
@@ -6464,6 +6483,39 @@ void MeasurePrintContext::measureWritten(const Measure* m)
       }
 
 //---------------------------------------------------------
+//  dumpPartInstruments
+//---------------------------------------------------------
+
+static QString instrumentNames(const QList<StaffName>& staffNames)
+{
+      QString res;
+      if (!staffNames.isEmpty()) {
+            res += QString("'%1'").arg(staffNames.at(0).toString());
+      }
+      for (auto i = 1; i < staffNames.size(); ++i) {
+            res += QString(",'%1'").arg(staffNames.at(i).toString());
+      }
+      return res;
+}
+
+static QString instrumentData(const Instrument* instrument)
+{
+      QString res;
+      res += QString("id '%1'").arg(instrument->getId());
+      res += QString(" long names %1").arg(instrumentNames(instrument->longNames()));
+      res += QString(" short names %1").arg(instrumentNames(instrument->shortNames()));
+      return res;
+}
+
+static void dumpPartInstruments(const InstrumentList* instruments)
+{
+      qDebug("instrument list size %lu", instruments->size());
+      for (const auto& pair : (*instruments)) {
+            qDebug("tick %d %s", pair.first, qPrintable(instrumentData(pair.second)));
+      }
+}
+
+//---------------------------------------------------------
 //  writeParts
 //---------------------------------------------------------
 
@@ -6478,6 +6530,7 @@ void ExportMusicXml::writeParts()
 
       for (int partIndex = 0; partIndex < parts.size(); ++partIndex) {
             const auto part = parts.at(partIndex);
+            dumpPartInstruments(part->instruments());
             _tick = { 0,1 };
             _xml.stag(QString("part id=\"P%1\"").arg(partIndex+1));
 
