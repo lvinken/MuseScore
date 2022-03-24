@@ -353,7 +353,7 @@ class ExportMusicXml {
                            TrillHash& trillStart, TrillHash& trillStop);
       void wavyLineStartStop(const ChordRest* const cr, Notations& notations, Ornaments& ornaments,
                              TrillHash& trillStart, TrillHash& trillStop);
-      void print(const Measure* const m, const int partNr, const int firstStaffOfPart, const int nrStavesInPart, const MeasurePrintContext& mpc);
+      void print(const Measure* const m, const int partNr, const int firstStaffOfPart, const int nrStavesInPart, const MeasurePrintContext& mpc, const Instrument* const instrument);
       void findAndExportClef(const Measure* const m, const int staves, const int strack, const int etrack);
       void exportDefaultClef(const Part* const part, const Measure* const m);
       void writeElement(Element* el, const Measure* m, int sstaff, bool useDrumset);
@@ -5551,8 +5551,10 @@ static Instrument* findInstrumentChangeInMeasure(const Measure* const m, const I
    (i.e. only has (a) frame(s))
  */
 
-void ExportMusicXml::print(const Measure* const m, const int partNr, const int firstStaffOfPart, const int nrStavesInPart, const MeasurePrintContext& mpc)
+void ExportMusicXml::print(const Measure* const m, const int partNr, const int firstStaffOfPart, const int nrStavesInPart, const MeasurePrintContext& mpc, const Instrument* const instrument)
       {
+            // TODO: add part name and abbreviation display if instrument != nullptr
+            // probably requires some refactoring
       const MeasureBase* const prevSysMB = lastMeasureBase(mpc.prevSystem);
 
       const bool prevMeasLineBreak = prevSysMB ? prevSysMB->lineBreak() : false;
@@ -5824,6 +5826,10 @@ static void findPitchesUsed(const Part* part, pitchSet& set)
                   }
             }
       }
+
+//---------------------------------------------------------
+//  TBD - write name and abbreviation display (used in group and part)
+//---------------------------------------------------------
 
 //---------------------------------------------------------
 //  partList
@@ -6404,8 +6410,8 @@ void ExportMusicXml::writeMeasure(const Measure* const m,
 
       _xml.stag(measureTag);
 
-      findInstrumentChangeInMeasure(m, part->instruments()); // TODO remove, this is temporary
-      print(m, partIndex, staffCount, staves, mpc);
+      const Instrument* const instrument = findInstrumentChangeInMeasure(m, part->instruments());
+      print(m, partIndex, staffCount, staves, mpc, instrument);
 
       _attr.start();
 
