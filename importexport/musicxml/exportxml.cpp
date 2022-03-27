@@ -5531,6 +5531,28 @@ static Instrument* findInstrumentChangeInMeasure(const Measure* const m, const I
       }
 
 //---------------------------------------------------------
+//  partNameDisplay
+//---------------------------------------------------------
+
+static void partNameDisplay(XmlWriter& xml, const QString& name)
+      {
+      xml.stag("part-name-display");
+      xml.tag("display-text", name); // TODO handle accidental-text
+      xml.etag();
+      }
+
+//---------------------------------------------------------
+//  partAbbreviationDisplay
+//---------------------------------------------------------
+
+static void partAbbreviationDisplay(XmlWriter& xml, const QString& name)
+      {
+      xml.stag("part-abbreviation-display");
+      xml.tag("display-text", name); // TODO handle accidental-text
+      xml.etag();
+      }
+
+//---------------------------------------------------------
 //  print
 //---------------------------------------------------------
 
@@ -5575,12 +5597,13 @@ void ExportMusicXml::print(const Measure* const m, const int partNr, const int f
                   }
             }
 
-      bool doBreak = mpc.scoreStart || (newSystemOrPage != "");
+      bool doBreak = mpc.scoreStart || (newSystemOrPage != ""); // at start of a new system (at score start or after break)
       bool doLayout = preferences.getBool(PREF_EXPORT_MUSICXML_EXPORTLAYOUT);
+      bool doPartName = (instrument != nullptr);
 
-      if (doBreak) {
+      if ((doBreak && doLayout) || doPartName) {
+            _xml.stag(QString("print%1").arg(newSystemOrPage));
             if (doLayout) {
-                  _xml.stag(QString("print%1").arg(newSystemOrPage));
                   const double pageWidth  = getTenthsFromInches(score()->styleD(Sid::pageWidth));
                   const double lm = getTenthsFromInches(score()->styleD(Sid::pageOddLeftMargin));
                   const double rm = getTenthsFromInches(score()->styleD(Sid::pageWidth)
@@ -5639,12 +5662,17 @@ void ExportMusicXml::print(const Measure* const m, const int partNr, const int f
                         _xml.tag("staff-distance", QString("%1").arg(QString::number(getTenthsFromDots(staffDist),'f',2)));
                         _xml.etag();
                         }
-
-                  _xml.etag();
                   }
-            else if (newSystemOrPage != "") {
-                  _xml.tagE(QString("print%1").arg(newSystemOrPage));
-                  }
+            if (doPartName) {
+                  const QList<StaffName>& lnl = instrument->longNames();
+                  partNameDisplay(_xml, lnl.empty() ? "" : lnl[0].name());
+                  const QList<StaffName>& snl = instrument->shortNames();
+                  partAbbreviationDisplay(_xml, snl.empty() ? "" : snl[0].name());
+            }
+            _xml.etag();
+            }
+      else if (newSystemOrPage != "") {
+            _xml.tagE(QString("print%1").arg(newSystemOrPage));
             }
       }
 
