@@ -5531,13 +5531,45 @@ static Instrument* findInstrumentChangeInMeasure(const Measure* const m, const I
       }
 
 //---------------------------------------------------------
+//  displayAccidentalText
+//---------------------------------------------------------
+
+static void displayAccidentalText(XmlWriter& xml, const QString& name)
+      {
+      QString hexName;
+      for (const auto ch : name) {
+            QString hexChar;
+            hexChar.setNum(ch.unicode(), 16);
+            hexName += " 0x" + hexChar;
+            }
+      qDebug("name '%s' (%s)", qPrintable(name), qPrintable(hexName));
+      QString displayText;
+      for (const auto ch : name) {
+            if (ch == 0x266d || ch == 0xe260) {
+                  if (!displayText.isEmpty()) {
+                        xml.tag("display-text", displayText);
+                        displayText = "";
+                        }
+                  xml.tag("accidental-text", "flat");
+                  }
+            else {
+                  displayText += ch;
+                  }
+            }
+      if (!displayText.isEmpty()) {
+            xml.tag("display-text", displayText);
+            displayText = "";
+            }
+      }
+
+//---------------------------------------------------------
 //  partNameDisplay
 //---------------------------------------------------------
 
 static void partNameDisplay(XmlWriter& xml, const QString& name)
       {
       xml.stag("part-name-display");
-      xml.tag("display-text", name); // TODO handle accidental-text
+      displayAccidentalText(xml, name);
       xml.etag();
       }
 
@@ -5548,7 +5580,7 @@ static void partNameDisplay(XmlWriter& xml, const QString& name)
 static void partAbbreviationDisplay(XmlWriter& xml, const QString& name)
       {
       xml.stag("part-abbreviation-display");
-      xml.tag("display-text", name); // TODO handle accidental-text
+      displayAccidentalText(xml, name);
       xml.etag();
       }
 
