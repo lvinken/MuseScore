@@ -315,6 +315,26 @@ typedef QMap<const Instrument*, int> MxmlInstrumentMap;
 class ExportMusicXml {
       Score* _score;
       XmlWriter _xml;
+      Score* score() const { return _score; };
+      double millimeters;
+      int tenths;
+      void work(const MeasureBase* measure);
+      void writeParts();
+public:
+      ExportMusicXml(Score* s) : _score(s), _xml(s)
+      {
+            tenths = 40;
+            millimeters = _score->spatium() * tenths / (10 * DPMM);
+      }
+      void write(QIODevice* dev);
+      void credits(XmlWriter& xml);
+      double getTenthsFromInches(double) const; // TODO: remove duplication
+      double getTenthsFromDots(double) const;   // TODO: remove duplication
+};
+
+class ExportMusicXmlToBeRenamed {
+      Score* _score;
+      XmlWriter& _xml;
       SlurHandler sh;
       GlissandoHandler gh;
       Fraction _tick;
@@ -325,8 +345,8 @@ class ExportMusicXml {
       Ottava const* ottavas[MAX_NUMBER_LEVEL];
       Trill const* trills[MAX_NUMBER_LEVEL];
       int div;
-      double millimeters;
-      int tenths;
+      double millimeters; // TODO: remove duplication
+      int tenths;         // TODO: remove duplication
       TrillHash _trillStart;
       TrillHash _trillStop;
       MxmlInstrumentMap instrMap;
@@ -345,7 +365,6 @@ class ExportMusicXml {
       void barlineMiddle(const BarLine* bl);
       void barlineRight(const Measure* const m, const int strack, const int etrack);
       void lyrics(const std::vector<Lyrics*>* ll, const int trk);
-      void work(const MeasureBase* measure);
       void calcDivMoveToTick(const Fraction& t);
       void calcDivisions();
       void keysigTimesig(const Measure* m, const Part* p);
@@ -359,17 +378,15 @@ class ExportMusicXml {
       void writeElement(Element* el, const Measure* m, int sstaff, bool useDrumset);
       void writeMeasureTracks(const Measure* const m, const int partIndex, const int strack, const int staves, const bool useDrumset, FigBassMap& fbMap, QSet<const Spanner*>& spannersStopped);
       void writeMeasure(const Measure* const m, const int idx, const int staffCount, MeasureNumberStateHandler& mnsh, FigBassMap& fbMap, const MeasurePrintContext& mpc, QSet<const Spanner*>& spannersStopped);
-      void writeParts();
 
 public:
-      ExportMusicXml(Score* s)
-            : _xml(s)
+      ExportMusicXmlToBeRenamed(Score* s, XmlWriter& xml)
+            : _xml(xml)
             {
-            _score = s; _tick = { 0,1 }; div = 1; tenths = 40;
-            millimeters = _score->spatium() * tenths / (10 * DPMM);
+            _score = s; _tick = { 0,1 }; div = 1; tenths = 40;      // TODO: remove duplication
+            millimeters = _score->spatium() * tenths / (10 * DPMM); // TODO: remove duplication
             }
-      void write(QIODevice* dev);
-      void credits(XmlWriter& xml);
+      //void write(QIODevice* dev);
       void moveToTick(const Fraction& t);
       void words(TextBase const* const text, int staff);
       void tboxTextAsWords(TextBase const* const text, int staff, QPointF position);
@@ -387,6 +404,7 @@ public:
       double getTenthsFromDots(double) const;
       Fraction tick() const { return _tick; }
       void writeInstrumentDetails(const Instrument* instrument);
+      void writePart(const int partIndex, const int staffCount);
       };
 
 //---------------------------------------------------------
@@ -1029,7 +1047,7 @@ static void addInteger(int len)
 //   calcDivMoveToTick
 //---------------------------------------------------------
 
-void ExportMusicXml::calcDivMoveToTick(const Fraction& t)
+void ExportMusicXmlToBeRenamed::calcDivMoveToTick(const Fraction& t)
       {
       if (t < _tick) {
 #ifdef DEBUG_TICK
@@ -1072,7 +1090,7 @@ static bool isTwoNoteTremolo(Chord* chord)
 /**
  */
 
-void ExportMusicXml::calcDivisions()
+void ExportMusicXmlToBeRenamed::calcDivisions()
       {
       // init
       integers.clear();
@@ -1599,7 +1617,7 @@ static void ending(XmlWriter& xml, Volta* v, bool left)
 //   barlineLeft -- search for and handle barline left
 //---------------------------------------------------------
 
-void ExportMusicXml::barlineLeft(const Measure* const m)
+void ExportMusicXmlToBeRenamed::barlineLeft(const Measure* const m)
       {
       bool rs = m->repeatStart();
       Volta* volta = findVolta(m, true);
@@ -1673,7 +1691,7 @@ static QString normalBarlineStyle(const BarLine* bl)
 //   barlineMiddle -- handle barline middle
 //---------------------------------------------------------
 
-void ExportMusicXml::barlineMiddle(const BarLine* bl)
+void ExportMusicXmlToBeRenamed::barlineMiddle(const BarLine* bl)
       {
       auto vis = bl->visible();
       auto shortStyle = shortBarlineStyle(bl);
@@ -1788,7 +1806,7 @@ static void writeBarlineFermata(const BarLine* const barline, XmlWriter& xml, co
 //   barlineRight -- search for and handle barline right
 //---------------------------------------------------------
 
-void ExportMusicXml::barlineRight(const Measure* const m, const int strack, const int etrack)
+void ExportMusicXmlToBeRenamed::barlineRight(const Measure* const m, const int strack, const int etrack)
       {
       const Measure* mmR1 = m->mmRest1(); // the multi measure rest this measure is covered by
       const Measure* mmRLst = mmR1->isMMRest() ? mmR1->mmRestLast() : 0; // last measure of replaced sequence of empty measures
@@ -1891,7 +1909,7 @@ static int calculateTimeDeltaInDivisions(const Fraction& t1, const Fraction& t2,
 //   moveToTick
 //---------------------------------------------------------
 
-void ExportMusicXml::moveToTick(const Fraction& t)
+void ExportMusicXmlToBeRenamed::moveToTick(const Fraction& t)
       {
       //qDebug("ExportMusicXml::moveToTick(t=%s) _tick=%s", qPrintable(t.print()), qPrintable(_tick.print()));
       if (t < _tick) {
@@ -1919,7 +1937,7 @@ void ExportMusicXml::moveToTick(const Fraction& t)
 //   timesig
 //---------------------------------------------------------
 
-void ExportMusicXml::timesig(TimeSig* tsig)
+void ExportMusicXmlToBeRenamed::timesig(TimeSig* tsig)
       {
       TimeSigType st = tsig->timeSigType();
       Fraction ts = tsig->sig();
@@ -1979,7 +1997,7 @@ static double accSymId2alter(SymId id)
 //   keysig
 //---------------------------------------------------------
 
-void ExportMusicXml::keysig(const KeySig* ks, ClefType ct, int staff, bool visible)
+void ExportMusicXmlToBeRenamed::keysig(const KeySig* ks, ClefType ct, int staff, bool visible)
       {
       static char table2[]  = "CDEFGAB";
       int po = ClefInfo::pitchOffset(ct); // actually 7 * oct + step for topmost staff line
@@ -2046,7 +2064,7 @@ void ExportMusicXml::keysig(const KeySig* ks, ClefType ct, int staff, bool visib
 //   clef
 //---------------------------------------------------------
 
-void ExportMusicXml::clef(int staff, const ClefType ct, const QString& extraAttributes)
+void ExportMusicXmlToBeRenamed::clef(int staff, const ClefType ct, const QString& extraAttributes)
       {
       clefDebug("ExportMusicXml::clef(staff %d, clef %hhd)", staff, ct);
 
@@ -2282,7 +2300,7 @@ static void tupletStartStop(ChordRest* cr, Notations& notations, XmlWriter& xml)
 //   return -1 if not found
 //---------------------------------------------------------
 
-int ExportMusicXml::findTrill(const Trill* tr) const
+int ExportMusicXmlToBeRenamed::findTrill(const Trill* tr) const
       {
       for (int i = 0; i < MAX_NUMBER_LEVEL; ++i)
             if (trills[i] == tr) return i;
@@ -2341,7 +2359,7 @@ static void wavyLineStop(const Trill* tr, const int number, Notations& notations
 //   wavyLineStartStop
 //---------------------------------------------------------
 
-void ExportMusicXml::wavyLineStartStop(const ChordRest* const cr, Notations& notations, Ornaments& ornaments,
+void ExportMusicXmlToBeRenamed::wavyLineStartStop(const ChordRest* const cr, Notations& notations, Ornaments& ornaments,
                                        TrillHash& trillStart, TrillHash& trillStop)
       {
       if (trillStart.contains(cr) && trillStop.contains(cr)) {
@@ -2675,7 +2693,7 @@ static void writeChordLines(const Chord* const chord, XmlWriter& xml, Notations&
 //   chordAttributes
 //---------------------------------------------------------
 
-void ExportMusicXml::chordAttributes(Chord* chord, Notations& notations, Technical& technical,
+void ExportMusicXmlToBeRenamed::chordAttributes(Chord* chord, Notations& notations, Technical& technical,
                                      TrillHash& trillStart, TrillHash& trillStop)
       {
       QVector<Element*> fl;
@@ -3239,7 +3257,7 @@ static void writePitch(XmlWriter& xml, const Note* const note, const bool useDru
 //   notePosition
 //---------------------------------------------------------
 
-static QString notePosition(const ExportMusicXml* const expMxml, const Note* const note)
+static QString notePosition(const ExportMusicXmlToBeRenamed* const expMxml, const Note* const note)
       {
       QString res;
 
@@ -3270,7 +3288,7 @@ static QString notePosition(const ExportMusicXml* const expMxml, const Note* con
  For a single-staff part, \a staff equals zero, suppressing the <staff> element.
  */
 
-void ExportMusicXml::chord(Chord* chord, int staff, const std::vector<Lyrics*>* ll, bool useDrumset)
+void ExportMusicXmlToBeRenamed::chord(Chord* chord, int staff, const std::vector<Lyrics*>* ll, bool useDrumset)
       {
       Part* part = chord->score()->staff(chord->track() / VOICES)->part();
       int partNr = _score->parts().indexOf(part);
@@ -3447,7 +3465,7 @@ void ExportMusicXml::chord(Chord* chord, int staff, const std::vector<Lyrics*>* 
  For a single-staff part, \a staff equals zero, suppressing the <staff> element.
  */
 
-void ExportMusicXml::rest(Rest* rest, int staff)
+void ExportMusicXmlToBeRenamed::rest(Rest* rest, int staff)
       {
       static char table2[]  = "CDEFGAB";
 #ifdef DEBUG_TICK
@@ -3943,7 +3961,7 @@ static void wordsMetrome(XmlWriter& xml, Score* s, TextBase const* const text, c
 //   tempoText
 //---------------------------------------------------------
 
-void ExportMusicXml::tempoText(TempoText const* const text, int staff)
+void ExportMusicXmlToBeRenamed::tempoText(TempoText const* const text, int staff)
       {
       const auto offset = calculateTimeDeltaInDivisions(text->tick(), tick(), div);
       /*
@@ -3976,7 +3994,7 @@ void ExportMusicXml::tempoText(TempoText const* const text, int staff)
 //   words
 //---------------------------------------------------------
 
-void ExportMusicXml::words(TextBase const* const text, int staff)
+void ExportMusicXmlToBeRenamed::words(TextBase const* const text, int staff)
       {
       const auto offset = calculateTimeDeltaInDivisions(text->tick(), tick(), div);
       /*
@@ -4017,7 +4035,7 @@ static QString positioningAttributesForTboxText(const QPointF position, float sp
 //   tboxTextAsWords
 //---------------------------------------------------------
 
-void ExportMusicXml::tboxTextAsWords(TextBase const* const text, const int staff, const QPointF relativePosition)
+void ExportMusicXmlToBeRenamed::tboxTextAsWords(TextBase const* const text, const int staff, const QPointF relativePosition)
       {
       if (text->plainText() == "") {
             // sometimes empty Texts are present, exporting would result
@@ -4053,7 +4071,7 @@ void ExportMusicXml::tboxTextAsWords(TextBase const* const text, const int staff
 //   rehearsal
 //---------------------------------------------------------
 
-void ExportMusicXml::rehearsal(RehearsalMark const* const rmk, int staff)
+void ExportMusicXmlToBeRenamed::rehearsal(RehearsalMark const* const rmk, int staff)
       {
       if (rmk->plainText() == "") {
             // sometimes empty Texts are present, exporting would result
@@ -4083,7 +4101,7 @@ void ExportMusicXml::rehearsal(RehearsalMark const* const rmk, int staff)
 //   return -1 if not found
 //---------------------------------------------------------
 
-int ExportMusicXml::findDashes(const TextLineBase* hp) const
+int ExportMusicXmlToBeRenamed::findDashes(const TextLineBase* hp) const
       {
       for (int i = 0; i < MAX_NUMBER_LEVEL; ++i)
             if (dashes[i] == hp) return i;
@@ -4095,7 +4113,7 @@ int ExportMusicXml::findDashes(const TextLineBase* hp) const
 //   return -1 if not found
 //---------------------------------------------------------
 
-int ExportMusicXml::findHairpin(const Hairpin* hp) const
+int ExportMusicXmlToBeRenamed::findHairpin(const Hairpin* hp) const
       {
       for (int i = 0; i < MAX_NUMBER_LEVEL; ++i)
             if (hairpins[i] == hp) return i;
@@ -4148,7 +4166,7 @@ static void writeHairpinText(XmlWriter& xml, const TextLineBase* const tlb, bool
 //   hairpin
 //---------------------------------------------------------
 
-void ExportMusicXml::hairpin(Hairpin const* const hp, int staff, const Fraction& tick)
+void ExportMusicXmlToBeRenamed::hairpin(Hairpin const* const hp, int staff, const Fraction& tick)
       {
       const auto isLineType = hp->isLineType();
       int n;
@@ -4234,7 +4252,7 @@ void ExportMusicXml::hairpin(Hairpin const* const hp, int staff, const Fraction&
 //   return -1 if not found
 //---------------------------------------------------------
 
-int ExportMusicXml::findOttava(const Ottava* ot) const
+int ExportMusicXmlToBeRenamed::findOttava(const Ottava* ot) const
       {
       for (int i = 0; i < MAX_NUMBER_LEVEL; ++i)
             if (ottavas[i] == ot) return i;
@@ -4247,7 +4265,7 @@ int ExportMusicXml::findOttava(const Ottava* ot) const
 // <octave-shift type="stop" size="8"/>
 //---------------------------------------------------------
 
-void ExportMusicXml::ottava(Ottava const* const ot, int staff, const Fraction& tick)
+void ExportMusicXmlToBeRenamed::ottava(Ottava const* const ot, int staff, const Fraction& tick)
       {
       auto n = findOttava(ot);
       if (n >= 0)
@@ -4313,7 +4331,7 @@ void ExportMusicXml::ottava(Ottava const* const ot, int staff, const Fraction& t
 //   pedal
 //---------------------------------------------------------
 
-void ExportMusicXml::pedal(Pedal const* const pd, int staff, const Fraction& tick)
+void ExportMusicXmlToBeRenamed::pedal(Pedal const* const pd, int staff, const Fraction& tick)
       {
       directionTag(_xml, _attr, pd);
       _xml.stag("direction-type");
@@ -4333,7 +4351,7 @@ void ExportMusicXml::pedal(Pedal const* const pd, int staff, const Fraction& tic
 //   return -1 if not found
 //---------------------------------------------------------
 
-int ExportMusicXml::findBracket(const TextLineBase* tl) const
+int ExportMusicXmlToBeRenamed::findBracket(const TextLineBase* tl) const
       {
       for (int i = 0; i < MAX_NUMBER_LEVEL; ++i)
             if (brackets[i] == tl) return i;
@@ -4344,7 +4362,7 @@ int ExportMusicXml::findBracket(const TextLineBase* tl) const
 //   textLine
 //---------------------------------------------------------
 
-void ExportMusicXml::textLine(TextLineBase const* const tl, int staff, const Fraction& tick)
+void ExportMusicXmlToBeRenamed::textLine(TextLineBase const* const tl, int staff, const Fraction& tick)
       {
       int n;
       // special case: a dashed line w/o hooks is written as dashes
@@ -4469,7 +4487,7 @@ void ExportMusicXml::textLine(TextLineBase const* const tl, int staff, const Fra
 // supported by MusicXML need to be filtered out. Everything not recognized
 // as MusicXML dynamics is written as other-dynamics.
 
-void ExportMusicXml::dynamic(Dynamic const* const dyn, int staff)
+void ExportMusicXmlToBeRenamed::dynamic(Dynamic const* const dyn, int staff)
       {
       QSet<QString> set; // the valid MusicXML dynamics
       set << "f" << "ff" << "fff" << "ffff" << "fffff" << "ffffff"
@@ -4569,7 +4587,7 @@ void ExportMusicXml::dynamic(Dynamic const* const dyn, int staff)
 // TODO: remove dependency on symbol name and replace by a more stable interface
 // changes in sym.cpp r2494 broke MusicXML export of pedals (again)
 
-void ExportMusicXml::symbol(Symbol const* const sym, int staff)
+void ExportMusicXmlToBeRenamed::symbol(Symbol const* const sym, int staff)
       {
       QString name = Sym::id2name(sym->sym());
       QString mxmlName = "";
@@ -4596,7 +4614,7 @@ void ExportMusicXml::symbol(Symbol const* const sym, int staff)
 //   lyrics
 //---------------------------------------------------------
 
-void ExportMusicXml::lyrics(const std::vector<Lyrics*>* ll, const int trk)
+void ExportMusicXmlToBeRenamed::lyrics(const std::vector<Lyrics*>* ll, const int trk)
       {
       for (const Lyrics* l :* ll) {
             if (l && !l->xmlText().isEmpty()) {
@@ -4889,6 +4907,7 @@ static void repeatAtMeasureStop(XmlWriter& xml, const Measure* const m, int stra
 //  note that order must be work-number, work-title
 //  also write <movement-number> and <movement-title>
 //  data is taken from the score metadata instead of the Text elements
+//  TODO: remove unused parameter measure
 //---------------------------------------------------------
 
 void ExportMusicXml::work(const MeasureBase* /*measure*/)
@@ -4943,7 +4962,7 @@ static void measureStyle(XmlWriter& xml, Attributes& attr, const Measure* const 
 //  commonAnnotations
 //---------------------------------------------------------
 
-static bool commonAnnotations(ExportMusicXml* exp, const Element* e, int sstaff)
+static bool commonAnnotations(ExportMusicXmlToBeRenamed* exp, const Element* e, int sstaff)
       {
       bool instrChangeHandled  = false;
 
@@ -4977,7 +4996,7 @@ static bool commonAnnotations(ExportMusicXml* exp, const Element* e, int sstaff)
 
 // Only handle common annotations, others are handled elsewhere
 
-static void annotations(ExportMusicXml* exp, int strack, int etrack, int track, int sstaff, Segment* seg)
+static void annotations(ExportMusicXmlToBeRenamed* exp, int strack, int etrack, int track, int sstaff, Segment* seg)
       {
       for (const Element* e : seg->annotations()) {
 
@@ -5002,7 +5021,7 @@ static void annotations(ExportMusicXml* exp, int strack, int etrack, int track, 
  * Helper method to export harmonies and chord diagrams for a single segment.
  */
 
-static void segmentHarmonies(ExportMusicXml* exp, int track, Segment* seg, int offset)
+static void segmentHarmonies(ExportMusicXmlToBeRenamed* exp, int track, Segment* seg, int offset)
       {
       const std::vector<Element*> diagrams = seg->findAnnotations(ElementType::FRET_DIAGRAM, track, track);
       std::vector<Element*> harmonies = seg->findAnnotations(ElementType::HARMONY, track, track);
@@ -5049,7 +5068,7 @@ static void segmentHarmonies(ExportMusicXml* exp, int track, Segment* seg, int o
  * we simply have to pick a random one to export.
  */
 
-static void harmonies(ExportMusicXml* exp, int track, Segment* seg, int divisions)
+static void harmonies(ExportMusicXmlToBeRenamed* exp, int track, Segment* seg, int divisions)
       {
       int offset = 0;
       segmentHarmonies(exp, track, seg, offset);
@@ -5155,7 +5174,7 @@ static void figuredBass(XmlWriter& xml, int strack, int etrack, int track, const
 //   calculate data
 // write start if in right track
 
-static void spannerStart(ExportMusicXml* exp, int strack, int etrack, int track, int sstaff, Segment* seg)
+static void spannerStart(ExportMusicXmlToBeRenamed* exp, int strack, int etrack, int track, int sstaff, Segment* seg)
       {
       if (seg->segmentType() == SegmentType::ChordRest) {
             Fraction stick = seg->tick();
@@ -5211,7 +5230,7 @@ static void spannerStart(ExportMusicXml* exp, int strack, int etrack, int track,
 // note that more than one voice may contains notes ending at tick2,
 // remember which spanners have already been stopped (the "stopped" set)
 
-static void spannerStop(ExportMusicXml* exp, int strack, int etrack, const Fraction& tick2, int sstaff, QSet<const Spanner*>& stopped)
+static void spannerStop(ExportMusicXmlToBeRenamed* exp, int strack, int etrack, const Fraction& tick2, int sstaff, QSet<const Spanner*>& stopped)
       {
       for (auto it : exp->score()->spanner()) {
             Spanner* e = it.second;
@@ -5263,7 +5282,7 @@ static void spannerStop(ExportMusicXml* exp, int strack, int etrack, const Fract
  Output attributes at start of measure: key, time
  */
 
-void ExportMusicXml::keysigTimesig(const Measure* m, const Part* p)
+void ExportMusicXmlToBeRenamed::keysigTimesig(const Measure* m, const Part* p)
       {
       int strack = p->startTrack();
       int etrack = p->endTrack();
@@ -5533,7 +5552,7 @@ static bool hasPageBreak(const System* const system)
    (i.e. only has (a) frame(s))
  */
 
-void ExportMusicXml::print(const Measure* const m, const int partNr, const int firstStaffOfPart, const int nrStavesInPart, const MeasurePrintContext& mpc)
+void ExportMusicXmlToBeRenamed::print(const Measure* const m, const int partNr, const int firstStaffOfPart, const int nrStavesInPart, const MeasurePrintContext& mpc)
       {
       const MeasureBase* const prevSysMB = lastMeasureBase(mpc.prevSystem);
 
@@ -5637,7 +5656,7 @@ void ExportMusicXml::print(const Measure* const m, const int partNr, const int f
  Note that a multi-measure rest starting in the first measure should be handled correctly.
  */
 
-void ExportMusicXml::exportDefaultClef(const Part* const part, const Measure* const m)
+void ExportMusicXmlToBeRenamed::exportDefaultClef(const Part* const part, const Measure* const m)
       {
       const auto staves = part->nstaves();
 
@@ -5688,7 +5707,7 @@ void ExportMusicXml::exportDefaultClef(const Part* const part, const Measure* co
  Make sure clefs at end of measure get exported at start of next measure.
  */
 
-void ExportMusicXml::findAndExportClef(const Measure* const m, const int staves, const int strack, const int etrack)
+void ExportMusicXmlToBeRenamed::findAndExportClef(const Measure* const m, const int staves, const int strack, const int etrack)
       {
       Measure* prevMeasure = m->prevMeasure();
       Measure* mmR         = m->mmRest();       // the replacing measure in a multi-measure rest
@@ -5954,7 +5973,7 @@ static bool tickIsInMiddleOfMeasure(const Fraction ti, const Measure* m)
  Write \a el.
  */
 
-void ExportMusicXml::writeElement(Element* el, const Measure* m, int sstaff, bool useDrumset)
+void ExportMusicXmlToBeRenamed::writeElement(Element* el, const Measure* m, int sstaff, bool useDrumset)
       {
       if (el->isClef()) {
             // output only clef changes, not generated clefs
@@ -6059,7 +6078,7 @@ static void writeStaffDetails(XmlWriter& xml, const Part* part)
  Write the instrument details for \a instrument.
  */
 
-void ExportMusicXml::writeInstrumentDetails(const Instrument* instrument)
+void ExportMusicXmlToBeRenamed::writeInstrumentDetails(const Instrument* instrument)
       {
       if (instrument->transpose().chromatic) {
             _attr.doAttr(_xml, true);
@@ -6082,7 +6101,7 @@ void ExportMusicXml::writeInstrumentDetails(const Instrument* instrument)
  Write the annotations that could not be attached to notes.
  */
 
-static void annotationsWithoutNote(ExportMusicXml* exp, const int strack, const int staves, const Measure* const measure)
+static void annotationsWithoutNote(ExportMusicXmlToBeRenamed* exp, const int strack, const int staves, const Measure* const measure)
       {
       for (auto segment = measure->first(); segment; segment = segment->next()) {
             if (segment->segmentType() == SegmentType::ChordRest) {
@@ -6268,7 +6287,7 @@ static std::vector<TBox*> findTextFramesToWriteAsWordsBelow(const Measure* const
  Write data contained in the measure's tracks.
  */
 
-void ExportMusicXml::writeMeasureTracks(const Measure* const m,
+void ExportMusicXmlToBeRenamed::writeMeasureTracks(const Measure* const m,
                                         const int partIndex,
                                         const int strack, const int staves, // TODO remove ??
                                         const bool useDrumset,
@@ -6362,7 +6381,7 @@ void ExportMusicXml::writeMeasureTracks(const Measure* const m,
  Write a measure.
  */
 
-void ExportMusicXml::writeMeasure(const Measure* const m,
+void ExportMusicXmlToBeRenamed::writeMeasure(const Measure* const m,
                                   const int partIndex,
                                   const int staffCount,
                                   MeasureNumberStateHandler& mnsh,
@@ -6463,20 +6482,56 @@ void MeasurePrintContext::measureWritten(const Measure* m)
       prevMeasure = m;
       }
 
+      //---------------------------------------------------------
+      //  writeParts
+      //---------------------------------------------------------
+
+      /**
+       Write all parts.
+       */
+
+      void ExportMusicXml::writeParts()
+      {
+            int staffCount = 0;
+            const auto& parts = _score->parts();
+
+            for (int partIndex = 0; partIndex < parts.size(); ++partIndex) {
+                  qDebug("partIndex %d staffCount %d", partIndex, staffCount);
+                  const auto part = parts.at(partIndex);
+                  // write part
+                  ExportMusicXmlToBeRenamed em(_score, _xml);
+                  em.writePart(partIndex, staffCount);
+                  staffCount += part->nstaves();
+            }
+      }
+
 //---------------------------------------------------------
-//  writeParts
+//  writePart
 //---------------------------------------------------------
 
 /**
- Write all parts.
+ Write a part.
  */
 
-void ExportMusicXml::writeParts()
+void ExportMusicXmlToBeRenamed::writePart(const int partIndex, const int staffCount)
       {
-      int staffCount = 0;
-      const auto& parts = _score->parts();
+            qDebug("partIndex %d staffCount %d", partIndex, staffCount);
+            // TODO: move to constructor
+            calcDivisions();
 
-      for (int partIndex = 0; partIndex < parts.size(); ++partIndex) {
+            for (int i = 0; i < MAX_NUMBER_LEVEL; ++i) {
+                  brackets[i] = nullptr;
+                  dashes[i] = nullptr;
+                  hairpins[i] = nullptr;
+                  ottavas[i] = nullptr;
+                  trills[i] = nullptr;
+            }
+            // end TODO
+
+      //int staffCount = 0;
+
+      //for (int partIndex = 0; partIndex < parts.size(); ++partIndex) {
+            const auto& parts = _score->parts();
             const auto part = parts.at(partIndex);
             _tick = { 0,1 };
             _xml.stag(QString("part id=\"P%1\"").arg(partIndex+1));
@@ -6535,8 +6590,57 @@ void ExportMusicXml::writeParts()
                   mpc.lastSystemPrevPage = mpc.prevSystem;
                   }
 
-            staffCount += part->nstaves();
+            //staffCount += part->nstaves();
             _xml.etag();
+            //}
+      }
+
+      //---------------------------------------------------------
+      //  write
+      //---------------------------------------------------------
+
+      /**
+       Write the score to \a dev in MusicXML format.
+       */
+
+      void ExportMusicXml::write(QIODevice* dev)
+      {
+            qDebug("score() %p dev %p", score(), dev);
+            // must export in transposed pitch to prevent
+            // losing the transposition information
+            // if necessary, switch concert pitch mode off
+            // before export and restore it after export
+            bool concertPitch = score()->styleB(Sid::concertPitch);
+            if (concertPitch) {
+                  score()->startCmd();
+                  score()->undo(new ChangeStyleVal(score(), Sid::concertPitch, false));
+                  score()->doLayout();    // this is only allowed in a cmd context to not corrupt the undo/redo stack
+            }
+
+            _xml.setDevice(dev);
+            _xml.setCodec("UTF-8");
+            _xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+            _xml << "<!DOCTYPE score-partwise PUBLIC \"-//Recordare//DTD MusicXML 3.1 Partwise//EN\" \"http://www.musicxml.org/dtds/partwise.dtd\">\n";
+
+            _xml.stag("score-partwise version=\"3.1\"");
+
+            work(_score->measures()->first());
+            identification(_xml, _score);
+
+            if (preferences.getBool(PREF_EXPORT_MUSICXML_EXPORTLAYOUT)) {
+                  defaults(_xml, _score, millimeters, tenths);
+                  credits(_xml);
+            }
+
+            MxmlInstrumentMap instrMap; // TODO: move into partList
+            partList(_xml, _score, instrMap);
+            writeParts();
+
+            _xml.etag();
+
+            if (concertPitch) {
+                  // restore concert pitch
+                  score()->endCmd(true);        // rollback
             }
       }
 
@@ -6548,19 +6652,9 @@ void ExportMusicXml::writeParts()
  Write the score to \a dev in MusicXML format.
  */
 
-void ExportMusicXml::write(QIODevice* dev)
+#if 0
+void ExportMusicXmlToBeRenamed::write(QIODevice* dev)
       {
-      // must export in transposed pitch to prevent
-      // losing the transposition information
-      // if necessary, switch concert pitch mode off
-      // before export and restore it after export
-      bool concertPitch = score()->styleB(Sid::concertPitch);
-      if (concertPitch) {
-            score()->startCmd();
-            score()->undo(new ChangeStyleVal(score(), Sid::concertPitch, false));
-            score()->doLayout();    // this is only allowed in a cmd context to not corrupt the undo/redo stack
-            }
-
       calcDivisions();
 
       for (int i = 0; i < MAX_NUMBER_LEVEL; ++i) {
@@ -6571,31 +6665,9 @@ void ExportMusicXml::write(QIODevice* dev)
             trills[i] = nullptr;
             }
 
-      _xml.setDevice(dev);
-      _xml.setCodec("UTF-8");
-      _xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-      _xml << "<!DOCTYPE score-partwise PUBLIC \"-//Recordare//DTD MusicXML 3.1 Partwise//EN\" \"http://www.musicxml.org/dtds/partwise.dtd\">\n";
-
-      _xml.stag("score-partwise version=\"3.1\"");
-
-      work(_score->measures()->first());
-      identification(_xml, _score);
-
-      if (preferences.getBool(PREF_EXPORT_MUSICXML_EXPORTLAYOUT)) {
-            defaults(_xml, _score, millimeters, tenths);
-            credits(_xml);
-            }
-
-      partList(_xml, _score, instrMap);
       writeParts();
-
-      _xml.etag();
-
-      if (concertPitch) {
-            // restore concert pitch
-            score()->endCmd(true);        // rollback
-            }
       }
+#endif
 
 //---------------------------------------------------------
 //   saveXml
@@ -6611,6 +6683,7 @@ void ExportMusicXml::write(QIODevice* dev)
 bool saveXml(Score* score, QIODevice* device)
       {
       ExportMusicXml em(score);
+      qDebug("score %p device %p em %p", score, device, &em);
       em.write(device);
       return true;
       }
@@ -6668,6 +6741,7 @@ static void writeMxlArchive(Score* score, MQZipWriter& zipwriter, const QString&
       QBuffer dbuf;
       dbuf.open(QIODevice::ReadWrite);
       ExportMusicXml em(score);
+      qDebug("score %p dbuf %p em %p", score, &dbuf, &em);
       em.write(&dbuf);
       dbuf.seek(0);
       zipwriter.addFile(filename, dbuf.data());
@@ -6696,21 +6770,31 @@ bool saveMxl(Score* score, const QString& name)
       return true;
       }
 
-double ExportMusicXml::getTenthsFromInches(double inches) const
+double ExportMusicXml::getTenthsFromInches(double inches) const // TODO: remove duplication
       {
       return inches * INCH / millimeters * tenths;
       }
 
-double ExportMusicXml::getTenthsFromDots(double dots) const
+double ExportMusicXml::getTenthsFromDots(double dots) const // TODO: remove duplication
       {
       return dots / DPMM / millimeters * tenths;
+      }
+
+      double ExportMusicXmlToBeRenamed::getTenthsFromInches(double inches) const
+      {
+            return inches * INCH / millimeters * tenths;
+      }
+
+      double ExportMusicXmlToBeRenamed::getTenthsFromDots(double dots) const
+      {
+            return dots / DPMM / millimeters * tenths;
       }
 
 //---------------------------------------------------------
 //   harmony
 //---------------------------------------------------------
 
-void ExportMusicXml::harmony(Harmony const* const h, FretDiagram const* const fd, int offset)
+void ExportMusicXmlToBeRenamed::harmony(Harmony const* const h, FretDiagram const* const fd, int offset)
       {
       // this code was probably in place to allow chord symbols shifted *right* to export with offset
       // since this was at once time the only way to get a chord to appear over beat 3 in an empty 4/4 measure
