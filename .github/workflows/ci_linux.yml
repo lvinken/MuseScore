@@ -20,13 +20,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-18.04
+    #runs-on: ubuntu-20.04 may be needed in the near futur, needs libssl1.0.0?
     steps:
     - name: Cancel Previous Runs
-      uses: styfle/cancel-workflow-action@0.5.0
+      uses: styfle/cancel-workflow-action@0.11.0
       with:
         access_token: ${{ github.token }}
     - name: Clone repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: "Configure workflow"
       run: |
         sudo bash ./build/ci/tools/make_build_mode_env.sh -e ${{ github.event_name }} -m ${{ github.event.inputs.build_mode }}
@@ -73,20 +74,21 @@ jobs:
         sudo bash ./build/ci/tools/osuosl/publish.sh -s ${{ secrets.OSUOSL_SSH_ENCRYPT_SECRET }} --os linux -v 3
     - name: Upload artifacts on GitHub
       if: env.DO_BUILD == 'true'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: MuseScore_${{ github.run_id }}
         path: ./build.artifacts/
 
   run_mtests:
     runs-on: ubuntu-18.04
+    #runs-on: ubuntu-20.04 may be needed in the near futur, needs libssl1.0.0?
     env:
         # Enable AddressSanitizer in the mtest build
         CFLAGS: "-fsanitize=address -fno-omit-frame-pointer"
         CXXFLAGS: "-fsanitize=address -fno-omit-frame-pointer"
     steps:
     - name: Clone repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Setup environment
       run: |
         sudo bash ./build/ci/linux/setup.sh
