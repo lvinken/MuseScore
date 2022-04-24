@@ -909,8 +909,9 @@ Fraction JsonTuplet::read(const QJsonObject& json, Measure* const measure, const
 // - the value specified
 Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const Fraction& tick, Tuplet* tuplet)
       {
-      qDebug("JsonEvent::read() rtick %s value '%s' duration '%s' increment '%s' pitch '%s' inner '%s' outer '%s'",
+      qDebug("JsonEvent::read() rtick %s tuplet %p value '%s' duration '%s' increment '%s' pitch '%s' inner '%s' outer '%s'",
              qPrintable(tick.print()),
+             tuplet,
              qPrintable(json["value"].toString()),
              qPrintable(json["duration"].toString()),
              qPrintable(json["increment"].toString()),
@@ -925,11 +926,17 @@ Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const 
             const auto ratio = inner / outer;
             //qDebug("ratio %s", qPrintable(ratio.print()));
             // create the tuplet
-            auto tuplet = createTuplet(measure->score(), 0 /* TODO track */);
-            tuplet->setParent(measure);
-            setTupletParameters(tuplet, ratio.numerator(), ratio.denominator(), /* TODO: calculate real value */ TDuration::DurationType::V_EIGHTH);
+            auto newTuplet = createTuplet(measure->score(), 0 /* TODO track */);
+            //qDebug("newTuplet %p ratio %s", newTuplet, qPrintable(ratio.print()));
+            newTuplet->setParent(measure);
+            newTuplet->setTuplet(tuplet);
+            setTupletParameters(newTuplet, ratio.numerator(), ratio.denominator(), /* TODO: calculate real value */ TDuration::DurationType::V_EIGHTH);
+            if (tuplet) {
+                  newTuplet->setTuplet(tuplet);
+                  tuplet->add(newTuplet);
+            }
             JsonTuplet jsonTuplet;
-            return jsonTuplet.read(json, measure, tick, tuplet);
+            return jsonTuplet.read(json, measure, tick, newTuplet);
             }
       else {
             Fraction duration { 0, 0 };   // initialize invalid to catch missing duration
@@ -955,14 +962,14 @@ Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const 
                   }
 
             // todo: check if following supports using increment in a tuplet
-            // inside a tuplet increment should (probably) be corrected for the tuplet fraction
-            // which it currently may not do while actualTicks() does
-            if (increment.isValid()) {
-                  return increment;
-                  }
-            else {
-                  return cr->actualTicks(); // duration and tuplet based
-                  }
+            auto res = increment.isValid() ? increment : cr->ticks();
+            //qDebug("res %s", qPrintable(res.print()));
+            for (Tuplet* t = cr-> tuplet(); t; t = t->tuplet()) {
+                  res /= t->ratio();
+                  //qDebug("t %p ratio %s res %s", t, qPrintable(t->ratio().print()), qPrintable(res.print()));
+            }
+            //qDebug("res %s", qPrintable(res.print()));
+            return res;
             }
       }
 
