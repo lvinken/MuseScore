@@ -1,0 +1,89 @@
+#!/bin/bash
+
+# simple standalone iotest for dbg import
+# run in mtest/dbg directory as "./iotest"
+
+# Linux
+#MSCORE=../../build.debug/mscore/mscore
+# OS X terminal build
+#MSCORE=../../applebuild/mscore.app/Contents/MacOS/mscore
+# OS X Xcode build
+#MSCORE=../../build.xcode/mscore/Debug/mscore.app/Contents/MacOS/mscore
+# OS X Xcode build (since early 2020)
+MSCORE=../../build.xcode/main/Debug/mscore.app/Contents/MacOS/mscore
+#MSCORE=~/dev/MuseScore-3.x/build.xcode/main/Debug/mscore.app/Contents/MacOS/mscore
+
+echo "----------------------------------------------"
+echo "Regression Tests for MuseScore dbg import"
+echo "----------------------------------------------"
+echo
+$MSCORE -v
+echo
+
+# generate list of files w/o extension
+#musicxml_files=`cat tst_mxml_io.cpp | grep "{ mxmlIoTest" | awk -F\" '{print $2}' | sort`
+#musicxml_files="testBegin testEnd testMiddle testNoteheadsFilled testTuplets4 testTuplets7 testTuplets9"
+dbg_files="test_001 test_002 test_003 test_005 test_007 test_011 test_012 test_013 test_014"
+
+testcount=0
+failures=0
+
+rwtestXml() {
+      echo -n "testing load/save $1";
+      $MSCORE $1 -d -t -o mops.xml &> /dev/null
+      if diff -q $1 mops.xml &> /dev/null; then
+            echo -e "\r\t\t\t\t\t\t...OK";
+      else
+            echo -e "\r\t\t\t\t\t\t...FAILED";
+            failures=$(($failures+1));
+            echo "+++++++++DIFF++++++++++++++"
+            diff $1 mops.xml
+            echo "+++++++++++++++++++++++++++"
+      fi
+      rm mops.xml
+      testcount=$(($testcount+1))
+      }
+
+rwtestXmlRef() {
+      echo -n "testing load/save $1";
+      REF=`basename $1 .dbg`_ref.mscx
+      $MSCORE $1 -d -t -o mops.mscx &> /dev/null
+      if diff -q $REF mops.mscx &> /dev/null; then
+            echo -e "\r\t\t\t\t\t\t...OK";
+      else
+            echo -e "\r\t\t\t\t\t\t...FAILED";
+            failures=$(($failures+1));
+            echo "+++++++++DIFF++++++++++++++"
+            diff $REF mops.mscx
+            echo "+++++++++++++++++++++++++++"
+      fi
+      rm mops.mscx
+      testcount=$(($testcount+1))
+      }
+
+rwtestAllXml() {
+      for f in $dbg_files; do
+            if [ -f ${f}_ref.mscx ]; then
+                  # reference file exists, test against it
+                  rwtestXmlRef ${f}.dbg
+            else
+                  # reference file does not exist: use regular test
+                  rwtestXml ${f}.dbg
+            fi
+      done
+      }
+
+usage() {
+      echo "usage: $0"
+      echo
+      exit 1
+      }
+
+if [ $# -eq 0 ]; then
+      rwtestAllXml
+else
+      usage
+fi
+
+echo
+echo "$testcount test(s), $failures failure(s)"
