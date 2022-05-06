@@ -23,7 +23,7 @@ echo
 # generate list of files w/o extension
 #musicxml_files=`cat tst_mxml_io.cpp | grep "{ mxmlIoTest" | awk -F\" '{print $2}' | sort`
 #musicxml_files="testBegin testEnd testMiddle testNoteheadsFilled testTuplets4 testTuplets7 testTuplets9"
-dbg_files="test_001 test_002 test_003 test_005 test_007 test_011 test_012 test_013 test_014"
+dbg_files="test_001 test_002 test_003 test_004 test_005 test_006 test_007 test_011 test_012 test_013 test_014"
 
 testcount=0
 failures=0
