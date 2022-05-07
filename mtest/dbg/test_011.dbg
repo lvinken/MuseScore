@@ -7,8 +7,8 @@
                 {
                     "events": [
                         {
-                            "inner": "3/4",
-                            "outer": "2/4",
+                            "baselen": "/4",
+                            "ratio": "3/2",
                             "events": [
                                 {
                                     "value": "/4",

@@ -11,8 +11,8 @@
                             "pitch": "60"
                         },
                         {
-                            "inner": "3/8",
-                            "outer": "2/8",
+                            "baselen": "/8",
+                            "ratio": "3/2",
                             "events": [
                                 {
                                     "value": "/8",

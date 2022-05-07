@@ -909,28 +909,27 @@ Fraction JsonTuplet::read(const QJsonObject& json, Measure* const measure, const
 // - the value specified
 Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const Fraction& tick, Tuplet* tuplet)
       {
-      qDebug("JsonEvent::read() rtick %s tuplet %p value '%s' duration '%s' increment '%s' pitch '%s' inner '%s' outer '%s'",
+      qDebug("JsonEvent::read() rtick %s tuplet %p value '%s' duration '%s' increment '%s' pitch '%s' baselen '%s' ratio '%s'",
              qPrintable(tick.print()),
              tuplet,
              qPrintable(json["value"].toString()),
              qPrintable(json["duration"].toString()),
              qPrintable(json["increment"].toString()),
              qPrintable(json["pitch"].toString()),
-             qPrintable(json["inner"].toString()),
-             qPrintable(json["outer"].toString())
+             qPrintable(json["baselen"].toString()),
+             qPrintable(json["ratio"].toString())
              );
-      if (json.contains("inner") && json.contains("outer")) {
+      if (json.contains("baselen") && json.contains("ratio")) {
             // tuplet found
-            const auto inner = Fraction::fromString(json["inner"].toString());
-            const auto outer = Fraction::fromString(json["outer"].toString());
-            const auto ratio = inner / outer;
-            //qDebug("ratio %s", qPrintable(ratio.print()));
+            const auto baselen = mnxEventValueToTDuration(json["baselen"].toString());
+            const auto ratio = Fraction::fromString(json["ratio"].toString());
+            //qDebug("baselen %s ratio %s", qPrintable(baselen.fraction().print()), qPrintable(ratio.print()));
             // create the tuplet
             auto newTuplet = createTuplet(measure->score(), 0 /* TODO track */);
             //qDebug("newTuplet %p ratio %s", newTuplet, qPrintable(ratio.print()));
             newTuplet->setParent(measure);
             newTuplet->setTuplet(tuplet);
-            setTupletParameters(newTuplet, ratio.numerator(), ratio.denominator(), /* TODO: calculate real value */ TDuration::DurationType::V_EIGHTH);
+            setTupletParameters(newTuplet, ratio.numerator(), ratio.denominator(), baselen.type());
             if (tuplet) {
                   newTuplet->setTuplet(tuplet);
                   tuplet->add(newTuplet);
