@@ -196,6 +196,41 @@ bool Score::sanityCheck(const QString& name)
 }
 
 //---------------------------------------------------------
+//   dumpNotes
+//   based on sanityCheck - Simple check for score
+//---------------------------------------------------------
+
+void Score::dumpNotes()
+{
+    int mNumber = 1;
+    for (Measure* m = firstMeasure(); m; m = m->nextMeasure()) {
+        Fraction mLen = m->ticks();
+        QString msg = QObject::tr("Measure %1 mLen %2").arg(mNumber).arg(mLen.toString());
+        LOGE() << msg;
+
+        size_t endStaff  = staves().size();
+        for (size_t staffIdx = 0; staffIdx < endStaff; ++staffIdx) {
+            for (Segment* s = m->first(SegmentType::ChordRest); s; s = s->next(SegmentType::ChordRest)) {
+                for (size_t v = 0; v < VOICES; ++v) {
+                    int track = static_cast<int>(staffIdx) * VOICES + static_cast<int>(v);
+                    ChordRest* cr = toChordRest(s->element(track));
+                    if (cr == nullptr) {
+                        continue;
+                    }
+                    QString msg = QObject::tr("Track %1 seg tick %2 cr ticks %3")
+                                  .arg(track)
+                                  .arg(s->tick().ticks())
+                                  .arg(cr->actualTicks().ticks());
+                    LOGE() << msg;
+                }
+            }
+        }
+
+        mNumber++;
+    }
+}
+
+//---------------------------------------------------------
 //   checkKeys
 ///    check that key map is in sync with actual keys
 //---------------------------------------------------------

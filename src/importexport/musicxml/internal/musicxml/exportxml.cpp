@@ -7301,6 +7301,7 @@ void ExportMusicXml::write(QIODevice* dev)
 
 bool saveXml(Score* score, QIODevice* device)
 {
+    score->dumpNotes();
     ExportMusicXml em(score);
     em.write(device);
     return true;
