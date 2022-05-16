@@ -221,6 +221,13 @@ void Score::dumpNotes()
                                   .arg(track)
                                   .arg(s->tick().ticks())
                                   .arg(cr->actualTicks().ticks());
+                    if (cr->isRest()) {
+                        msg += " isRest";
+                        const auto rest = toRest(cr);
+                        if (rest->isGap()) {
+                            msg += " isGap";
+                        }
+                    }
                     LOGE() << msg;
                 }
             }
