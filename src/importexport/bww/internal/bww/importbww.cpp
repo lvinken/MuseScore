@@ -582,6 +582,361 @@ Score::FileError importBww(MasterScore* score, const QString& path)
 #endif
 
 //---------------------------------------------------------
+//   mnxValueUnitToDurationType
+//---------------------------------------------------------
+
+/**
+ * Convert MNX note value unit to MuseScore DurationType.
+ */
+
+static TDuration::DurationType mnxValueUnitToDurationType(const QString& s)
+{
+    if (s == "/4") {
+        return TDuration::DurationType::V_QUARTER;
+    } else if (s == "/8") {
+        return TDuration::DurationType::V_EIGHTH;
+    } else if (s == "/1024") {
+        return TDuration::DurationType::V_1024TH;
+    } else if (s == "/512") {
+        return TDuration::DurationType::V_512TH;
+    } else if (s == "/256") {
+        return TDuration::DurationType::V_256TH;
+    } else if (s == "/128") {
+        return TDuration::DurationType::V_128TH;
+    } else if (s == "/64") {
+        return TDuration::DurationType::V_64TH;
+    } else if (s == "/32") {
+        return TDuration::DurationType::V_32ND;
+    } else if (s == "/16") {
+        return TDuration::DurationType::V_16TH;
+    } else if (s == "/2") {
+        return TDuration::DurationType::V_HALF;
+    } else if (s == "/1") {
+        return TDuration::DurationType::V_WHOLE;
+    } else if (s == "*2") {
+        return TDuration::DurationType::V_BREVE;
+    } else if (s == "*4") {
+        return TDuration::DurationType::V_LONG;
+    } else {
+        qDebug("mnxValueUnitToDurationType(%s): unknown", qPrintable(s));
+        return TDuration::DurationType::V_INVALID;
+    }
+}
+
+//---------------------------------------------------------
+//   mnxEventValueToTDuration
+//---------------------------------------------------------
+
+/**
+ * Convert MNX note value (unit plus optional dots) to MuseScore TDuration.
+ */
+
+static TDuration mnxEventValueToTDuration(const QString& value)
+{
+    int dots = 0;
+    QString valueWithoutDots = value;
+
+    while (valueWithoutDots.endsWith('d')) {
+        ++dots;
+        valueWithoutDots.resize(valueWithoutDots.size() - 1);
+    }
+
+    auto val = mnxValueUnitToDurationType(valueWithoutDots);
+
+    TDuration res(val);
+    res.setDots(dots);
+
+    return res;
+}
+
+//---------------------------------------------------------
+//   addCrToTuplet
+//---------------------------------------------------------
+
+static void addCrToTuplet(ChordRest* cr, Tuplet* tuplet)
+{
+    cr->setTuplet(tuplet);
+    tuplet->add(cr);
+}
+
+//---------------------------------------------------------
+//   createChord
+//---------------------------------------------------------
+
+Chord* createChord(Score* score, const QString& value, const Fraction& duration)
+{
+    auto dur = mnxEventValueToTDuration(value);
+    auto chord = new Chord(score);
+    chord->setTrack(0);               // TODO
+    chord->setDurationType(dur);
+    chord->setTicks(duration.isValid() ? duration : dur.fraction());          // specified duration overrules value-based
+    chord->setDots(dur.dots());
+    return chord;
+}
+
+//---------------------------------------------------------
+//   createNote
+//---------------------------------------------------------
+
+Note* createNote(Score* score, const int pitch)
+{
+    auto note = new Note(score);
+    note->setTrack(0);              // TODO
+    note->setPitch(pitch);
+    note->setTpcFromPitch();
+    return note;
+}
+
+//---------------------------------------------------------
+//   createTimeSig
+//---------------------------------------------------------
+
+TimeSig* createTimeSig(Score* score, const Fraction& sig)
+{
+    auto timesig = new TimeSig(score);
+    timesig->setSig(sig);
+    timesig->setTrack(0);                    // TODO
+    return timesig;
+}
+
+//---------------------------------------------------------
+//   createTuplet
+//---------------------------------------------------------
+
+Tuplet* createTuplet(Score* score, const int track)
+{
+    auto tuplet = new Tuplet(score);
+    tuplet->setTrack(track);
+    return tuplet;
+}
+
+//---------------------------------------------------------
+//   setTupletParameters
+//---------------------------------------------------------
+
+static void setTupletParameters(Tuplet* tuplet, const int actual, const int normal, const TDuration::DurationType base)
+{
+    tuplet->setRatio({ actual, normal });
+    tuplet->setBaseLen(base);
+}
+
+//---------------------------------------------------------
+//   JsonTuplet
+//---------------------------------------------------------
+
+class JsonEvent
+{
+public:
+    JsonEvent() {}
+    Fraction read(const QJsonObject& json, Measure* const measure, const Fraction& tick, Tuplet* tuplet);
+private:
+};
+
+class JsonTuplet
+{
+public:
+    JsonTuplet() {}
+    Fraction read(const QJsonObject& json, Measure* const measure, const Fraction& tick, Tuplet* tuplet);
+private:
+};
+
+Fraction JsonTuplet::read(const QJsonObject& json, Measure* const measure, const Fraction& tick, Tuplet* tuplet)
+{
+    qDebug("JsonTuplet::read() rtick %s",
+           qPrintable(tick.print())
+           );
+    Fraction tupTime { 0, 1 };               // time in this tuplet
+    QJsonArray array = json["events"].toArray();
+    for (int i = 0; i < array.size(); ++i) {
+        QJsonObject object = array[i].toObject();
+        JsonEvent event;
+        tupTime += event.read(object, measure, tick + tupTime, tuplet);
+        //qDebug("tupTime %s", qPrintable(tupTime.print()));
+    }
+    return tupTime;
+}
+
+//---------------------------------------------------------
+//   JsonEvent
+//---------------------------------------------------------
+
+// read a single event and return its length
+// pitch is 0-based, see pitchIsValid() in pitchspelling.h
+// => C4 = 60
+// note type, duration and increment can be set (kind of) independently
+// duration: sets DurationElement::_duration (defaults to "as calculated from value")
+// set by (in order of decreasing priority):
+// - the duration specified
+// - the value specified
+// increment: sets the time increment to the next note (current to next note's Segment::_tick )
+// set by (in order of decreasing priority):
+// - the increment specified
+// - the duration specified
+// - the value specified
+Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const Fraction& tick, Tuplet* tuplet)
+{
+    qDebug("JsonEvent::read() rtick %s tuplet %p value '%s' duration '%s' increment '%s' pitch '%s' baselen '%s' ratio '%s'",
+           qPrintable(tick.print()),
+           tuplet,
+           qPrintable(json["value"].toString()),
+           qPrintable(json["duration"].toString()),
+           qPrintable(json["increment"].toString()),
+           qPrintable(json["pitch"].toString()),
+           qPrintable(json["baselen"].toString()),
+           qPrintable(json["ratio"].toString())
+           );
+    if (json.contains("baselen") && json.contains("ratio")) {
+        // tuplet found
+        const auto baselen = mnxEventValueToTDuration(json["baselen"].toString());
+        const auto ratio = Fraction::fromString(json["ratio"].toString());
+        //qDebug("baselen %s ratio %s", qPrintable(baselen.fraction().print()), qPrintable(ratio.print()));
+        // create the tuplet
+        auto newTuplet = createTuplet(measure->score(), 0 /* TODO track */);
+        //qDebug("newTuplet %p ratio %s", newTuplet, qPrintable(ratio.print()));
+        newTuplet->setParent(measure);
+        newTuplet->setTuplet(tuplet);
+        setTupletParameters(newTuplet, ratio.numerator(), ratio.denominator(), baselen.type());
+        if (tuplet) {
+            newTuplet->setTuplet(tuplet);
+            tuplet->add(newTuplet);
+        }
+        JsonTuplet jsonTuplet;
+        return jsonTuplet.read(json, measure, tick, newTuplet);
+    } else {
+        Fraction duration { 0, 0 };       // initialize invalid to catch missing duration
+        if (json.contains("duration")) {
+            duration = Fraction::fromString(json["duration"].toString());
+            qDebug("duration %s", qPrintable(duration.print()));
+        }
+        Fraction increment { 0, 0 };       // initialize invalid to catch missing increment
+        if (json.contains("increment")) {
+            increment = Fraction::fromString(json["increment"].toString());
+            qDebug("increment %s", qPrintable(increment.print()));
+        }
+        auto cr = createChord(measure->score(), json["value"].toString(), duration);
+        bool ok { true };
+        int pitch { json["pitch"].toString().toInt(&ok) };
+        //qDebug("ok %d pitch %d", ok, pitch);
+        cr->add(createNote(measure->score(), pitch));
+        auto s = measure->getSegment(SegmentType::ChordRest, tick);
+        s->add(cr);
+        if (tuplet) {
+            cr->setTuplet(tuplet);
+            tuplet->add(cr);
+        }
+
+        // todo: check if following supports using increment in a tuplet
+        auto res = increment.isValid() ? increment : cr->ticks();
+        //qDebug("res %s", qPrintable(res.print()));
+        for (Tuplet* t = cr->tuplet(); t; t = t->tuplet()) {
+            res /= t->ratio();
+            //qDebug("t %p ratio %s res %s", t, qPrintable(t->ratio().print()), qPrintable(res.print()));
+        }
+        //qDebug("res %s", qPrintable(res.print()));
+        return res;
+    }
+}
+
+//---------------------------------------------------------
+//   JsonSequence
+//---------------------------------------------------------
+
+class JsonSequence
+{
+public:
+    JsonSequence() {}
+    Fraction read(const QJsonObject& json, Measure* const measure, const Fraction& startTick);
+private:
+};
+
+// read a single sequence (a.k.a. voice)
+// assume all voices start at relative tick 0 in its measure
+Fraction JsonSequence::read(const QJsonObject& json, Measure* const measure, const Fraction& startTick)
+{
+    qDebug("JsonSequence::read()");
+    Fraction tick { startTick };
+    QJsonArray array = json["events"].toArray();
+    for (int i = 0; i < array.size(); ++i) {
+        QJsonObject object = array[i].toObject();
+        JsonEvent event;
+        tick += event.read(object, measure, tick, nullptr);
+    }
+    return {};         // TODO to suppurt nested sequences
+}
+
+//---------------------------------------------------------
+//   JsonMeasure
+//---------------------------------------------------------
+
+class JsonMeasure
+{
+public:
+    JsonMeasure() {}
+    Fraction read(MasterScore* score, const QJsonObject& json, const Fraction& timeSig, const Fraction& startTick);
+private:
+};
+
+// read a single measure and return its length
+Fraction JsonMeasure::read(MasterScore* const score, const QJsonObject& json, const Fraction& timeSig, const Fraction& startTick)
+{
+    qDebug("JsonMeasure::read()");
+    auto m = new Measure(score);
+    m->setTick(startTick);
+    m->setTimesig(timeSig);
+    score->measures()->add(m);
+    if (startTick == Fraction { 0, 1 }) {
+        auto ts = createTimeSig(score, timeSig);
+        auto s = m->getSegment(SegmentType::TimeSig, { 0, 1 });
+        s->add(ts);
+    }
+    QJsonArray array = json["sequences"].toArray();
+    for (int i = 0; i < array.size(); ++i) {
+        QJsonObject object = array[i].toObject();
+        JsonSequence sequence;
+        sequence.read(object, m, startTick);
+    }
+    const auto length = timeSig;               // TODO: use real length instead ?
+    m->setTicks(length);
+    return length;
+}
+
+//---------------------------------------------------------
+//   JsonScore
+//---------------------------------------------------------
+
+class JsonScore
+{
+public:
+    JsonScore() {}
+    void read(MasterScore* score, const QJsonObject& json);
+private:
+};
+
+void JsonScore::read(MasterScore* const score, const QJsonObject& json)
+{
+    qDebug("JsonScore::read()");
+    // TODO move temporary part / staff creation
+    auto part = new Part(score);
+    part->setId("dbg");
+    score->appendPart(part);
+    auto staff = new Staff(score);
+    staff->setPart(part);
+    part->staves()->push_back(staff);
+    score->staves().push_back(staff);
+    Fraction timeSig { 4, 4 };         // default: assume all measures are 4/4
+    if (json.contains("time")) {
+        timeSig = Fraction::fromString(json["time"].toString());
+        qDebug("timesig %s", qPrintable(timeSig.print()));
+    }
+    QJsonArray array = json["measures"].toArray();
+    for (int i = 0; i < array.size(); ++i) {
+        QJsonObject object = array[i].toObject();
+        JsonMeasure measure;
+        measure.read(score, object, timeSig, timeSig * i);
+    }
+}
+
+//---------------------------------------------------------
 //   importBww
 //---------------------------------------------------------
 
@@ -596,23 +951,12 @@ Score::FileError importBww(MasterScore* score, const QString& path)
     if (!fp.open(QIODevice::ReadOnly)) {
         return Score::FileError::FILE_OPEN_ERROR;
     }
-/*
-    Part* part = new Part(score);
-    score->appendPart(part);
-    Staff* staff = Factory::createStaff(part);
-    score->appendStaff(staff);
 
-    Bww::Lexer lex(&fp);
-    Bww::MsScWriter wrt;
-    wrt.setScore(score);
-    score->resetStyleValue(Sid::measureSpacing);
-    Bww::Parser p(lex, wrt);
-    p.parse();
+    QByteArray data = file.readAll();
+    QJsonDocument doc = QJsonDocument::fromJson(data);
+    JsonScore jsonScore;
+    jsonScore.read(score, doc.object());
 
-    score->setSaved(false);
-    score->setNewlyCreated(true);
-    score->connectTies();
-*/
     LOGD("Score::importBww() done");
     return Score::FileError::FILE_NO_ERROR;        // OK
 }
