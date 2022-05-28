@@ -23,6 +23,10 @@
 // TODO LVI 2011-10-30: determine how to report import errors.
 // Currently all output (both debug and error reports) are done using LOGD.
 
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+
 #if 0
 #include "lexer.h"
 #include "writer.h"
@@ -54,7 +58,12 @@
 #include "libmscore/segment.h"
 #endif
 
+#include "libmscore/chord.h"
+#include "libmscore/masterscore.h"
+#include "libmscore/measure.h"
 #include "libmscore/score.h"
+#include "libmscore/staff.h"
+#include "libmscore/tuplet.h"
 
 #include "log.h"
 
@@ -589,37 +598,37 @@ Score::FileError importBww(MasterScore* score, const QString& path)
  * Convert MNX note value unit to MuseScore DurationType.
  */
 
-static TDuration::DurationType mnxValueUnitToDurationType(const QString& s)
+static Ms::DurationType mnxValueUnitToDurationType(const QString& s)
 {
     if (s == "/4") {
-        return TDuration::DurationType::V_QUARTER;
+        return Ms::DurationType::V_QUARTER;
     } else if (s == "/8") {
-        return TDuration::DurationType::V_EIGHTH;
+        return Ms::DurationType::V_EIGHTH;
     } else if (s == "/1024") {
-        return TDuration::DurationType::V_1024TH;
+        return Ms::DurationType::V_1024TH;
     } else if (s == "/512") {
-        return TDuration::DurationType::V_512TH;
+        return Ms::DurationType::V_512TH;
     } else if (s == "/256") {
-        return TDuration::DurationType::V_256TH;
+        return Ms::DurationType::V_256TH;
     } else if (s == "/128") {
-        return TDuration::DurationType::V_128TH;
+        return Ms::DurationType::V_128TH;
     } else if (s == "/64") {
-        return TDuration::DurationType::V_64TH;
+        return Ms::DurationType::V_64TH;
     } else if (s == "/32") {
-        return TDuration::DurationType::V_32ND;
+        return Ms::DurationType::V_32ND;
     } else if (s == "/16") {
-        return TDuration::DurationType::V_16TH;
+        return Ms::DurationType::V_16TH;
     } else if (s == "/2") {
-        return TDuration::DurationType::V_HALF;
+        return Ms::DurationType::V_HALF;
     } else if (s == "/1") {
-        return TDuration::DurationType::V_WHOLE;
+        return Ms::DurationType::V_WHOLE;
     } else if (s == "*2") {
-        return TDuration::DurationType::V_BREVE;
+        return Ms::DurationType::V_BREVE;
     } else if (s == "*4") {
-        return TDuration::DurationType::V_LONG;
+        return Ms::DurationType::V_LONG;
     } else {
         qDebug("mnxValueUnitToDurationType(%s): unknown", qPrintable(s));
-        return TDuration::DurationType::V_INVALID;
+        return Ms::DurationType::V_INVALID;
     }
 }
 
@@ -926,7 +935,7 @@ void JsonScore::read(MasterScore* const score, const QJsonObject& json)
     Fraction timeSig { 4, 4 };         // default: assume all measures are 4/4
     if (json.contains("time")) {
         timeSig = Fraction::fromString(json["time"].toString());
-        qDebug("timesig %s", qPrintable(timeSig.print()));
+        // TODO qDebug("timesig %s", qPrintable(timeSig.print()));
     }
     QJsonArray array = json["measures"].toArray();
     for (int i = 0; i < array.size(); ++i) {
@@ -952,7 +961,7 @@ Score::FileError importBww(MasterScore* score, const QString& path)
         return Score::FileError::FILE_OPEN_ERROR;
     }
 
-    QByteArray data = file.readAll();
+    QByteArray data = fp.readAll();
     QJsonDocument doc = QJsonDocument::fromJson(data);
     JsonScore jsonScore;
     jsonScore.read(score, doc.object());
