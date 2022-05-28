@@ -1,0 +1,78 @@
+{
+    "meta" : "test duration and increment interaction (duration <= increment)",
+    "time": "4/4",
+    "measures": [
+        {
+            "sequences": [
+                {
+                    "events": [
+                        {
+                            "comment" : "expect duration 1/2 (implicit) and increment 1/2 (implicit)",
+                            "value": "/2",
+                            "pitch": "67"
+                        },
+                        {
+                            "value": "/2",
+                            "pitch": "69"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "sequences": [
+                {
+                    "events": [
+                        {
+                            "comment" : "expect duration 3/8 (explicit) and increment 3/8 (implicit)",
+                            "value": "/2",
+                            "duration": "3/8",
+                            "pitch": "67"
+                        },
+                        {
+                            "value": "/2",
+                            "pitch": "69"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "sequences": [
+                {
+                    "events": [
+                        {
+                            "comment" : "expect duration 1/2 (implicit) and increment 5/8 (explicit)",
+                            "value": "/2",
+                            "increment": "5/8",
+                            "pitch": "67"
+                        },
+                        {
+                            "value": "/2",
+                            "pitch": "69"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "sequences": [
+                {
+                    "events": [
+                        {
+                            "comment" : "expect duration 3/8 (explicit) and increment 5/8 (explicit)",
+                            "value": "/2",
+                            "duration": "3/8",
+                            "increment": "5/8",
+                            "pitch": "67"
+                        },
+                        {
+                            "value": "/2",
+                            "pitch": "69"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

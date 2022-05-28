@@ -1,0 +1,32 @@
+{
+    "meta" : "test 3:2 tuplet of quarter notes",
+    "time": "2/4",
+    "measures": [
+        {
+            "sequences": [
+                {
+                    "events": [
+                        {
+                            "baselen": "/4",
+                            "ratio": "3/2",
+                            "events": [
+                                {
+                                    "value": "/4",
+                                    "pitch": "71"
+                                },
+                                {
+                                    "value": "/4",
+                                    "pitch": "71"
+                                },
+                                {
+                                    "value": "/4",
+                                    "pitch": "71"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

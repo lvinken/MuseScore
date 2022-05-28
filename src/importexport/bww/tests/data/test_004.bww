@@ -1,0 +1,34 @@
+{
+    "meta" : "test quarter notes typed as whole",
+    "time": "4/4",
+    "measures": [
+        {
+            "sequences": [
+                {
+                    "events": [
+                        {
+                            "value": "/1",
+                            "duration": "1/4",
+                            "pitch": "72"
+                        },
+                        {
+                            "value": "/1",
+                            "duration": "1/4",
+                            "pitch": "74"
+                        },
+                        {
+                            "value": "/1",
+                            "duration": "1/4",
+                            "pitch": "76"
+                        },
+                        {
+                            "value": "/1",
+                            "duration": "1/4",
+                            "pitch": "77"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

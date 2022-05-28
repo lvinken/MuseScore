@@ -1,0 +1,38 @@
+{
+    "meta" : "test multiple measures with multiple notes",
+    "time": "4/4",
+    "measures": [
+        {
+            "sequences": [
+                {
+                    "events": [
+                        {
+                            "value": "/2",
+                            "pitch": "67"
+                        },
+                        {
+                            "value": "/2",
+                            "pitch": "69"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "sequences": [
+                {
+                    "events": [
+                        {
+                            "value": "/2",
+                            "pitch": "71"
+                        },
+                        {
+                            "value": "/2",
+                            "pitch": "72"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

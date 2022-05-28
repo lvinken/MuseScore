@@ -1,0 +1,54 @@
+{
+    "meta" : "test 3:2 tuplet of eighth notes with nested 3:2 tuplet of 16th notes",
+    "time": "3/4",
+    "measures": [
+        {
+            "sequences": [
+                {
+                    "events": [
+                        {
+                            "value": "/4",
+                            "pitch": "60"
+                        },
+                        {
+                            "baselen": "/8",
+                            "ratio": "3/2",
+                            "events": [
+                                {
+                                    "baselen": "/16",
+                                    "ratio": "3/2",
+                                    "events": [
+                                        {
+                                            "value": "/16",
+                                            "pitch": "62"
+                                        },
+                                        {
+                                            "value": "/16",
+                                            "pitch": "64"
+                                        },
+                                        {
+                                            "value": "/16",
+                                            "pitch": "65"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "value": "/8",
+                                    "pitch": "67"
+                                },
+                                {
+                                    "value": "/8",
+                                    "pitch": "69"
+                                }
+                            ]
+                        },
+                        {
+                            "value": "/4",
+                            "pitch": "71"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
