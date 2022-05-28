@@ -59,10 +59,13 @@
 #endif
 
 #include "libmscore/chord.h"
+#include "libmscore/factory.h"
 #include "libmscore/masterscore.h"
 #include "libmscore/measure.h"
+#include "libmscore/part.h"
 #include "libmscore/score.h"
 #include "libmscore/staff.h"
+#include "libmscore/timesig.h"
 #include "libmscore/tuplet.h"
 
 #include "log.h"
@@ -675,7 +678,7 @@ static void addCrToTuplet(ChordRest* cr, Tuplet* tuplet)
 Chord* createChord(Score* score, const QString& value, const Fraction& duration)
 {
     auto dur = mnxEventValueToTDuration(value);
-    auto chord = new Chord(score);
+    auto chord = Factory::createChord(score->dummy()->segment());
     chord->setTrack(0);               // TODO
     chord->setDurationType(dur);
     chord->setTicks(duration.isValid() ? duration : dur.fraction());          // specified duration overrules value-based
@@ -687,9 +690,9 @@ Chord* createChord(Score* score, const QString& value, const Fraction& duration)
 //   createNote
 //---------------------------------------------------------
 
-Note* createNote(Score* score, const int pitch)
+Note* createNote(Chord* c, const int pitch)
 {
-    auto note = new Note(score);
+    auto note = Factory::createNote(c);
     note->setTrack(0);              // TODO
     note->setPitch(pitch);
     note->setTpcFromPitch();
@@ -700,9 +703,9 @@ Note* createNote(Score* score, const int pitch)
 //   createTimeSig
 //---------------------------------------------------------
 
-TimeSig* createTimeSig(Score* score, const Fraction& sig)
+TimeSig* createTimeSig(Segment* seg, const Fraction& sig)
 {
-    auto timesig = new TimeSig(score);
+    auto timesig = Factory::createTimeSig(seg);
     timesig->setSig(sig);
     timesig->setTrack(0);                    // TODO
     return timesig;
@@ -712,9 +715,9 @@ TimeSig* createTimeSig(Score* score, const Fraction& sig)
 //   createTuplet
 //---------------------------------------------------------
 
-Tuplet* createTuplet(Score* score, const int track)
+Tuplet* createTuplet(Measure* measure, const int track)
 {
-    auto tuplet = new Tuplet(score);
+    auto tuplet = new Tuplet(measure);
     tuplet->setTrack(track);
     return tuplet;
 }
@@ -723,7 +726,7 @@ Tuplet* createTuplet(Score* score, const int track)
 //   setTupletParameters
 //---------------------------------------------------------
 
-static void setTupletParameters(Tuplet* tuplet, const int actual, const int normal, const TDuration::DurationType base)
+static void setTupletParameters(Tuplet* tuplet, const int actual, const int normal, const Ms::DurationType base)
 {
     tuplet->setRatio({ actual, normal });
     tuplet->setBaseLen(base);
@@ -751,9 +754,11 @@ private:
 
 Fraction JsonTuplet::read(const QJsonObject& json, Measure* const measure, const Fraction& tick, Tuplet* tuplet)
 {
+/* TODO
     qDebug("JsonTuplet::read() rtick %s",
            qPrintable(tick.print())
            );
+*/
     Fraction tupTime { 0, 1 };               // time in this tuplet
     QJsonArray array = json["events"].toArray();
     for (int i = 0; i < array.size(); ++i) {
@@ -784,6 +789,7 @@ Fraction JsonTuplet::read(const QJsonObject& json, Measure* const measure, const
 // - the value specified
 Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const Fraction& tick, Tuplet* tuplet)
 {
+/* TODO
     qDebug("JsonEvent::read() rtick %s tuplet %p value '%s' duration '%s' increment '%s' pitch '%s' baselen '%s' ratio '%s'",
            qPrintable(tick.print()),
            tuplet,
@@ -794,13 +800,14 @@ Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const 
            qPrintable(json["baselen"].toString()),
            qPrintable(json["ratio"].toString())
            );
+*/
     if (json.contains("baselen") && json.contains("ratio")) {
         // tuplet found
         const auto baselen = mnxEventValueToTDuration(json["baselen"].toString());
         const auto ratio = Fraction::fromString(json["ratio"].toString());
         //qDebug("baselen %s ratio %s", qPrintable(baselen.fraction().print()), qPrintable(ratio.print()));
         // create the tuplet
-        auto newTuplet = createTuplet(measure->score(), 0 /* TODO track */);
+        auto newTuplet = createTuplet(measure, 0 /* TODO track */);
         //qDebug("newTuplet %p ratio %s", newTuplet, qPrintable(ratio.print()));
         newTuplet->setParent(measure);
         newTuplet->setTuplet(tuplet);
@@ -815,29 +822,29 @@ Fraction JsonEvent::read(const QJsonObject& json, Measure* const measure, const 
         Fraction duration { 0, 0 };       // initialize invalid to catch missing duration
         if (json.contains("duration")) {
             duration = Fraction::fromString(json["duration"].toString());
-            qDebug("duration %s", qPrintable(duration.print()));
+            //qDebug("duration %s", qPrintable(duration.print()));
         }
         Fraction increment { 0, 0 };       // initialize invalid to catch missing increment
         if (json.contains("increment")) {
             increment = Fraction::fromString(json["increment"].toString());
-            qDebug("increment %s", qPrintable(increment.print()));
+            //qDebug("increment %s", qPrintable(increment.print()));
         }
-        auto cr = createChord(measure->score(), json["value"].toString(), duration);
+        auto c = createChord(measure->score(), json["value"].toString(), duration);
         bool ok { true };
         int pitch { json["pitch"].toString().toInt(&ok) };
         //qDebug("ok %d pitch %d", ok, pitch);
-        cr->add(createNote(measure->score(), pitch));
+        c->add(createNote(c, pitch));
         auto s = measure->getSegment(SegmentType::ChordRest, tick);
-        s->add(cr);
+        s->add(c);
         if (tuplet) {
-            cr->setTuplet(tuplet);
-            tuplet->add(cr);
+            c->setTuplet(tuplet);
+            tuplet->add(c);
         }
 
         // todo: check if following supports using increment in a tuplet
-        auto res = increment.isValid() ? increment : cr->ticks();
+        auto res = increment.isValid() ? increment : c->ticks();
         //qDebug("res %s", qPrintable(res.print()));
-        for (Tuplet* t = cr->tuplet(); t; t = t->tuplet()) {
+        for (Tuplet* t = c->tuplet(); t; t = t->tuplet()) {
             res /= t->ratio();
             //qDebug("t %p ratio %s res %s", t, qPrintable(t->ratio().print()), qPrintable(res.print()));
         }
@@ -889,13 +896,13 @@ private:
 Fraction JsonMeasure::read(MasterScore* const score, const QJsonObject& json, const Fraction& timeSig, const Fraction& startTick)
 {
     qDebug("JsonMeasure::read()");
-    auto m = new Measure(score);
+    auto m = Factory::createMeasure(score->dummy()->system());
     m->setTick(startTick);
     m->setTimesig(timeSig);
     score->measures()->add(m);
     if (startTick == Fraction { 0, 1 }) {
-        auto ts = createTimeSig(score, timeSig);
         auto s = m->getSegment(SegmentType::TimeSig, { 0, 1 });
+        auto ts = createTimeSig(s, timeSig);
         s->add(ts);
     }
     QJsonArray array = json["sequences"].toArray();
@@ -926,12 +933,10 @@ void JsonScore::read(MasterScore* const score, const QJsonObject& json)
     qDebug("JsonScore::read()");
     // TODO move temporary part / staff creation
     auto part = new Part(score);
-    part->setId("dbg");
+    // TODO (?) part->setId("dbg");
     score->appendPart(part);
-    auto staff = new Staff(score);
-    staff->setPart(part);
-    part->staves()->push_back(staff);
-    score->staves().push_back(staff);
+    auto staff = Factory::createStaff(part);
+    score->appendStaff(staff);
     Fraction timeSig { 4, 4 };         // default: assume all measures are 4/4
     if (json.contains("time")) {
         timeSig = Fraction::fromString(json["time"].toString());
