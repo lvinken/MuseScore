@@ -23,12 +23,15 @@
 // TODO LVI 2011-10-30: determine how to report import errors.
 // Currently all output (both debug and error reports) are done using LOGD.
 
+#if 0
 #include "lexer.h"
 #include "writer.h"
 #include "parser.h"
+#endif
 
 #include "engraving/types/fraction.h"
 
+#if 0
 #include "libmscore/factory.h"
 #include "libmscore/barline.h"
 #include "libmscore/box.h"
@@ -49,6 +52,9 @@
 #include "libmscore/tuplet.h"
 #include "libmscore/volta.h"
 #include "libmscore/segment.h"
+#endif
+
+#include "libmscore/score.h"
 
 #include "log.h"
 
@@ -59,6 +65,7 @@ namespace Bww {
  The writer that imports into MuseScore.
  */
 
+#if 0
 //---------------------------------------------------------
 //   addText
 //   copied from importxml.cpp
@@ -533,9 +540,12 @@ void MsScWriter::doTriplet(Ms::Chord* cr, StartStop triplet)
         tuplet->add(cr);
     }
 }
+
+#endif
 } // namespace Bww
 
 namespace Ms {
+#if 0
 //---------------------------------------------------------
 //   importBww
 //---------------------------------------------------------
@@ -567,6 +577,42 @@ Score::FileError importBww(MasterScore* score, const QString& path)
     score->setSaved(false);
     score->setNewlyCreated(true);
     score->connectTies();
+    LOGD("Score::importBww() done");
+    return Score::FileError::FILE_NO_ERROR;        // OK
+#endif
+
+//---------------------------------------------------------
+//   importBww
+//---------------------------------------------------------
+
+Score::FileError importBww(MasterScore* score, const QString& path)
+{
+    LOGD("Score::importBww(%s) importing DBG", qPrintable(path));
+
+    QFile fp(path);
+    if (!fp.exists()) {
+        return Score::FileError::FILE_NOT_FOUND;
+    }
+    if (!fp.open(QIODevice::ReadOnly)) {
+        return Score::FileError::FILE_OPEN_ERROR;
+    }
+/*
+    Part* part = new Part(score);
+    score->appendPart(part);
+    Staff* staff = Factory::createStaff(part);
+    score->appendStaff(staff);
+
+    Bww::Lexer lex(&fp);
+    Bww::MsScWriter wrt;
+    wrt.setScore(score);
+    score->resetStyleValue(Sid::measureSpacing);
+    Bww::Parser p(lex, wrt);
+    p.parse();
+
+    score->setSaved(false);
+    score->setNewlyCreated(true);
+    score->connectTies();
+*/
     LOGD("Score::importBww() done");
     return Score::FileError::FILE_NO_ERROR;        // OK
 }
