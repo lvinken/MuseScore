@@ -1530,6 +1530,7 @@ static void unpitch2xml(const Note* note, QString& s, int& octave)
 
 static QString tick2xml(const Fraction& ticks, int* dots)
       {
+      qDebug("ticks %s", qPrintable(ticks.print()));
       TDuration t(ticks);
       *dots = t.dots();
       if (ticks == Fraction(0,1)) {
@@ -3142,13 +3143,22 @@ static void writeTypeAndDots(XmlWriter& xml, const Note* const note)
       {
       // type
       int dots { 0 };
+      /*
       const auto ratio = timeModification(note->chord()->tuplet());
 
       const auto strActFraction = stretchCorrActFraction(note);
       const Fraction tt  = strActFraction * ratio * tremoloCorrection(note);
+       */
+      const auto duration = note->chord()->actualDurationType();
+      qDebug("name %s dots %d", qPrintable(duration.name()), duration.dots());
+      const QString s { duration.name() };
+      dots = duration.dots();
+
+      /*
       const QString s { tick2xml(tt, &dots) };
       if (s.isEmpty())
             qDebug("no note type found for fraction %d / %d", strActFraction.numerator(), strActFraction.denominator());
+       */
 
       // small notes are indicated by size=cue, but for grace and cue notes this is implicit
       if (isSmallNote(note) && !isCueNote(note) && !note->chord()->isGrace())
