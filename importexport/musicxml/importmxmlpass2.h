@@ -77,6 +77,7 @@ struct MusicXmlTupletDesc {
 
 //---------------------------------------------------------
 //   MusicXmlSpannerDesc
+//      input parameter for MusicXMLParserPass2::addSpanner(), ::getSpanner() and ::clearSpanner()
 //---------------------------------------------------------
 
 struct MusicXmlSpannerDesc {
@@ -308,9 +309,13 @@ private:
 
       SlurStack _slurs { {} };
       TrillStack _trills { {} };          ///< Current trills
+      // arrays of concurrent / overlapping spanners in the MusicXML file, indexed on the "number" attribute
+      // they contain MusicXmlExtendedSpannerDescs
+      // note: these are not stacks, the number simply distinguishes between the overlapping spanners
       BracketsStack _brackets;
       OttavasStack _ottavas;              ///< Current ottavas
       HairpinsStack _hairpins;            ///< Current hairpins
+      // dummy MusicXmlExtendedSpannerDesc used for error handling
       MusicXmlExtendedSpannerDesc _dummyNewMusicXmlSpannerDesc;
 
       Glissando* _glissandi[MAX_NUMBER_LEVEL][2];   ///< Current slides ([0]) / glissandi ([1])

@@ -2380,6 +2380,18 @@ static Fraction calcTicks(const QString& text, int divs, MxmlLogger* logger, con
 //   direction
 //---------------------------------------------------------
 
+static void dumpHairpinState(MusicXMLParserPass2& pass2)
+      {
+      for (int i = 0; i < MAX_NUMBER_LEVEL; ++i) {
+            auto& spdesc = pass2.getSpanner({ ElementType::HAIRPIN, i });
+            qDebug("hairpin[%d] %s", i, qPrintable(spdesc.toString()));
+            }
+      }
+
+//---------------------------------------------------------
+//   direction
+//---------------------------------------------------------
+
 /**
  Parse the /score-partwise/part/measure/direction node.
  */
@@ -2391,7 +2403,8 @@ void MusicXMLParserDirection::direction(const QString& partId,
                                         MusicXmlSpannerMap& spanners)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "direction");
-      //qDebug("direction tick %s", qPrintable(tick.print()));
+      qDebug("direction begin line %lld tick %s", _e.lineNumber(), qPrintable(tick.print()));
+      dumpHairpinState(_pass2);
 
       QString placement = _e.attributes().value("placement").toString();
       int track = _pass1.trackForPart(partId);
@@ -2536,21 +2549,35 @@ void MusicXMLParserDirection::direction(const QString& partId,
 
       // handle the spanner stops first
       foreach (auto desc, stops) {
+            qDebug("handle stop %d", desc._nr);
             auto& spdesc = _pass2.getSpanner({ desc._tp, desc._nr });
             if (spdesc._isStopped) {
                   _logger->logError("spanner already stopped", &_e);
-                  delete desc._sp;
+                  if (desc._sp) {
+                        qDebug("already stopped, deleting %p", desc._sp);
+                        delete desc._sp;
+                        }
+                  else {
+                        qDebug("already stopped, _sp %p, not deleting", desc._sp);
+                        }
                   }
             else {
                   if (spdesc._isStarted) {
+                        qDebug("_isStarted, handleSpannerStop %d", desc._nr);
                         handleSpannerStop(spdesc._sp, track, tick, spanners);
                         _pass2.clearSpanner(desc);
                         }
                   else {
-                        spdesc._sp = desc._sp;
-                        spdesc._tick2 = tick;
-                        spdesc._track2 = track;
-                        spdesc._isStopped = true;
+                        if (desc._sp) {
+                              qDebug("update spdesc %d: change %p to %p", desc._nr, spdesc._sp, desc._sp);
+                              spdesc._sp = desc._sp;
+                              spdesc._tick2 = tick;
+                              spdesc._track2 = track;
+                              spdesc._isStopped = true;
+                              }
+                        else {
+                              qDebug("not started, _sp %p, ignoring", desc._sp);
+                              }
                         }
                   }
             }
@@ -2579,6 +2606,9 @@ void MusicXMLParserDirection::direction(const QString& partId,
                         }
                   }
             }
+
+            dumpHairpinState(_pass2);
+            qDebug("direction end line %lld tick %s", _e.lineNumber(), qPrintable(tick.print()));
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "direction");
       }
@@ -3052,19 +3082,36 @@ void MusicXMLParserDirection::wedge(const QString& type, const int number,
       {
       QStringRef niente = _e.attributes().value("niente");
       const auto& spdesc = _pass2.getSpanner({ ElementType::HAIRPIN, number });
+      qDebug("type %s number %d spdesc '%s'", qPrintable(type), number, qPrintable(spdesc.toString()));
+      Hairpin* h { nullptr };
+      Hairpin* newh { nullptr };
       if (type == "crescendo" || type == "diminuendo") {
-            auto h = spdesc._isStopped ? toHairpin(spdesc._sp) : new Hairpin(_score);
+            if (spdesc._isStopped) {
+                  h = toHairpin(spdesc._sp);
+                  qDebug("_isStopped, hairpin %p from spdesc", h);
+            }
+            else {
+                  h = newh = new Hairpin(_score);
+                  qDebug("new hairpin %p %p", h, newh);
+            }
             h->setHairpinType(type == "crescendo"
                               ? HairpinType::CRESC_HAIRPIN : HairpinType::DECRESC_HAIRPIN);
             if (niente == "yes")
                   h->setHairpinCircledTip(true);
-            starts.append(MusicXmlSpannerDesc(h, ElementType::HAIRPIN, number));
+            starts.append(MusicXmlSpannerDesc(newh, ElementType::HAIRPIN, number));
             }
       else if (type == "stop") {
-            auto h = spdesc._isStarted ? toHairpin(spdesc._sp) : new Hairpin(_score);
+            if (spdesc._isStarted) {
+                  h = toHairpin(spdesc._sp);
+                  qDebug("_isStarted, hairpin %p from spdesc", h);
+            }
+            else {
+                  h = newh = new Hairpin(_score);
+                  qDebug("new hairpin %p %p", h, newh);
+            }
             if (niente == "yes")
                   h->setHairpinCircledTip(true);
-            stops.append(MusicXmlSpannerDesc(h, ElementType::HAIRPIN, number));
+            stops.append(MusicXmlSpannerDesc(newh, ElementType::HAIRPIN, number));
             }
       _e.skipCurrentElement();
       }
@@ -3077,10 +3124,12 @@ QString MusicXmlExtendedSpannerDesc::toString() const
       {
       QString string;
       QTextStream(&string) << _sp;
-      return QString("sp %1 tp %2 tick2 %3 track2 %4 %5 %6")
-             .arg(string, _tick2.print())
+      return QString("sp %1 tick2 %2 track2 %3 %4 %5")
+             .arg(string)
+             .arg(_tick2.print())
              .arg(_track2)
-             .arg(_isStarted ? "started" : "", _isStopped ? "stopped" : "")
+             .arg(_isStarted ? " started" : "")
+             .arg(_isStopped ? " stopped" : "")
       ;
       }
 
