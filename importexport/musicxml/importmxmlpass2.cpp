@@ -2585,24 +2585,39 @@ void MusicXMLParserDirection::direction(const QString& partId,
       // then handle the spanner starts
       // TBD handle offset ?
       foreach (auto desc, starts) {
+            qDebug("handle start %d", desc._nr);
             auto& spdesc = _pass2.getSpanner({ desc._tp, desc._nr });
             if (spdesc._isStarted) {
                   _logger->logError("spanner already started", &_e);
-                  delete desc._sp;
+                  if (desc._sp) {
+                        qDebug("already started, deleting %p", desc._sp);
+                        delete desc._sp;
+                        }
+                  else {
+                        qDebug("already started, _sp %p, not deleting", desc._sp);
+                        }
                   }
             else {
+                  qDebug("spdesc %d spdesc._sp %p desc._sp %p", desc._nr, spdesc._sp, desc._sp);
                   if (spdesc._isStopped) {
-                        _pass2.addSpanner(desc);
+                        qDebug("_isStopped, handleSpannerStart and ...Stop %d", desc._nr);
+                        _pass2.addSpanner(MusicXmlSpannerDesc(spdesc._sp, ElementType::HAIRPIN, desc._nr));
                         // handleSpannerStart and handleSpannerStop must be called in order
                         // due to allocation of elements in the map
-                        handleSpannerStart(desc._sp, track, placement, tick, spanners);
+                        handleSpannerStart(spdesc._sp, track, placement, tick, spanners);
                         handleSpannerStop(spdesc._sp, spdesc._track2, spdesc._tick2, spanners);
                         _pass2.clearSpanner(desc);
                         }
                   else {
-                        _pass2.addSpanner(desc);
-                        handleSpannerStart(desc._sp, track, placement, tick, spanners);
-                        spdesc._isStarted = true;
+                        if (desc._sp) {
+                              qDebug("handleSpannerStart spdesc %d %p", desc._nr, desc._sp);
+                              _pass2.addSpanner(desc);
+                              handleSpannerStart(desc._sp, track, placement, tick, spanners);
+                              spdesc._isStarted = true;
+                              }
+                        else {
+                              qDebug("not started, _sp %p, ignoring", desc._sp);
+                              }
                         }
                   }
             }
