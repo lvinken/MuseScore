@@ -2384,7 +2384,10 @@ static void dumpHairpinState(MusicXMLParserPass2& pass2)
       {
       for (int i = 0; i < MAX_NUMBER_LEVEL; ++i) {
             auto& spdesc = pass2.getSpanner({ ElementType::HAIRPIN, i });
-            qDebug("hairpin[%d] %s", i, qPrintable(spdesc.toString()));
+            auto desc = spdesc.toString();
+            if (desc != "sp 0x0 tick2 0/0 track2 0  ") {
+                  qDebug("hairpin[%d] %s", i, qPrintable(desc));
+                  }
             }
       }
 
@@ -2563,12 +2566,14 @@ void MusicXMLParserDirection::direction(const QString& partId,
                   }
             else {
                   if (spdesc._isStarted) {
+                        // codecoverage001
                         qDebug("_isStarted, handleSpannerStop %d", desc._nr);
                         handleSpannerStop(spdesc._sp, track, tick, spanners);
                         _pass2.clearSpanner(desc);
                         }
                   else {
                         if (desc._sp) {
+                              // codecoverage002
                               qDebug("update spdesc %d: change %p to %p", desc._nr, spdesc._sp, desc._sp);
                               spdesc._sp = desc._sp;
                               spdesc._tick2 = tick;
@@ -2590,16 +2595,19 @@ void MusicXMLParserDirection::direction(const QString& partId,
             if (spdesc._isStarted) {
                   _logger->logError("spanner already started", &_e);
                   if (desc._sp) {
+                        // nok
                         qDebug("already started, deleting %p", desc._sp);
                         delete desc._sp;
                         }
                   else {
+                        // should not happen (but leave in for robustness)
                         qDebug("already started, _sp %p, not deleting", desc._sp);
                         }
                   }
             else {
                   qDebug("spdesc %d spdesc._sp %p desc._sp %p", desc._nr, spdesc._sp, desc._sp);
                   if (spdesc._isStopped) {
+                        // codecoverage002
                         qDebug("_isStopped, handleSpannerStart and ...Stop %d", desc._nr);
                         _pass2.addSpanner(MusicXmlSpannerDesc(spdesc._sp, ElementType::HAIRPIN, desc._nr));
                         // handleSpannerStart and handleSpannerStop must be called in order
@@ -2610,12 +2618,14 @@ void MusicXMLParserDirection::direction(const QString& partId,
                         }
                   else {
                         if (desc._sp) {
+                              // codecoverage001
                               qDebug("handleSpannerStart spdesc %d %p", desc._nr, desc._sp);
                               _pass2.addSpanner(desc);
                               handleSpannerStart(desc._sp, track, placement, tick, spanners);
                               spdesc._isStarted = true;
                               }
                         else {
+                              // nok3
                               qDebug("not started, _sp %p, ignoring", desc._sp);
                               }
                         }
@@ -3102,10 +3112,12 @@ void MusicXMLParserDirection::wedge(const QString& type, const int number,
       Hairpin* newh { nullptr };
       if (type == "crescendo" || type == "diminuendo") {
             if (spdesc._isStopped) {
+                  // codecoverage002
                   h = toHairpin(spdesc._sp);
                   qDebug("_isStopped, hairpin %p from spdesc", h);
             }
             else {
+                  // codecoverage001
                   h = newh = new Hairpin(_score);
                   qDebug("new hairpin %p %p", h, newh);
             }
@@ -3117,10 +3129,12 @@ void MusicXMLParserDirection::wedge(const QString& type, const int number,
             }
       else if (type == "stop") {
             if (spdesc._isStarted) {
+                  // codecoverage001
                   h = toHairpin(spdesc._sp);
                   qDebug("_isStarted, hairpin %p from spdesc", h);
             }
             else {
+                  // codecoverage002
                   h = newh = new Hairpin(_score);
                   qDebug("new hairpin %p %p", h, newh);
             }
