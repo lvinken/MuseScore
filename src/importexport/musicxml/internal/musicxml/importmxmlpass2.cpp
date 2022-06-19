@@ -2653,16 +2653,20 @@ void MusicXMLParserDirection::direction(const QString& partId,
         auto& spdesc = _pass2.getSpanner({ desc._tp, desc._nr });
         if (spdesc._isStopped) {
             _logger->logError("spanner already stopped", &_e);
+            if (desc._sp) {
             delete desc._sp;
+            }
         } else {
             if (spdesc._isStarted) {
                 handleSpannerStop(spdesc._sp, track, tick, spanners);
                 _pass2.clearSpanner(desc);
             } else {
+           if (desc._sp) {
                 spdesc._sp = desc._sp;
                 spdesc._tick2 = tick;
                 spdesc._track2 = track;
                 spdesc._isStopped = true;
+}
             }
         }
     }
@@ -2673,19 +2677,23 @@ void MusicXMLParserDirection::direction(const QString& partId,
         auto& spdesc = _pass2.getSpanner({ desc._tp, desc._nr });
         if (spdesc._isStarted) {
             _logger->logError("spanner already started", &_e);
+           if (desc._sp) {
             delete desc._sp;
+}
         } else {
             if (spdesc._isStopped) {
-                _pass2.addSpanner(desc);
+                _pass2.addSpanner(MusicXmlSpannerDesc(spdesc.sp, ElementType::HAIRPIN /* TODO: get correct type */, desc._nr);
                 // handleSpannerStart and handleSpannerStop must be called in order
                 // due to allocation of elements in the map
-                handleSpannerStart(desc._sp, track, placement, tick, spanners);
+                handleSpannerStart(spdesc._sp, track, placement, tick, spanners);
                 handleSpannerStop(spdesc._sp, spdesc._track2, spdesc._tick2, spanners);
                 _pass2.clearSpanner(desc);
             } else {
+           if (desc._sp) {
                 _pass2.addSpanner(desc);
                 handleSpannerStart(desc._sp, track, placement, tick, spanners);
                 spdesc._isStarted = true;
+}
             }
         }
     }
@@ -3169,20 +3177,34 @@ void MusicXMLParserDirection::wedge(const QString& type, const int number,
 {
     QStringRef niente = _e.attributes().value("niente");
     const auto& spdesc = _pass2.getSpanner({ ElementType::HAIRPIN, number });
+    Hairpin* h { nullptr };
+    Hairpin* newh { nullptr };
     if (type == "crescendo" || type == "diminuendo") {
-        auto h = spdesc._isStopped ? toHairpin(spdesc._sp) : Factory::createHairpin(_score->dummy()->segment());
+        //auto h = spdesc._isStopped ? toHairpin(spdesc._sp) : Factory::createHairpin(_score->dummy()->segment());
+        if (spdesc._isStopped) {
+          h = toHairpin(spdesc._sp);
+}
+else {
+h = newh = new Hairpin(_score);
+}
         h->setHairpinType(type == "crescendo"
                           ? HairpinType::CRESC_HAIRPIN : HairpinType::DECRESC_HAIRPIN);
         if (niente == "yes") {
             h->setHairpinCircledTip(true);
         }
-        starts.append(MusicXmlSpannerDesc(h, ElementType::HAIRPIN, number));
+        starts.append(MusicXmlSpannerDesc(newh, ElementType::HAIRPIN, number));
     } else if (type == "stop") {
-        auto h = spdesc._isStarted ? toHairpin(spdesc._sp) : Factory::createHairpin(_score->dummy()->segment());
+        //auto h = spdesc._isStarted ? toHairpin(spdesc._sp) : Factory::createHairpin(_score->dummy()->segment());
+        if (spdesc._isStarted) {
+          h = toHairpin(spdesc._sp);
+}
+else {
+h = newh = new Hairpin(_score);
+}
         if (niente == "yes") {
             h->setHairpinCircledTip(true);
         }
-        stops.append(MusicXmlSpannerDesc(h, ElementType::HAIRPIN, number));
+        stops.append(MusicXmlSpannerDesc(newh, ElementType::HAIRPIN, number));
     }
     _e.skipCurrentElement();
 }
@@ -3195,10 +3217,12 @@ QString MusicXmlExtendedSpannerDesc::toString() const
 {
     QString string;
     QTextStream(&string) << _sp;
-    return QString("sp %1 tp %2 tick2 %3 track2 %4 %5 %6")
-           .arg(string, _tick2.toString())
+    return QString("sp %1 tick2 %2 track2 %3%4%5")
+           .arg(string)
+           .arg(_tick2.toString())
            .arg(static_cast<int>(_track2))
-           .arg(_isStarted ? "started" : "", _isStopped ? "stopped" : "")
+           .arg(_isStarted ? " started" : "")
+           .arg(_isStopped ? " stopped" : "")
     ;
 }
 
