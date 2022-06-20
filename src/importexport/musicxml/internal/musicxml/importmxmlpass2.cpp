@@ -2654,19 +2654,19 @@ void MusicXMLParserDirection::direction(const QString& partId,
         if (spdesc._isStopped) {
             _logger->logError("spanner already stopped", &_e);
             if (desc._sp) {
-            delete desc._sp;
+                delete desc._sp;
             }
         } else {
             if (spdesc._isStarted) {
                 handleSpannerStop(spdesc._sp, track, tick, spanners);
                 _pass2.clearSpanner(desc);
             } else {
-           if (desc._sp) {
-                spdesc._sp = desc._sp;
-                spdesc._tick2 = tick;
-                spdesc._track2 = track;
-                spdesc._isStopped = true;
-}
+                if (desc._sp) {
+                    spdesc._sp = desc._sp;
+                    spdesc._tick2 = tick;
+                    spdesc._track2 = track;
+                    spdesc._isStopped = true;
+                }
             }
         }
     }
@@ -2677,9 +2677,9 @@ void MusicXMLParserDirection::direction(const QString& partId,
         auto& spdesc = _pass2.getSpanner({ desc._tp, desc._nr });
         if (spdesc._isStarted) {
             _logger->logError("spanner already started", &_e);
-           if (desc._sp) {
-            delete desc._sp;
-}
+            if (desc._sp) {
+                delete desc._sp;
+            }
         } else {
             if (spdesc._isStopped) {
                 _pass2.addSpanner(MusicXmlSpannerDesc(spdesc._sp, ElementType::HAIRPIN /* TODO: get correct type */, desc._nr));
@@ -2689,11 +2689,11 @@ void MusicXMLParserDirection::direction(const QString& partId,
                 handleSpannerStop(spdesc._sp, spdesc._track2, spdesc._tick2, spanners);
                 _pass2.clearSpanner(desc);
             } else {
-           if (desc._sp) {
-                _pass2.addSpanner(desc);
-                handleSpannerStart(desc._sp, track, placement, tick, spanners);
-                spdesc._isStarted = true;
-}
+                if (desc._sp) {
+                    _pass2.addSpanner(desc);
+                    handleSpannerStart(desc._sp, track, placement, tick, spanners);
+                    spdesc._isStarted = true;
+                }
             }
         }
     }
@@ -3182,11 +3182,10 @@ void MusicXMLParserDirection::wedge(const QString& type, const int number,
     if (type == "crescendo" || type == "diminuendo") {
         //auto h = spdesc._isStopped ? toHairpin(spdesc._sp) : Factory::createHairpin(_score->dummy()->segment());
         if (spdesc._isStopped) {
-          h = toHairpin(spdesc._sp);
-}
-else {
-h = newh = Factory::createHairpin(_score->dummy()->segment());
-}
+            h = toHairpin(spdesc._sp);
+        } else {
+            h = newh = Factory::createHairpin(_score->dummy()->segment());
+        }
         h->setHairpinType(type == "crescendo"
                           ? HairpinType::CRESC_HAIRPIN : HairpinType::DECRESC_HAIRPIN);
         if (niente == "yes") {
@@ -3196,11 +3195,10 @@ h = newh = Factory::createHairpin(_score->dummy()->segment());
     } else if (type == "stop") {
         //auto h = spdesc._isStarted ? toHairpin(spdesc._sp) : Factory::createHairpin(_score->dummy()->segment());
         if (spdesc._isStarted) {
-          h = toHairpin(spdesc._sp);
-}
-else {
-h = newh = Factory::createHairpin(_score->dummy()->segment());
-}
+            h = toHairpin(spdesc._sp);
+        } else {
+            h = newh = Factory::createHairpin(_score->dummy()->segment());
+        }
         if (niente == "yes") {
             h->setHairpinCircledTip(true);
         }
