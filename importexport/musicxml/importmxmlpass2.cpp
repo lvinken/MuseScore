@@ -4035,6 +4035,7 @@ NoteType graceNoteType(const TDuration duration, const bool slash)
       NoteType nt = NoteType::APPOGGIATURA;
       if (slash)
             nt = NoteType::ACCIACCATURA;
+      else {
       if (duration.type() == TDuration::DurationType::V_QUARTER) {
             nt = NoteType::GRACE4;
             }
@@ -4044,6 +4045,7 @@ NoteType graceNoteType(const TDuration duration, const bool slash)
       else if (duration.type() == TDuration::DurationType::V_32ND) {
             nt = NoteType::GRACE32;
             }
+      }
       return nt;
       }
 
