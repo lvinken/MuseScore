@@ -2682,7 +2682,8 @@ void MusicXMLParserDirection::direction(const QString& partId,
             }
         } else {
             if (spdesc._isStopped) {
-                _pass2.addSpanner(MusicXmlSpannerDesc(spdesc._sp, ElementType::HAIRPIN /* TODO: get correct type */, desc._nr));
+                //_pass2.addSpanner(MusicXmlSpannerDesc(spdesc._sp, ElementType::HAIRPIN /* TODO: get correct type */, desc._nr));
+                _pass2.addSpanner(MusicXmlSpannerDesc(spdesc._sp, desc._tp, desc._nr));
                 // handleSpannerStart and handleSpannerStop must be called in order
                 // due to allocation of elements in the map
                 handleSpannerStart(spdesc._sp, track, placement, tick, spanners);
