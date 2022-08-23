@@ -730,6 +730,7 @@ static VBox* addCreditWords(Score* const score, const CreditWordsList& crWords,
 
 static void createDefaultHeader(Score* const score)
       {
+#if 0
       QString strTitle;
       QString strSubTitle;
       QString strComposer;
@@ -760,6 +761,7 @@ static void createDefaultHeader(Score* const score)
       addText(vbox, score, strComposer.toHtmlEscaped(),   Tid::COMPOSER);
       addText(vbox, score, strPoet.toHtmlEscaped(),       Tid::POET);
       addText(vbox, score, strTranslator.toHtmlEscaped(), Tid::TRANSLATOR);
+#endif
       }
 
 //---------------------------------------------------------
@@ -999,6 +1001,7 @@ void MusicXMLParserPass1::scorePartwise()
                   part();
             else if (_e.name() == "part-list")
                   partList(partGroupList);
+#if 0
             else if (_e.name() == "work") {
                   while (_e.readNextStartElement()) {
                         if (_e.name() == "work-number")
@@ -1011,14 +1014,17 @@ void MusicXMLParserPass1::scorePartwise()
                   }
             else if (_e.name() == "identification")
                   identification();
+#endif
             else if (_e.name() == "defaults")
                   defaults();
+#if 0
             else if (_e.name() == "movement-number")
                   _score->setMetaTag("movementNumber", _e.readElementText());
             else if (_e.name() == "movement-title")
                   _score->setMetaTag("movementTitle", _e.readElementText());
             else if (_e.name() == "credit")
                   credit(_credits);
+#endif
             else
                   skipLogCurrElem();
             }
@@ -1291,6 +1297,7 @@ static QString nextPartOfFormattedString(QXmlStreamReader& e)
 void MusicXMLParserPass1::credit(CreditWordsList& credits)
       {
       Q_ASSERT(_e.isStartElement() && _e.name() == "credit");
+#if 0
       _logger->logDebugTrace("MusicXMLParserPass1::credit", &_e);
 
       const auto page = _e.attributes().value("page").toString().toInt();       // ignoring errors implies incorrect conversion defaults to the first page
@@ -1336,6 +1343,9 @@ void MusicXMLParserPass1::credit(CreditWordsList& credits)
             CreditWords* cw = new CreditWords(page, crtype, defaultx, defaulty, fontSize, justify, halign, valign, crwords);
             credits.append(cw);
             }
+#else
+            _e.skipCurrentElement();
+#endif
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "credit");
       }
