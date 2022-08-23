@@ -1015,8 +1015,10 @@ void MusicXMLParserPass1::scorePartwise()
             else if (_e.name() == "identification")
                   identification();
 #endif
+#if 0
             else if (_e.name() == "defaults")
                   defaults();
+#endif
 #if 0
             else if (_e.name() == "movement-number")
                   _score->setMetaTag("movementNumber", _e.readElementText());
