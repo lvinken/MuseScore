@@ -8,6 +8,8 @@
 
 #include "mxmldata.h"
 
+namespace MusicXML {
+
 class MxmlParser
 {
 public:
@@ -21,7 +23,7 @@ private:
     std::unique_ptr<Attributes> parseAttributes();
     std::unique_ptr<Backup> parseBackup();
     Clef parseClef();
-    std::optional<unsigned int> parseDivisions();
+    unsigned int parseDivisions();
     std::unique_ptr<Forward> parseForward();
     Key parseKey();
     Measure parseMeasure();
@@ -33,12 +35,14 @@ private:
     ScorePart parseScorePart();
     void parseScorePartwise();
     Time parseTime();
-    std::optional<TimeModification> parseTimeModification();
+    Ms::Fraction parseTimeModification();
     void unexpectedElement();
 
     MxmlData m_data;
     QXmlStreamReader m_e;
     QString m_filename;
 };
+
+} // namespace MusicXML
 
 #endif // MXMLPARSER_H

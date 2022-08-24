@@ -6,6 +6,8 @@
 
 #include "mxmldata.h"
 
+namespace MusicXML {
+
 Attributes::Attributes()
     : Element(ElementType::ATTRIBUTES)
 {
@@ -17,7 +19,7 @@ std::string Attributes::toString() const
     std::string result;
     result += "   attributes";
     if (divisions) {
-        result += "\n    divisions \"" + std::to_string(*divisions) + "\"";
+        result += "\n    divisions \"" + std::to_string(divisions) + "\"";
     }
     for (const auto& key : keys) {
         result += "\n    key";
@@ -38,7 +40,7 @@ std::string Attributes::toString() const
             result += "\n     sign \"" + clef.sign + "\"";
         }
         if (clef.line) {
-            result += "\n     line \"" + std::to_string(*(clef.line)) + "\"";
+            result += "\n     line \"" + std::to_string(clef.line) + "\"";
         }
     }
     return result;
@@ -55,7 +57,7 @@ std::string Backup::toString() const
     std::string result;
     result += "   backup";
     if (duration) {
-        result += "\n    duration \"" + std::to_string(*duration) + "\"";
+        result += "\n    duration \"" + std::to_string(duration) + "\"";
     }
     return result;
 }
@@ -82,7 +84,7 @@ std::string Forward::toString() const
     std::string result;
     result += "   forward";
     if (duration) {
-        result += "\n    duration \"" + std::to_string(*duration) + "\"";
+        result += "\n    duration \"" + std::to_string(duration) + "\"";
     }
     return result;
 }
@@ -136,7 +138,7 @@ std::string Note::toString() const
         result += "\n     octave \"" + std::to_string(pitch.octave) + "\"";
     }
     if (duration) {
-        result += "\n    duration \"" + std::to_string(*duration) + "\"";
+        result += "\n    duration \"" + std::to_string(duration) + "\"";
     }
     if (!voice.empty()) {
         result += "\n    voice \"" + voice + "\"";
@@ -147,8 +149,8 @@ std::string Note::toString() const
     for (unsigned int i = 0; i < dots; ++i) {
         result += "\n    dot";
     }
-    if (timeModification) {
-        result += timeModification->toString();
+    if (timeModification.isValid()) {
+        result += timeModification.print().toStdString();
     }
     return result;
 }
@@ -242,3 +244,5 @@ std::string TimeModification::toString() const
     result += "\n     normal-notes \"" + std::to_string(normalNotes) + "\"";
     return result;
 }
+
+} // namespace MusicXML

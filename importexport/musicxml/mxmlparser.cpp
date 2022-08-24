@@ -11,6 +11,8 @@
 //#include "logger.h"
 #include "mxmlparser.h"
 
+namespace MusicXML {
+
 void MxmlParser::log_error(const QString& text)
 {
     /*
@@ -80,7 +82,7 @@ int MxmlParser::parse(QIODevice* data, const QString &filename)
 
 std::unique_ptr<Attributes> MxmlParser::parseAttributes()
 {
-    std::unique_ptr<Attributes> attributes = std::make_unique<Attributes>();
+    std::unique_ptr<MusicXML::Attributes> attributes(new Attributes);
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "divisions") {
             attributes->divisions = parseDivisions();
@@ -103,7 +105,7 @@ std::unique_ptr<Attributes> MxmlParser::parseAttributes()
 
 std::unique_ptr<Backup> MxmlParser::parseBackup()
 {
-    std::unique_ptr<Backup> backup = std::make_unique<Backup>();
+    std::unique_ptr<Backup> backup(new Backup);
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "duration") {
             unsigned int duration;
@@ -145,7 +147,7 @@ Clef MxmlParser::parseClef()
     return clef;
 }
 
-std::optional<unsigned int> MxmlParser::parseDivisions()
+unsigned int MxmlParser::parseDivisions()
 {
     unsigned int divisions;
     bool ok;
@@ -153,12 +155,12 @@ std::optional<unsigned int> MxmlParser::parseDivisions()
     if (ok) {
         return divisions;
     }
-    return {};
+    return 0;
 }
 
 std::unique_ptr<Forward> MxmlParser::parseForward()
 {
-    std::unique_ptr<Forward> forward = std::make_unique<Forward>();
+    std::unique_ptr<Forward> forward(new Forward);
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "duration") {
             unsigned int duration;
@@ -234,7 +236,7 @@ Measure MxmlParser::parseMeasure()
 std::unique_ptr<Note> MxmlParser::parseNote()
 {
     // TODO add error detection and handling
-    std::unique_ptr<Note> note = std::make_unique<Note>();
+    std::unique_ptr<Note> note(new Note);
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "accidental") {
             m_e.skipCurrentElement();   // ignore
@@ -429,25 +431,25 @@ Time MxmlParser::parseTime()
     return time;
 }
 
-std::optional<TimeModification> MxmlParser::parseTimeModification()
+Ms::Fraction MxmlParser::parseTimeModification()
 {
-    TimeModification timeModification;
+    Ms::Fraction timeModification;
     bool actualOk { false };
     bool normalOk { false };
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "actual-notes") {
-            timeModification.actualNotes = m_e.readElementText().toUInt(&actualOk);
+            timeModification.setNumerator(m_e.readElementText().toInt(&actualOk));
         }
         else if (m_e.name() == "normal-notes") {
-            timeModification.normalNotes = m_e.readElementText().toUInt(&normalOk);
+            timeModification.setDenominator(m_e.readElementText().toInt(&normalOk));
         }
         else {
             unexpectedElement();
         }
     }
     // TODO: error reporting
-    if (actualOk && timeModification.actualNotes > 0
-            && normalOk && timeModification.normalNotes > 0) {
+    if (actualOk && timeModification.numerator() > 0
+            && normalOk && timeModification.denominator() > 0) {
         return timeModification;
     }
     return {};
@@ -460,3 +462,5 @@ void MxmlParser::unexpectedElement()
     log_warning(text);
     m_e.skipCurrentElement();
 }
+
+} // namespace MusicXML

@@ -5,6 +5,10 @@
 #include <string>
 #include <vector>
 
+#include "libmscore/fraction.h"
+
+namespace MusicXML {
+
 enum class ElementType {
     INVALID = 0,
     ATTRIBUTES,
@@ -28,7 +32,7 @@ struct Note;
 struct ScorePart;
 
 struct Element {
-    Element(const ElementType& p_elementType);
+    Element(const ElementType& p_ElementType);
     virtual ~Element() {};
     ElementType elementType { ElementType::INVALID };
     virtual std::string toString() const { return ""; }
@@ -36,7 +40,7 @@ struct Element {
 
 struct Clef : public Element {
     Clef();
-    std::optional<int> line;
+    int line { 0 };
     std::string sign;   // TODO make type safe
 };
 
@@ -55,7 +59,7 @@ struct Time : public Element {
 struct Attributes : public Element {
     Attributes();
     std::vector<Clef> clefs;
-    std::optional<unsigned int> divisions;
+    unsigned int divisions { 0 };
     std::vector<Key> keys;
     std::vector<Time> times;
     std::string toString() const;
@@ -64,13 +68,13 @@ struct Attributes : public Element {
 struct Backup : public Element {
     Backup();
     std::string toString() const;
-    std::optional<unsigned int> duration;
+    unsigned int duration { 0 };
 };
 
 struct Forward : public Element {
     Forward();
     std::string toString() const;
-    std::optional<unsigned int> duration;
+    unsigned int duration { 0 };
 };
 
 struct Measure : public Element {
@@ -97,12 +101,12 @@ struct Note : public Element {
     Note();
     bool chord { false };
     unsigned int dots { 0 };
-    std::optional<unsigned int> duration;
+    unsigned int duration { 0 };
     bool grace { false };
     bool measureRest { false };
     Pitch pitch;            // TODO: make optional ?
     bool rest { false };    // TODO: support display-step and display-octave
-    std::optional<TimeModification> timeModification;
+    Ms::Fraction timeModification;
     std::string toString() const;
     std::string type;
     std::string voice;
@@ -140,5 +144,7 @@ struct ScorePartwise : public Element {
 struct MxmlData {
     ScorePartwise scorePartwise;
 };
+
+} // namespace MusicXML
 
 #endif // MXMLDATA_H
