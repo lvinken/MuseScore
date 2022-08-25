@@ -150,7 +150,9 @@ std::string Note::toString() const
         result += "\n    dot";
     }
     if (timeModification.isValid()) {
+        result += "\n    time-modification \"";
         result += timeModification.print().toStdString();
+        result += "\"";
     }
     return result;
 }
