@@ -170,10 +170,12 @@ public:
 
 private:
       // functions
+      void newMeasure(const MusicXML::Measure& measure, const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr);
       Score::FileError newParse(const MusicXML::MxmlData& mxmlData);
+      void newPart(const MusicXML::Part& part);
+      void newPartList(const MusicXML::PartList& partList);
       void newScorePart(const MusicXML::ScorePart& scorePart);
       void newScorePartwise(const MusicXML::ScorePartwise& scorePartwise);
-      void newPartList(const MusicXML::PartList& partList);
 
       // generic pass 1 data
       QXmlStreamReader _e;
