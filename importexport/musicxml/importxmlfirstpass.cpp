@@ -223,7 +223,7 @@ QString LyricNumberHandler::toString() const
       for (const auto& p : _numberToNo) {
             if (!res.isEmpty())
                   res += " ";
-            res += QString("%1:%2").arg(p.first, p.second);
+            res += QString("%1:%2").arg(p.first).arg(p.second);
             }
       return res;
       }
