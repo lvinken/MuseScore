@@ -2090,11 +2090,11 @@ void MusicXMLParserPass1::part()
       _parts[id].lyricNumberHandler().determineLyricNos();
 
       // debug: print results
-      //qDebug("%s", qPrintable(_parts[id].toString()));
-
-      //qDebug("lyric numbers: %s", qPrintable(_parts[id].lyricNumberHandler().toString()));
-
-#if 0
+#if 1
+      for (const auto& str : _parts[id].toString().split('\n')) {
+            qDebug("%s", qPrintable(str));
+            }
+      qDebug("lyric numbers: %s", qPrintable(_parts[id].lyricNumberHandler().toString()));
       qDebug("instrument map:");
       for (auto& instr : _parts[id]._instrList) {
             qDebug("- %s '%s'", qPrintable(instr.first.print()), qPrintable(instr.second));
