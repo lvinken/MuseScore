@@ -910,10 +910,14 @@ static void fixupSigmap(MxmlLogger* logger, Score* score, const QVector<Fraction
 Score::FileError MusicXMLParserPass1::parse(QIODevice* device, const MusicXML::MxmlData& mxmlData)
       {
       _logger->logDebugTrace("MusicXMLParserPass1::parse device");
-      qDebug("data:\n%s", mxmlData.scorePartwise.toString().data());
       _parts.clear();
+
+      auto res = newParse(mxmlData);
+      if (res != Score::FileError::FILE_NO_ERROR)
+            return res;
+
       _e.setDevice(device);
-      auto res = parse();
+      res = parse();
       if (res != Score::FileError::FILE_NO_ERROR)
             return res;
 
@@ -999,9 +1003,15 @@ void MusicXMLParserPass1::scorePartwise()
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "part")
+#if 1
                   part();
+#else
+                  ;
+#endif
+#if 0
             else if (_e.name() == "part-list")
                   partList(partGroupList);
+#endif
 #if 0
             else if (_e.name() == "work") {
                   while (_e.readNextStartElement()) {
@@ -3458,6 +3468,83 @@ void MusicXMLParserPass1::rest()
             else
                   skipLogCurrElem();
             }
+      }
+
+//---------------------------------------------------------
+//   new parser
+//---------------------------------------------------------
+
+Score::FileError MusicXMLParserPass1::newParse(const MusicXML::MxmlData& mxmlData)
+      {
+      qDebug("data:\n%s", mxmlData.scorePartwise.toString().data());
+      newScorePartwise(mxmlData.scorePartwise);
+      return Score::FileError::FILE_NO_ERROR;
+      }
+
+void MusicXMLParserPass1::newPartList(const MusicXML::PartList& partList)
+      {
+      for (const auto& scorePart : partList.scoreParts)
+            newScorePart(scorePart);
+      }
+
+void MusicXMLParserPass1::newScorePart(const MusicXML::ScorePart& scorePart)
+      {
+      QString id = scorePart.id.data();
+
+      if (_parts.contains(id)) {
+            // TODO _logger->logError(QString("duplicate part id '%1'").arg(id), &_e);
+            return;
+            }
+      else {
+            _parts.insert(id, MusicXmlPart(id));
+            _instruments.insert(id, MusicXMLInstruments());
+            createPart(_score, id, _partMap);
+            }
+
+            // Element part-name contains the displayed (full) part name
+            // It is displayed by default, but can be suppressed (print-object=”no”)
+            // As of MusicXML 3.0, formatting is deprecated, with part-name in plain text
+            // and the formatted version in the part-name-display element
+            // TODO _parts[id].setPrintName(!(_e.attributes().value("print-object") == "no"));
+            QString name = scorePart.partName.data();
+            _parts[id].setName(name);
+
+#if 0
+                  // TODO else if (_e.name() == "part-abbreviation") {
+                        // Element part-name contains the displayed (abbreviated) part name
+                        // It is displayed by default, but can be suppressed (print-object=”no”)
+                        // As of MusicXML 3.0, formatting is deprecated, with part-name in plain text
+                        // and the formatted version in the part-abbreviation-display element
+                        _parts[id].setPrintAbbr(!(_e.attributes().value("print-object") == "no"));
+                        QString name = _e.readElementText();
+                        _parts[id].setAbbr(name);
+
+                        // TODO scoreInstrument(id);
+                  // TODO else if (_e.name() == "midi-device") {
+                        if (!_e.attributes().hasAttribute("port")) {
+                              _e.readElementText(); // empty string
+                              continue;
+                        }
+                        QString instrId = _e.attributes().value("id").toString();
+                        QString port = _e.attributes().value("port").toString();
+                        // If instrId is missing, the device assignment affects all
+                        // score-instrument elements in the score-part
+                        if (instrId.isEmpty()) {
+                              for (auto it = _instruments[id].cbegin(); it != _instruments[id].cend(); ++it)
+                                    _instruments[id][it.key()].midiPort = port.toInt() - 1;
+                        }
+                        else if (_instruments[id].contains(instrId))
+                              _instruments[id][instrId].midiPort = port.toInt() - 1;
+
+                        _e.readElementText(); // empty string
+                  }
+                        // TODO midiInstrument(id);
+#endif
+      }
+
+void MusicXMLParserPass1::newScorePartwise(const MusicXML::ScorePartwise& scorePartwise)
+      {
+      newPartList(scorePartwise.partList);
       }
 
 } // namespace Ms
