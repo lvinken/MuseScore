@@ -24,6 +24,7 @@
 #include "importxmlfirstpass.h"
 #include "musicxml.h" // for the creditwords and MusicXmlPartGroupList definitions
 #include "musicxmlsupport.h"
+#include "mxmldata.h"
 
 namespace Ms {
 
@@ -116,7 +117,7 @@ class MusicXMLParserPass1 {
 public:
       MusicXMLParserPass1(Score* score, MxmlLogger* logger);
       void initPartState(const QString& partId);
-      Score::FileError parse(QIODevice* device);
+      Score::FileError parse(QIODevice* device, const MusicXML::MxmlData& mxmlData);
       Score::FileError parse();
       void scorePartwise();
       void identification();

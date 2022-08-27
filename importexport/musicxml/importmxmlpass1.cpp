@@ -907,9 +907,10 @@ static void fixupSigmap(MxmlLogger* logger, Score* score, const QVector<Fraction
  Parse MusicXML in \a device and extract pass 1 data.
  */
 
-Score::FileError MusicXMLParserPass1::parse(QIODevice* device)
+Score::FileError MusicXMLParserPass1::parse(QIODevice* device, const MusicXML::MxmlData& mxmlData)
       {
       _logger->logDebugTrace("MusicXMLParserPass1::parse device");
+      qDebug("data:\n%s", mxmlData.scorePartwise.toString().data());
       _parts.clear();
       _e.setDevice(device);
       auto res = parse();

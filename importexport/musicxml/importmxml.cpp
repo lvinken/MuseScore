@@ -56,7 +56,7 @@ Score::FileError importMusicXMLfromBuffer(Score* score, const QString& /*name*/,
       // pass 1
       dev->seek(0);
       MusicXMLParserPass1 pass1(score, &logger);
-      Score::FileError res = pass1.parse(dev);
+      Score::FileError res = pass1.parse(dev, alternative.getData());
       if (res != Score::FileError::FILE_NO_ERROR)
             return res;
 
