@@ -49,9 +49,10 @@ Score::FileError importMusicXMLfromBuffer(Score* score, const QString& /*name*/,
       dev->seek(0);
       MusicXML::MxmlParser alternative;
       int altRes = alternative.parse(dev, "<unknown name>");
-      qDebug("altRes: %d", altRes);
-      if (!altRes)
-            qDebug("data:\n%s", alternative.getData().scorePartwise.toString().data());
+      if (altRes) {
+            qDebug("altRes: %d", altRes);
+            return Score::FileError::FILE_BAD_FORMAT;
+            }
 
       // pass 1
       dev->seek(0);
