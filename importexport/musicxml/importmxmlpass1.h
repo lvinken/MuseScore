@@ -171,6 +171,7 @@ public:
 private:
       // functions
       void newMeasure(const MusicXML::Measure& measure, const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr);
+      void newNote(const MusicXML::Note& note, const QString& partId, const Fraction cTime, Fraction& missingPrev, Fraction& dura, Fraction& missingCurr, VoiceOverlapDetector& vod, MxmlTupletStates& tupletStates);
       Score::FileError newParse(const MusicXML::MxmlData& mxmlData);
       void newPart(const MusicXML::Part& part);
       void newPartList(const MusicXML::PartList& partList);

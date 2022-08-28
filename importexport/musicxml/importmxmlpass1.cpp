@@ -3477,6 +3477,250 @@ void MusicXMLParserPass1::rest()
 void MusicXMLParserPass1::newMeasure(const MusicXML::Measure& measure, const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr)
       {
       qDebug("part %s measure %d", qPrintable(partId), measureNr);
+            const QString number = measure.number.data();
+
+            Fraction mTime; // current time stamp within measure
+            Fraction mDura; // current total measure duration
+            vod.newMeasure();
+            MxmlTupletStates tupletStates;
+
+                  if (_e.name() == "attributes")
+                        attributes(partId, cTime + mTime);
+                  else if (_e.name() == "note") {
+                        Fraction missingPrev;
+                        Fraction dura;
+                        Fraction missingCurr;
+                        // note: chord and grace note handling done in note()
+                        note(partId, cTime + mTime, missingPrev, dura, missingCurr, vod, tupletStates);
+                        if (missingPrev.isValid()) {
+                              mTime += missingPrev;
+                        }
+                        if (dura.isValid()) {
+                              mTime += dura;
+                        }
+                        if (missingCurr.isValid()) {
+                              mTime += missingCurr;
+                        }
+                        if (mTime > mDura)
+                              mDura = mTime;
+                  }
+                  else if (_e.name() == "forward") {
+                        Fraction dura;
+                        forward(dura);
+                        if (dura.isValid()) {
+                              mTime += dura;
+                              if (mTime > mDura)
+                                    mDura = mTime;
+                        }
+                  }
+                  else if (_e.name() == "backup") {
+                        Fraction dura;
+                        backup(dura);
+                        if (dura.isValid()) {
+                              if (dura <= mTime)
+                                    mTime -= dura;
+                              else {
+                                    _logger->logError("backup beyond measure start", &_e);
+                                    mTime.set(0, 1);
+                              }
+                        }
+                  }
+
+            for (const auto& element : measure.elements) {
+                  if (element->elementType == MusicXML::ElementType::ATTRIBUTES) {
+                        const MusicXML::Attributes& attributes = *static_cast<MusicXML::Attributes*>(element.get());
+                        // TODO parseAttributes(attributes);
+                  }
+                  else if (element->elementType == MusicXML::ElementType::BACKUP) {
+                        const MusicXML::Backup& backup = *static_cast<MusicXML::Backup*>(element.get());
+                        // TODO parseBackup(backup);
+                  }
+                  else if (element->elementType == MusicXML::ElementType::FORWARD) {
+                        const MusicXML::Forward& forward = *static_cast<MusicXML::Forward*>(element.get());
+                        // TODO parseForward(forward);
+                  }
+                  else if (element->elementType == MusicXML::ElementType::NOTE) {
+                        const MusicXML::Note& note = *static_cast<MusicXML::Note*>(element.get());
+                        // TODO parseNote(note);
+                  }
+                  // TODO direction(partId, cTime + mTime);
+                  // TODO print(measureNr);
+
+                  /*
+                   qDebug("mTime %s (%s) mDura %s (%s)",
+                   qPrintable(mTime.print()),
+                   qPrintable(mTime.reduced().print()),
+                   qPrintable(mDura.print()),
+                   qPrintable(mDura.reduced().print()));
+                   */
+            }
+
+            // debug vod
+            // vod.dump();
+            // copy overlap data from vod to voicelist
+            copyOverlapData(vod, _parts[partId].voicelist);
+
+            // measure duration fixups
+            mDura.reduce();
+
+            // fix for PDFtoMusic Pro v1.3.0d Build BF4E and PlayScore / ReadScoreLib Version 3.11
+            // which sometimes generate empty measures
+            // if no valid length found and length according to time signature is known,
+            // use length according to time signature
+            if (mDura.isZero() && _timeSigDura.isValid() && _timeSigDura > Fraction(0, 1))
+                  mDura = _timeSigDura;
+            // if no valid length found and time signature is unknown, use default
+            if (mDura.isZero() && !_timeSigDura.isValid())
+                  mDura = Fraction(4, 4);
+
+            // if necessary, round up to an integral number of 1/64s,
+            // to comply with MuseScores actual measure length constraints
+            Fraction length = mDura * Fraction(64,1);
+            Fraction correctedLength = mDura;
+            length.reduce();
+            if (length.denominator() != 1) {
+                  Fraction roundDown = Fraction(length.numerator() / length.denominator(), 64);
+                  Fraction roundUp = Fraction(length.numerator() / length.denominator() + 1, 64);
+                  // mDura is not an integer multiple of 1/64;
+                  // first check if the duration is larger than an integer multiple of 1/64
+                  // by an amount smaller than the minimum division resolution
+                  // in that case, round down (rounding errors have possibly occurred),
+                  // otherwise, round up
+                  if ((_divs > 0) && ((mDura - roundDown) < Fraction(1, 4*_divs))) {
+                        _logger->logError(QString("rounding down measure duration %1 to %2")
+                                          .arg(qPrintable(mDura.print())).arg(qPrintable(roundDown.print())),
+                                          &_e);
+                        correctedLength = roundDown;
+                  }
+                  else {
+                        _logger->logError(QString("rounding up measure duration %1 to %2")
+                                          .arg(qPrintable(mDura.print())).arg(qPrintable(roundUp.print())),
+                                          &_e);
+                        correctedLength = roundUp;
+                  }
+                  mDura = correctedLength;
+            }
+
+            // set measure duration to a suitable value given the time signature
+            if (_timeSigDura.isValid() && _timeSigDura > Fraction(0, 1)) {
+                  int btp = _timeSigDura.denominator();
+                  if (btp > 0)
+                        mDura = measureDurationAsFraction(mDura, btp);
+            }
+
+            // set return value(s)
+            mdur = mDura;
+
+            // set measure number and duration
+            /*
+             qDebug("part %s measure %s dura %s (%d)",
+             qPrintable(partId), qPrintable(number), qPrintable(mdur.print()), mdur.ticks());
+             */
+            _parts[partId].addMeasureNumberAndDuration(number, mdur);
+      }
+
+void MusicXMLParserPass1::newNote(const MusicXML::Note& note, const QString& partId, const Fraction sTime, Fraction& missingPrev, Fraction& dura, Fraction& missingCurr, VoiceOverlapDetector& vod, MxmlTupletStates& tupletStates)
+      {
+            /* TODO
+            if (_e.attributes().value("print-spacing") == "no") {
+                  notePrintSpacingNo(dura);
+                  return;
+            }
+             */
+
+      int staff = 1; // TODO
+      const QString type = note.type.data();
+      const QString voice = note.voice.data();
+      QString instrId; // TODO
+      MxmlStartStop tupletStartStop { MxmlStartStop::NONE };
+
+      mxmlNoteDuration mnd(_divs, _logger);
+
+            /* TODO
+            while (_e.readNextStartElement()) {
+                  if (mnd.readProperties(_e)) {
+                        // element handled
+                  }
+                  else if (_e.name() == "beam") {
+                        _hasBeamingInfo = true;
+                        _e.skipCurrentElement();  // skip but don't log
+                  }
+                  else if (_e.name() == "instrument") {
+                        instrId = _e.attributes().value("id").toString();
+                        _e.readNext();
+                  }
+                  else if (_e.name() == "lyric") {
+                        const auto number = _e.attributes().value("number").toString();
+                        _parts[partId].lyricNumberHandler().addNumber(number);
+                        _e.skipCurrentElement();
+                  }
+                  else if (_e.name() == "notations")
+                        notations(tupletStartStop);
+                  else if (_e.name() == "staff") {
+                        auto ok = false;
+                        auto strStaff = _e.readElementText();
+                        staff = strStaff.toInt(&ok);
+                        _parts[partId].setMaxStaff(staff);
+                        Part* part = _partMap.value(partId);
+                        Q_ASSERT(part);
+                        if (!ok || staff <= 0 || staff > part->nstaves())
+                              _logger->logError(QString("illegal staff '%1'").arg(strStaff), &_e);
+                  }
+            }
+             */
+
+      // convert staff to zero-based
+      staff--;
+
+      // multi-instrument handling
+      QString prevInstrId = _parts[partId]._instrList.instrument(sTime);
+      bool mustInsert = instrId != prevInstrId;
+            /*
+             qDebug("tick %s (%d) staff %d voice '%s' previnst='%s' instrument '%s' mustInsert %d",
+             qPrintable(sTime.print()),
+             sTime.ticks(),
+             staff + 1,
+             qPrintable(voice),
+             qPrintable(prevInstrId),
+             qPrintable(instrId),
+             mustInsert
+             );
+             */
+      if (mustInsert)
+            _parts[partId]._instrList.setInstrument(instrId, sTime);
+
+      // check for timing error(s) and set dura
+      // keep in this order as checkTiming() might change dura
+      auto errorStr = mnd.checkTiming(type, note.rest, note.grace);
+      dura = mnd.dura();
+      if (errorStr != "")
+            _logger->logError(errorStr, &_e);
+
+      // don't count chord or grace note duration
+      // note that this does not check the MusicXML requirement that notes in a chord
+      // cannot have a duration longer than the first note in the chord
+      missingPrev.set(0, 1);
+      if (note.chord || note.grace)
+            dura.set(0, 1);
+
+      if (!note.chord && !note.grace) {
+            // do tuplet
+            auto timeMod = mnd.timeMod();
+            auto& tupletState = tupletStates[voice];
+            tupletState.determineTupletAction(mnd.dura(), timeMod, tupletStartStop, mnd.normalType(), missingPrev, missingCurr);
+            }
+
+      // store result
+      if (dura.isValid() && dura > Fraction(0, 1)) {
+            // count the chords
+            if (!_parts.value(partId).voicelist.contains(voice)) {
+                  VoiceDesc vs;
+                  _parts[partId].voicelist.insert(voice, vs);
+                  }
+            _parts[partId].voicelist[voice].incrChordRests(staff);
+            // determine note length for voice overlap detection
+            vod.addNote((sTime + missingPrev).ticks(), (sTime + missingPrev + dura).ticks(), voice, staff);
+            }
       }
 
 Score::FileError MusicXMLParserPass1::newParse(const MusicXML::MxmlData& mxmlData)
