@@ -3516,8 +3516,6 @@ void MusicXMLParserPass1::newMeasure(const MusicXML::Measure& measure, const QSt
 
 #if 0
             // TODO
-                  if (_e.name() == "attributes")
-                        attributes(partId, cTime + mTime);
                   else if (_e.name() == "forward") {
                         Fraction dura;
                         forward(dura);
@@ -3544,7 +3542,7 @@ void MusicXMLParserPass1::newMeasure(const MusicXML::Measure& measure, const QSt
             for (const auto& element : measure.elements) {
                   if (element->elementType == MusicXML::ElementType::ATTRIBUTES) {
                         const MusicXML::Attributes& attributes = *static_cast<MusicXML::Attributes*>(element.get());
-                        // TODO parseAttributes(attributes);
+                        newAttributes(attributes, partId, cTime + mTime);
                   }
                   else if (element->elementType == MusicXML::ElementType::BACKUP) {
                         const MusicXML::Backup& backup = *static_cast<MusicXML::Backup*>(element.get());
