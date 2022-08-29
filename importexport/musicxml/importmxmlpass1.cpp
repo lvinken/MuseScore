@@ -917,7 +917,9 @@ Score::FileError MusicXMLParserPass1::parse(QIODevice* device, const MusicXML::M
             return res;
 
       _e.setDevice(device);
+#if 0
       res = parse();
+#endif
       if (res != Score::FileError::FILE_NO_ERROR)
             return res;
 
@@ -3474,6 +3476,34 @@ void MusicXMLParserPass1::rest()
 //   new parser
 //---------------------------------------------------------
 
+void MusicXMLParserPass1::newAttributes(const MusicXML::Attributes& attributes, const QString& partId, const Fraction cTime)
+      {
+#if 0
+            // TODO
+            while (_e.readNextStartElement()) {
+                  if (_e.name() == "clef")
+                        clef(partId);
+                  else if (_e.name() == "divisions")
+                        divisions();
+                  else if (_e.name() == "key")
+                        _e.skipCurrentElement();  // skip but don't log
+                  else if (_e.name() == "instruments")
+                        _e.skipCurrentElement();  // skip but don't log
+                  else if (_e.name() == "staff-details")
+                        _e.skipCurrentElement();  // skip but don't log
+                  else if (_e.name() == "staves")
+                        staves(partId);
+                  else if (_e.name() == "time")
+                        time(cTime);
+                  else if (_e.name() == "transpose")
+                        transpose(partId, cTime);
+                  else
+                        skipLogCurrElem();
+            }
+#endif
+      _divs = attributes.divisions;
+      }
+
 void MusicXMLParserPass1::newMeasure(const MusicXML::Measure& measure, const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr)
       {
       qDebug("part %s measure %d", qPrintable(partId), measureNr);
@@ -3484,26 +3514,10 @@ void MusicXMLParserPass1::newMeasure(const MusicXML::Measure& measure, const QSt
             vod.newMeasure();
             MxmlTupletStates tupletStates;
 
+#if 0
+            // TODO
                   if (_e.name() == "attributes")
                         attributes(partId, cTime + mTime);
-                  else if (_e.name() == "note") {
-                        Fraction missingPrev;
-                        Fraction dura;
-                        Fraction missingCurr;
-                        // note: chord and grace note handling done in note()
-                        note(partId, cTime + mTime, missingPrev, dura, missingCurr, vod, tupletStates);
-                        if (missingPrev.isValid()) {
-                              mTime += missingPrev;
-                        }
-                        if (dura.isValid()) {
-                              mTime += dura;
-                        }
-                        if (missingCurr.isValid()) {
-                              mTime += missingCurr;
-                        }
-                        if (mTime > mDura)
-                              mDura = mTime;
-                  }
                   else if (_e.name() == "forward") {
                         Fraction dura;
                         forward(dura);
@@ -3525,6 +3539,7 @@ void MusicXMLParserPass1::newMeasure(const MusicXML::Measure& measure, const QSt
                               }
                         }
                   }
+#endif
 
             for (const auto& element : measure.elements) {
                   if (element->elementType == MusicXML::ElementType::ATTRIBUTES) {
@@ -3540,8 +3555,23 @@ void MusicXMLParserPass1::newMeasure(const MusicXML::Measure& measure, const QSt
                         // TODO parseForward(forward);
                   }
                   else if (element->elementType == MusicXML::ElementType::NOTE) {
-                        const MusicXML::Note& note = *static_cast<MusicXML::Note*>(element.get());
-                        // TODO parseNote(note);
+                        const auto& note = *static_cast<MusicXML::Note*>(element.get());
+                        Fraction missingPrev;
+                        Fraction dura;
+                        Fraction missingCurr;
+                        // note: chord and grace note handling done in note()
+                        newNote(note, partId, cTime + mTime, missingPrev, dura, missingCurr, vod, tupletStates);
+                        if (missingPrev.isValid()) {
+                              mTime += missingPrev;
+                        }
+                        if (dura.isValid()) {
+                              mTime += dura;
+                        }
+                        if (missingCurr.isValid()) {
+                              mTime += missingCurr;
+                        }
+                        if (mTime > mDura)
+                              mDura = mTime;
                   }
                   // TODO direction(partId, cTime + mTime);
                   // TODO print(measureNr);
@@ -3635,12 +3665,10 @@ void MusicXMLParserPass1::newNote(const MusicXML::Note& note, const QString& par
       MxmlStartStop tupletStartStop { MxmlStartStop::NONE };
 
       mxmlNoteDuration mnd(_divs, _logger);
+      mnd.setProperties(note.duration, note.dots, Fraction { 1, 1 } /* TODO note.timeModification */);
 
             /* TODO
             while (_e.readNextStartElement()) {
-                  if (mnd.readProperties(_e)) {
-                        // element handled
-                  }
                   else if (_e.name() == "beam") {
                         _hasBeamingInfo = true;
                         _e.skipCurrentElement();  // skip but don't log

@@ -217,6 +217,26 @@ bool mxmlNoteDuration::readProperties(QXmlStreamReader& e)
       return false;
       }
 
+
+//---------------------------------------------------------
+//   readProperties
+//---------------------------------------------------------
+
+void mxmlNoteDuration::setProperties(const unsigned int duration, const int dots, const Fraction timeMod)
+      {
+      _dots = dots;
+      if (duration > 0) {
+            if (_divs > 0) {
+                  _dura.set(duration, 4 * _divs);
+                  _dura.reduce();       // prevent overflow in later Fraction operations
+                  }
+            else
+                  _logger->logError("illegal or uninitialized divisions", nullptr);
+            }
+      _timeMod = timeMod;
+      // TODO _normalType
+      }
+
 //---------------------------------------------------------
 //   timeModification
 //---------------------------------------------------------

@@ -37,6 +37,7 @@ public:
       int dots() const { return _dots; }
       TDuration normalType() const { return _normalType; }
       bool readProperties(QXmlStreamReader& e);
+      void setProperties(const unsigned int duration, const int dots, const Fraction timeMod);
       Fraction timeMod() const { return _timeMod; }
 
 private:
