@@ -93,6 +93,14 @@ std::unique_ptr<Attributes> MxmlParser::parseAttributes()
         else if (m_e.name() == "key") {
             attributes->keys.push_back(parseKey());
         }
+        else if (m_e.name() == "staves") {
+              unsigned int staves;
+              bool ok;
+              staves = m_e.readElementText().toUInt(&ok);
+              if (ok) {
+                    attributes->staves = staves;
+              }
+        }
         else if (m_e.name() == "time") {
             attributes->times.push_back(parseTime());
         }

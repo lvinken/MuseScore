@@ -61,6 +61,7 @@ struct Attributes : public Element {
     std::vector<Clef> clefs;
     unsigned int divisions { 0 };
     std::vector<Key> keys;
+    unsigned int staves { 1 };
     std::vector<Time> times;
     std::string toString() const;
 };
