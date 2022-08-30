@@ -3491,8 +3491,6 @@ void MusicXMLParserPass1::newAttributes(const MusicXML::Attributes& attributes, 
                         _e.skipCurrentElement();  // skip but don't log
                   else if (_e.name() == "staff-details")
                         _e.skipCurrentElement();  // skip but don't log
-                  else if (_e.name() == "staves")
-                        staves(partId);
                   else if (_e.name() == "time")
                         time(cTime);
                   else if (_e.name() == "transpose")
@@ -3502,6 +3500,7 @@ void MusicXMLParserPass1::newAttributes(const MusicXML::Attributes& attributes, 
             }
 #endif
       _divs = attributes.divisions;
+      setNumberOfStavesForPart(_partMap.value(partId), attributes.staves);
       }
 
 void MusicXMLParserPass1::newMeasure(const MusicXML::Measure& measure, const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr)
