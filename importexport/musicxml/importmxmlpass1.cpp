@@ -3655,7 +3655,6 @@ void MusicXMLParserPass1::newNote(const MusicXML::Note& note, const QString& par
             }
              */
 
-      int staff = 1; // TODO
       const QString type = note.type.data();
       const QString voice = note.voice.data();
       QString instrId; // TODO
@@ -3681,21 +3680,15 @@ void MusicXMLParserPass1::newNote(const MusicXML::Note& note, const QString& par
                   }
                   else if (_e.name() == "notations")
                         notations(tupletStartStop);
-                  else if (_e.name() == "staff") {
-                        auto ok = false;
-                        auto strStaff = _e.readElementText();
-                        staff = strStaff.toInt(&ok);
-                        _parts[partId].setMaxStaff(staff);
-                        Part* part = _partMap.value(partId);
-                        Q_ASSERT(part);
-                        if (!ok || staff <= 0 || staff > part->nstaves())
-                              _logger->logError(QString("illegal staff '%1'").arg(strStaff), &_e);
-                  }
             }
              */
 
-      // convert staff to zero-based
-      staff--;
+      _parts[partId].setMaxStaff(note.staff);
+      Part* part = _partMap.value(partId);
+      Q_ASSERT(part); // TODO replace
+      if (note.staff <= 0 || note.staff > static_cast<unsigned int>(part->nstaves()))
+            _logger->logError(QString("illegal staff '%1'").arg(note.staff), &_e);
+      const int staff = note.staff - 1;    // convert staff to zero-based
 
       // multi-instrument handling
       QString prevInstrId = _parts[partId]._instrList.instrument(sTime);
