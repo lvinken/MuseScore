@@ -34,6 +34,7 @@ std::string Attributes::toString() const
             result += "\n     beat-type \"" + time.beatType + "\"";
         }
     }
+    result += "\n    staves \"" + std::to_string(staves) + "\"";
     for (const auto& clef : clefs) {
         result += "\n    clef";
         if (!clef.sign.empty()) {
@@ -154,6 +155,7 @@ std::string Note::toString() const
         result += timeModification.print().toStdString();
         result += "\"";
     }
+    result += "\n    staff \"" + std::to_string(staff) + "\"";
     return result;
 }
 
