@@ -286,6 +286,14 @@ std::unique_ptr<Note> MxmlParser::parseNote()
             note->measureRest = m_e.attributes().value("measure") == "yes";
             m_e.skipCurrentElement();
         }
+        else if (m_e.name() == "staff") {
+              unsigned int staff;
+              bool ok;
+              staff = m_e.readElementText().toUInt(&ok);
+              if (ok) {
+                    note->staff = staff;
+              }
+        }
         else if (m_e.name() == "stem") {
             m_e.skipCurrentElement();   // ignore
         }

@@ -107,6 +107,7 @@ struct Note : public Element {
     bool measureRest { false };
     Pitch pitch;            // TODO: make optional ?
     bool rest { false };    // TODO: support display-step and display-octave
+    unsigned int staff { 1 };
     Ms::Fraction timeModification { 0, 0 };
     std::string toString() const;
     std::string type;
