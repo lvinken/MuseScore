@@ -3503,6 +3503,31 @@ void MusicXMLParserPass1::newAttributes(const MusicXML::Attributes& attributes, 
       setNumberOfStavesForPart(_partMap.value(partId), attributes.staves);
       }
 
+void MusicXMLParserPass1::newBackup(const unsigned int duration, Fraction& dura)
+      {
+      newDuration(duration, dura);
+      }
+
+      void MusicXMLParserPass1::newDuration(const unsigned int duration, Fraction& dura)
+      {
+      dura.set(0, 0);  // invalid unless set correctly
+      if (duration > 0) {
+            if (_divs > 0) {
+                  dura.set(duration, 4 * _divs);
+                  dura.reduce(); // prevent overflow in later Fraction operations
+                  }
+            else
+                  _logger->logError("illegal or uninitialized divisions", &_e);
+            }
+      else
+            _logger->logError("illegal duration", &_e);
+      }
+
+void MusicXMLParserPass1::newForward(const unsigned int duration, Fraction& dura)
+      {
+      newDuration(duration, dura);
+      }
+
 void MusicXMLParserPass1::newMeasure(const MusicXML::Measure& measure, const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr)
       {
       qDebug("part %s measure %d", qPrintable(partId), measureNr);
@@ -3513,20 +3538,15 @@ void MusicXMLParserPass1::newMeasure(const MusicXML::Measure& measure, const QSt
             vod.newMeasure();
             MxmlTupletStates tupletStates;
 
-#if 0
-            // TODO
-                  else if (_e.name() == "forward") {
-                        Fraction dura;
-                        forward(dura);
-                        if (dura.isValid()) {
-                              mTime += dura;
-                              if (mTime > mDura)
-                                    mDura = mTime;
-                        }
+            for (const auto& element : measure.elements) {
+                  if (element->elementType == MusicXML::ElementType::ATTRIBUTES) {
+                        const MusicXML::Attributes& attributes = *static_cast<MusicXML::Attributes*>(element.get());
+                        newAttributes(attributes, partId, cTime + mTime);
                   }
-                  else if (_e.name() == "backup") {
+                  else if (element->elementType == MusicXML::ElementType::BACKUP) {
+                        const MusicXML::Backup& backup = *static_cast<MusicXML::Backup*>(element.get());
                         Fraction dura;
-                        backup(dura);
+                        newBackup(backup.duration, dura);
                         if (dura.isValid()) {
                               if (dura <= mTime)
                                     mTime -= dura;
@@ -3536,20 +3556,15 @@ void MusicXMLParserPass1::newMeasure(const MusicXML::Measure& measure, const QSt
                               }
                         }
                   }
-#endif
-
-            for (const auto& element : measure.elements) {
-                  if (element->elementType == MusicXML::ElementType::ATTRIBUTES) {
-                        const MusicXML::Attributes& attributes = *static_cast<MusicXML::Attributes*>(element.get());
-                        newAttributes(attributes, partId, cTime + mTime);
-                  }
-                  else if (element->elementType == MusicXML::ElementType::BACKUP) {
-                        const MusicXML::Backup& backup = *static_cast<MusicXML::Backup*>(element.get());
-                        // TODO parseBackup(backup);
-                  }
                   else if (element->elementType == MusicXML::ElementType::FORWARD) {
                         const MusicXML::Forward& forward = *static_cast<MusicXML::Forward*>(element.get());
-                        // TODO parseForward(forward);
+                        Fraction dura;
+                        newForward(forward.duration, dura);
+                        if (dura.isValid()) {
+                              mTime += dura;
+                              if (mTime > mDura)
+                                    mDura = mTime;
+                        }
                   }
                   else if (element->elementType == MusicXML::ElementType::NOTE) {
                         const auto& note = *static_cast<MusicXML::Note*>(element.get());
