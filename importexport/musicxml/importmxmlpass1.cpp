@@ -3499,8 +3499,11 @@ void MusicXMLParserPass1::newAttributes(const MusicXML::Attributes& attributes, 
                         skipLogCurrElem();
             }
 #endif
+      qDebug("divisions %d times.size %d", attributes.divisions, attributes.times.size());
       _divs = attributes.divisions;
       setNumberOfStavesForPart(_partMap.value(partId), attributes.staves);
+      if (attributes.times.size() == 1)
+            newTime(attributes.times[0], cTime);
       }
 
 void MusicXMLParserPass1::newBackup(const unsigned int duration, Fraction& dura)
@@ -3905,5 +3908,23 @@ void MusicXMLParserPass1::newScorePartwise(const MusicXML::ScorePartwise& scoreP
             for (const auto& part : scorePartwise.parts)
                   newPart(part);
       }
+
+void MusicXMLParserPass1::newTime(const MusicXML::Time& time, const Fraction cTime)
+{
+      QString beats = time.beats.data();
+      QString beatType = time.beatType.data();
+      QString timeSymbol; // TODO = _e.attributes().value("symbol").toString();
+
+      if (beats != "" && beatType != "") {
+            // determine if timesig is valid
+            TimeSigType st  = TimeSigType::NORMAL;
+            int bts = 0;       // total beats as integer (beats may contain multiple numbers, separated by "+")
+            int btp = 0;       // beat-type as integer
+            if (determineTimeSig(_logger, &_e, beats, beatType, timeSymbol, st, bts, btp)) {
+                  _timeSigDura = Fraction(bts, btp);
+                  _score->sigmap()->add(cTime.ticks(), _timeSigDura);
+            }
+      }
+}
 
 } // namespace Ms

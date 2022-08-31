@@ -181,6 +181,7 @@ private:
       void newPartList(const MusicXML::PartList& partList);
       void newScorePart(const MusicXML::ScorePart& scorePart);
       void newScorePartwise(const MusicXML::ScorePartwise& scorePartwise);
+      void newTime(const MusicXML::Time& time, const Fraction cTime);
 
       // generic pass 1 data
       QXmlStreamReader _e;
