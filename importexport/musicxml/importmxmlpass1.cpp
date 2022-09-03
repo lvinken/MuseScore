@@ -3499,8 +3499,8 @@ void MusicXMLParserPass1::newAttributes(const MusicXML::Attributes& attributes, 
                         skipLogCurrElem();
             }
 #endif
-      qDebug("divisions %d times.size %d", attributes.divisions, attributes.times.size());
-      _divs = attributes.divisions;
+      if (attributes.divisions > 0)
+            _divs = attributes.divisions;
       setNumberOfStavesForPart(_partMap.value(partId), attributes.staves);
       if (attributes.times.size() == 1)
             newTime(attributes.times[0], cTime);
