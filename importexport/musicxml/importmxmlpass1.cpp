@@ -3679,7 +3679,8 @@ void MusicXMLParserPass1::newNote(const MusicXML::Note& note, const QString& par
       MxmlStartStop tupletStartStop { MxmlStartStop::NONE };
 
       mxmlNoteDuration mnd(_divs, _logger);
-      mnd.setProperties(note.duration, note.dots, Fraction { 1, 1 } /* TODO note.timeModification */);
+      const Fraction timeModification { static_cast<int>(note.timeModification.normalNotes), static_cast<int>(note.timeModification.actualNotes) };
+      mnd.setProperties(note.duration, note.dots, timeModification);
 
             /* TODO
             while (_e.readNextStartElement()) {
