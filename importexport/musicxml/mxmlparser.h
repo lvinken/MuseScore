@@ -35,7 +35,7 @@ private:
     ScorePart parseScorePart();
     void parseScorePartwise();
     Time parseTime();
-    Ms::Fraction parseTimeModification();
+    TimeModification parseTimeModification();
     void unexpectedElement();
 
     MxmlData m_data;

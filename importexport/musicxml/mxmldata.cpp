@@ -151,9 +151,7 @@ std::string Note::toString() const
         result += "\n    dot";
     }
     if (timeModification.isValid()) {
-        result += "\n    time-modification \"";
-        result += timeModification.print().toStdString();
-        result += "\"";
+        result += timeModification.toString();
     }
     result += "\n    staff \"" + std::to_string(staff) + "\"";
     return result;
@@ -239,6 +237,11 @@ TimeModification::TimeModification()
 {
     // nothing
 }
+
+bool TimeModification::isValid() const
+      {
+      return !(actualNotes == 0 || normalNotes == 0 || (actualNotes == 1 && normalNotes == 1));
+      }
 
 std::string TimeModification::toString() const
 {

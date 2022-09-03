@@ -447,25 +447,24 @@ Time MxmlParser::parseTime()
     return time;
 }
 
-Ms::Fraction MxmlParser::parseTimeModification()
+TimeModification MxmlParser::parseTimeModification()
 {
-    Ms::Fraction timeModification;
+    TimeModification timeModification;
     bool actualOk { false };
     bool normalOk { false };
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "actual-notes") {
-            timeModification.setNumerator(m_e.readElementText().toInt(&actualOk));
+            timeModification.actualNotes = m_e.readElementText().toInt(&actualOk);
         }
         else if (m_e.name() == "normal-notes") {
-            timeModification.setDenominator(m_e.readElementText().toInt(&normalOk));
+            timeModification.normalNotes = m_e.readElementText().toInt(&normalOk);
         }
         else {
             unexpectedElement();
         }
     }
     // TODO: error reporting
-    if (actualOk && timeModification.numerator() > 0
-            && normalOk && timeModification.denominator() > 0) {
+    if (timeModification.isValid()) {
         return timeModification;
     }
     return {};

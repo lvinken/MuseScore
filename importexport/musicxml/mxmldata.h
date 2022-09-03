@@ -5,8 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "libmscore/fraction.h"
-
 namespace MusicXML {
 
 enum class ElementType {
@@ -93,8 +91,9 @@ struct Pitch : public Element {
 
 struct TimeModification : public Element {
     TimeModification();
-    unsigned int actualNotes { 0 };
-    unsigned int normalNotes { 0 };
+    unsigned int actualNotes { 1 };
+    bool isValid() const;
+    unsigned int normalNotes { 1 };
     std::string toString() const;
 };
 
@@ -108,7 +107,7 @@ struct Note : public Element {
     Pitch pitch;            // TODO: make optional ?
     bool rest { false };    // TODO: support display-step and display-octave
     unsigned int staff { 1 };
-    Ms::Fraction timeModification { 0, 0 };
+    TimeModification timeModification;
     std::string toString() const;
     std::string type;
     std::string voice;
