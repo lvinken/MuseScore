@@ -175,4 +175,19 @@ bool mxmlNotePitch::readProperties(QXmlStreamReader& e, Score* score)
       return false;
       }
 
+//---------------------------------------------------------
+//   setProperties
+//---------------------------------------------------------
+
+void mxmlNotePitch::setProperties(const char step, const int alter, const int octave)
+{
+      const auto pos = QString("CDEFGAB").indexOf(step);
+      if (pos >=0 && pos < 7)
+            _step = pos;
+      else
+            _logger->logError(QString("invalid step '%1'").arg(step), nullptr);
+      _alter = alter;
+      _octave = octave;
+}
+
 }

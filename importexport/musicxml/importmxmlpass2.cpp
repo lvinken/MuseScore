@@ -216,8 +216,8 @@ static int MusicXMLStepAltOct2Pitch(int step, int alter, int octave)
 
 static void xmlSetPitch(Note* n, int step, int alter, int octave, const int octaveShift, const Instrument* const instr)
       {
-      //qDebug("xmlSetPitch(n=%p, step=%d, alter=%d, octave=%d, octaveShift=%d)",
-      //       n, step, alter, octave, octaveShift);
+      qDebug("xmlSetPitch(n=%p, step=%d, alter=%d, octave=%d, octaveShift=%d)",
+             n, step, alter, octave, octaveShift);
 
       //const Staff* staff = n->score()->staff(track / VOICES);
       //const Instrument* instr = staff->part()->instr();
@@ -236,7 +236,7 @@ static void xmlSetPitch(Note* n, int step, int alter, int octave, const int octa
       int tpc2 = step2tpc(step, AccidentalVal(alter));
       int tpc1 = Ms::transposeTpc(tpc2, intval, true);
       n->setPitch(pitch, tpc1, tpc2);
-      //qDebug("  pitch=%d tpc1=%d tpc2=%d", n->pitch(), n->tpc1(), n->tpc2());
+      qDebug("  pitch=%d tpc1=%d tpc2=%d", n->pitch(), n->tpc1(), n->tpc2());
       }
 
 //---------------------------------------------------------
@@ -1562,7 +1562,7 @@ void MusicXMLParserPass2::scorePartwise(const MusicXML::ScorePartwise& scorePart
 
       // not required partList(scorePartwise.partList);
       for (const auto& part : scorePartwise.parts)
-            ;      //MusicXMLParserPass2::part(part);
+            MusicXMLParserPass2::part(part);
 
       // set last measure barline to normal or MuseScore will generate light-heavy EndBarline
       // TODO, handle other tracks?
@@ -1624,6 +1624,7 @@ void MusicXMLParserPass2::scorePart()
 void MusicXMLParserPass2::part(const MusicXML::Part& part)
       {
       const QString id = part.id.data();
+      qDebug("id '%s'", qPrintable(id));
 
       if (!_pass1.hasPart(id)) {
             _logger->logError(QString("MusicXMLParserPass2::part cannot find part '%1'").arg(id), &_e);
@@ -1663,22 +1664,15 @@ void MusicXMLParserPass2::part(const MusicXML::Part& part)
 
       // read the measures
       int nr = 0; // current measure sequence number
-#if 0
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "measure") {
-                  Fraction t = _pass1.getMeasureStart(nr);
-                  if (t.isValid())
-                        measure(id, t);
-                  else {
-                        _logger->logError(QString("no valid start time for measure %1").arg(nr + 1), &_e);
-                        _e.skipCurrentElement();
-                        }
-                  ++nr;
+      for (const auto& measure : part.measures) {
+            Fraction t = _pass1.getMeasureStart(nr);
+            if (t.isValid())
+                  MusicXMLParserPass2::measure(measure, id, t);
+            else {
+                  _logger->logError(QString("no valid start time for measure %1").arg(nr + 1), &_e);
                   }
-            else
-                  skipLogCurrElem();
+            ++nr;
             }
-#endif
 
       // stop all remaining extends for this part
       Measure* lm = _pass1.getPart(id)->score()->lastMeasure();
@@ -1989,58 +1983,59 @@ void MusicXMLParserPass2::measure(const MusicXML::Measure& measure,
       QMap<Note*, int> alterMap;
 
 #if 0
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "attributes")
-                  attributes(partId, measure, time + mTime);
-            else if (_e.name() == "direction") {
-                  MusicXMLParserDirection dir(_e, _score, _pass1, *this, _logger);
-                  dir.direction(partId, measure, time + mTime, _divs, _spanners);
+      // TODO: port remaining original code
+      if (_e.name() == "direction") {
+            MusicXMLParserDirection dir(_e, _score, _pass1, *this, _logger);
+            dir.direction(partId, measure, time + mTime, _divs, _spanners);
+            }
+      else if (_e.name() == "figured-bass") {
+            FiguredBass* fb = figuredBass();
+            if (fb)
+                  fbl.append(fb);
+            }
+      else if (_e.name() == "harmony")
+            harmony(partId, measure, time + mTime);
+      else if (_e.name() == "sound") {
+            QString tempo = _e.attributes().value("tempo").toString();
+
+            if (!tempo.isEmpty()) {
+                  // sound tempo="..."
+                  // create an invisible default TempoText
+                  // to prevent duplicates, only if none is present yet
+                  Fraction tick = time + mTime;
+                  if (hasTempoTextAtTick(_score->tempomap(), tick.ticks())) {
+                        _logger->logError(QString("duplicate tempo at tick %1").arg(tick.ticks()), &_e);
+                        }
+                  else {
+                        double tpo = tempo.toDouble() / 60;
+                        TempoText* t = new TempoText(_score);
+                        t->setXmlText(QString("%1 = %2").arg(TempoText::duration2tempoTextString(TDuration(TDuration::DurationType::V_QUARTER)), tempo));
+                        t->setVisible(false);
+                        t->setTempo(tpo);
+                        t->setFollowText(true);
+
+                        _score->setTempo(tick, tpo);
+
+                        addElemOffset(t, _pass1.trackForPart(partId), "above", measure, tick);
+                        }
                   }
-            else if (_e.name() == "figured-bass") {
-                  FiguredBass* fb = figuredBass();
-                  if (fb)
-                        fbl.append(fb);
+            _e.skipCurrentElement();
+            }
+      else if (_e.name() == "barline")
+            barline(partId, measure, time + mTime);
+      }
+#endif
+#if 1
+      // copied and adapted from pass 1
+      for (const auto& element : measure.elements) {
+            if (element->elementType == MusicXML::ElementType::ATTRIBUTES) {
+                  const MusicXML::Attributes& attributes = *static_cast<MusicXML::Attributes*>(element.get());
+                  // TODO MusicXMLParserPass2::attributes(partId, currentMeasure, time + mTime);
                   }
-            else if (_e.name() == "harmony")
-                  harmony(partId, measure, time + mTime);
-            else if (_e.name() == "note") {
-                  Fraction missingPrev;
+            else if (element->elementType == MusicXML::ElementType::BACKUP) {
+                  const MusicXML::Backup& backup = *static_cast<MusicXML::Backup*>(element.get());
                   Fraction dura;
-                  Fraction missingCurr;
-                  int alt = -10;                    // any number outside range of xml-tag "alter"
-                  // note: chord and grace note handling done in note()
-                  // dura > 0 iff valid rest or first note of chord found
-                  Note* n = note(partId, measure, time + mTime, time + prevTime, missingPrev, dura, missingCurr, cv, gcl, gac, beam, fbl, alt, tupletStates, tuplets);
-                  if (n && !n->chord()->isGrace())
-                        prevChord = n->chord();  // remember last non-grace chord
-                  if (n && n->accidental() && n->accidental()->accidentalType() != AccidentalType::NONE)
-                        alterMap.insert(n, alt);
-                  if (missingPrev.isValid()) {
-                        mTime += missingPrev;
-                        }
-                  if (dura.isValid() && dura > Fraction(0, 1)) {
-                        prevTime = mTime; // save time stamp last chord created
-                        mTime += dura;
-                        if (mTime > mDura)
-                              mDura = mTime;
-                        }
-                  if (missingCurr.isValid()) {
-                        mTime += missingCurr;
-                        }
-                  //qDebug("added note %p chord %p gac %d", n, n ? n->chord() : 0, gac);
-                  }
-            else if (_e.name() == "forward") {
-                  Fraction dura;
-                  forward(dura);
-                  if (dura.isValid()) {
-                        mTime += dura;
-                        if (mTime > mDura)
-                              mDura = mTime;
-                        }
-                  }
-            else if (_e.name() == "backup") {
-                  Fraction dura;
-                  backup(dura);
+                  // TODO MusicXMLParserPass2::backup(backup.duration, dura);
                   if (dura.isValid()) {
                         if (dura <= mTime)
                               mTime -= dura;
@@ -2056,38 +2051,44 @@ void MusicXMLParserPass2::measure(const MusicXML::Measure& measure,
                               }
                         }
                   }
-            else if (_e.name() == "sound") {
-                  QString tempo = _e.attributes().value("tempo").toString();
-
-                  if (!tempo.isEmpty()) {
-                        // sound tempo="..."
-                        // create an invisible default TempoText
-                        // to prevent duplicates, only if none is present yet
-                        Fraction tick = time + mTime;
-                        if (hasTempoTextAtTick(_score->tempomap(), tick.ticks())) {
-                              _logger->logError(QString("duplicate tempo at tick %1").arg(tick.ticks()), &_e);
-                              }
-                        else {
-                              double tpo = tempo.toDouble() / 60;
-                              TempoText* t = new TempoText(_score);
-                              t->setXmlText(QString("%1 = %2").arg(TempoText::duration2tempoTextString(TDuration(TDuration::DurationType::V_QUARTER)), tempo));
-                              t->setVisible(false);
-                              t->setTempo(tpo);
-                              t->setFollowText(true);
-
-                              _score->setTempo(tick, tpo);
-
-                              addElemOffset(t, _pass1.trackForPart(partId), "above", measure, tick);
-                              }
+            else if (element->elementType == MusicXML::ElementType::FORWARD) {
+                  const MusicXML::Forward& forward = *static_cast<MusicXML::Forward*>(element.get());
+                  Fraction dura;
+                  // TODO MusicXMLParserPass2::forward(forward.duration, dura);
+                  if (dura.isValid()) {
+                        mTime += dura;
+                        if (mTime > mDura)
+                              mDura = mTime;
                         }
-                  _e.skipCurrentElement();
                   }
-            else if (_e.name() == "barline")
-                  barline(partId, measure, time + mTime);
-            else if (_e.name() == "print")
-                  _e.skipCurrentElement();
-            else
-                  skipLogCurrElem();
+            else if (element->elementType == MusicXML::ElementType::NOTE) {
+                  const auto& note = *static_cast<MusicXML::Note*>(element.get());
+                  Fraction missingPrev;
+                  Fraction dura;
+                  Fraction missingCurr;
+                  int alt = -10;                          // any number outside range of xml-tag "alter"
+                  // note: chord and grace note handling done in note()
+                  // dura > 0 iff valid rest or first note of chord found
+                  qDebug("1");
+                  Note* n = MusicXMLParserPass2::note(note, partId, currentMeasure, time + mTime, time + prevTime, missingPrev, dura, missingCurr, cv, gcl, gac, beam, fbl, alt, tupletStates, tuplets);
+                  if (n && !n->chord()->isGrace())
+                        prevChord = n->chord();        // remember last non-grace chord
+                  if (n && n->accidental() && n->accidental()->accidentalType() != AccidentalType::NONE)
+                        alterMap.insert(n, alt);
+                  if (missingPrev.isValid()) {
+                        mTime += missingPrev;
+                        }
+                  if (dura.isValid() && dura > Fraction(0, 1)) {
+                        prevTime = mTime;       // save time stamp last chord created
+                        mTime += dura;
+                        if (mTime > mDura)
+                              mDura = mTime;
+                        }
+                  if (missingCurr.isValid()) {
+                        mTime += missingCurr;
+                        }
+                  //qDebug("added note %p chord %p gac %d", n, n ? n->chord() : 0, gac);
+                  }
 
             /*
              qDebug("mTime %s (%s) mDura %s (%s)",
@@ -4272,7 +4273,8 @@ static void setDrumset(Chord* c, MusicXMLParserPass1& pass1, const QString& part
  Parse the /score-partwise/part/measure/note node.
  */
 
-Note* MusicXMLParserPass2::note(const QString& partId,
+Note* MusicXMLParserPass2::note(const MusicXML::Note& note,
+                                const QString& partId,
                                 Measure* measure,
                                 const Fraction sTime,
                                 const Fraction prevSTime,
@@ -4289,21 +4291,19 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                                 Tuplets& tuplets
                                 )
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "note");
 
+#if 0
+            // TODO
       if (_e.attributes().value("print-spacing") == "no") {
             notePrintSpacingNo(dura);
             return 0;
             }
+#endif
 
-      bool chord = false;
       bool cue = false;
       bool small = false;
-      bool grace = false;
-      bool rest = false;
-      int staff = 1;
-      QString type;
-      QString voice;
+      const QString type = note.type.data();
+      QString voice = note.voice.data();
       Direction stemDir = Direction::AUTO;
       bool noStem = false;
       NoteHead::Group headGroup = NoteHead::Group::HEAD_NORMAL;
@@ -4321,9 +4321,13 @@ Note* MusicXMLParserPass2::note(const QString& partId,
       MusicXMLParserNotations notations { _e, _score, _logger };
 
       mxmlNoteDuration mnd { _divs, _logger };
+      const Fraction timeModification { static_cast<int>(note.timeModification.normalNotes), static_cast<int>(note.timeModification.actualNotes) };
+      mnd.setProperties(note.duration, note.dots, timeModification);
       mxmlNotePitch mnp { _logger };
+      mnp.setProperties(note.pitch.step, /* TODO note.pitch.alter */ 0, note.pitch.octave);
 
-      while (_e.readNextStartElement()) {
+#if 0
+            // TODO
             if (mnp.readProperties(_e, _score)) {
                   // element handled
                   }
@@ -4332,17 +4336,8 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                   }
             else if (_e.name() == "beam")
                   beam(bm);
-            else if (_e.name() == "chord") {
-                  chord = true;
-                  _e.readNext();
-                  }
             else if (_e.name() == "cue") {
                   cue = true;
-                  _e.readNext();
-                  }
-            else if (_e.name() == "grace") {
-                  grace = true;
-                  graceSlash = _e.attributes().value("slash") == "yes";
                   _e.readNext();
                   }
             else if (_e.name() == "instrument") {
@@ -4368,19 +4363,6 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                   noteheadFilled = _e.attributes().value("filled").toString();
                   headGroup = convertNotehead(_e.readElementText());
                   }
-            else if (_e.name() == "rest") {
-                  rest = true;
-                  mnp.displayStepOctave(_e);
-                  }
-            else if (_e.name() == "staff") {
-                  auto ok = false;
-                  auto strStaff = _e.readElementText();
-                  staff = strStaff.toInt(&ok);
-                  if (!ok) {
-                        // error already reported in pass 1
-                        staff = 1;
-                        }
-                  }
             else if (_e.name() == "stem")
                   stem(stemDir, noStem);
             else if (_e.name() == "type") {
@@ -4389,15 +4371,12 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                   }
             else if (_e.name() == "voice")
                   voice = _e.readElementText();
-            else
-                  skipLogCurrElem();
-            }
+#endif
 
-      // convert staff to zero-based (in case of error, staff will be -1)
-      staff--;
+      const int staff = note.staff - 1;    // convert staff to zero-based
 
       // Bug fix for Sibelius 7.1.3 which does not write <voice> for notes with <chord>
-      if (!chord)
+      if (!note.chord)
             // remember voice
             currentVoice = voice;
       else if (voice == "")
@@ -4410,7 +4389,7 @@ Note* MusicXMLParserPass2::note(const QString& partId,
 
       // check for timing error(s) and set dura
       // keep in this order as checkTiming() might change dura
-      auto errorStr = mnd.checkTiming(type, rest, grace);
+      auto errorStr = mnd.checkTiming(type, note.rest, note.grace);
       dura = mnd.dura();
       if (errorStr != "")
             _logger->logError(errorStr, &_e);
@@ -4432,14 +4411,14 @@ Note* MusicXMLParserPass2::note(const QString& partId,
       // start time for note:
       // - sTime for non-chord / first chord note
       // - prevTime for others
-      auto noteStartTime = chord ? prevSTime : sTime;
+      auto noteStartTime = note.chord ? prevSTime : sTime;
       auto timeMod = mnd.timeMod();
 
       // determine tuplet state, used twice (before and after note allocation)
       MxmlTupletFlags tupletAction;
 
       // handle tuplet state for the previous chord or rest
-      if (!chord && !grace) {
+      if (!note.chord && !note.grace) {
             auto& tuplet = tuplets[voice];
             auto& tupletState = tupletStates[voice];
             tupletAction = tupletState.determineTupletAction(mnd.dura(), timeMod, notations.tupletDesc().type, mnd.normalType(), missingPrev, missingCurr);
@@ -4463,18 +4442,18 @@ Note* MusicXMLParserPass2::note(const QString& partId,
 
       Chord* c { nullptr };
       ChordRest* cr { nullptr };
-      Note* note { nullptr };
+      Note* currentNote { nullptr };
 
-      TDuration duration = determineDuration(rest, type, mnd.dots(), dura, measure->ticks());
+      TDuration duration = determineDuration(note.rest, type, mnd.dots(), dura, measure->ticks());
 
       // begin allocation
-      if (rest) {
+      if (note.rest) {
             const auto track = msTrack + msVoice;
             cr = addRest(_score, measure, noteStartTime, track, msMove,
                          duration, dura);
             }
       else {
-            if (!grace) {
+            if (!note.grace) {
                   // regular note
                   // if there is already a chord just add to it
                   // else create a new one
@@ -4488,7 +4467,7 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                   // grace note
                   // TODO: check if explicit stem direction should also be set for grace notes
                   // (the DOM parser does that, but seems to have no effect on the autotester)
-                  if (!chord || gcl.isEmpty()) {
+                  if (!note.chord || gcl.isEmpty()) {
                         c = createGraceChord(_score, msTrack + msVoice, duration, graceSlash);
                         // TODO FIX
                         // the setStaffMove() below results in identical behaviour as 2.0:
@@ -4505,20 +4484,20 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                         c = gcl.last();
 
                   }
-            note = new Note(_score);
+            currentNote = new Note(_score);
             const int ottavaStaff = (msTrack - _pass1.trackForPart(partId)) / VOICES;
             const int octaveShift = _pass1.octaveShift(partId, ottavaStaff, noteStartTime);
             const auto part = _pass1.getPart(partId);
             const auto instrument = part->instrument(noteStartTime);
-            setPitch(note, _pass1, partId, instrumentId, mnp, octaveShift, instrument);
-            c->add(note);
+            setPitch(currentNote, _pass1, partId, instrumentId, mnp, octaveShift, instrument);
+            c->add(currentNote);
             //c->setStemDirection(stemDir); // already done in handleBeamAndStemDir()
             //c->setNoStem(noStem);
             cr = c;
             }
       // end allocation
 
-      if (rest) {
+      if (note.rest) {
             const auto track = msTrack + msVoice;
             if (cr) {
                   if (currBeam) {
@@ -4539,10 +4518,10 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                   }
             }
       else {
-            if (!grace) {
+            if (!note.grace) {
                   // regular note
                   // handle beam
-                  if (!chord)
+                  if (!note.chord)
                         handleBeamAndStemDir(c, bm, stemDir, currBeam, _pass1.hasBeamingInfo());
 
                   // append any grace chord after chord to the previous chord
@@ -4554,17 +4533,17 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                   addGraceChordsBefore(c, gcl);
                   }
 
-            note->setSmall(cue || small); // cue notes are always small, normal notes only if size=cue
-            note->setPlay(!cue);          // cue notes don't play
-            note->setHeadGroup(headGroup);
+            currentNote->setSmall(cue || small); // cue notes are always small, normal notes only if size=cue
+            currentNote->setPlay(!cue);          // cue notes don't play
+            currentNote->setHeadGroup(headGroup);
             if (noteColor != QColor::Invalid)
-                  note->setColor(noteColor);
-            setNoteHead(note, noteheadColor, noteheadParentheses, noteheadFilled);
-            note->setVisible(printObject); // TODO also set the stem to invisible
+                  currentNote->setColor(noteColor);
+            setNoteHead(currentNote, noteheadColor, noteheadParentheses, noteheadFilled);
+            currentNote->setVisible(printObject); // TODO also set the stem to invisible
 
             if (velocity > 0) {
-                  note->setVeloType(Note::ValueType::USER_VAL);
-                  note->setVeloOffset(velocity);
+                  currentNote->setVeloType(Note::ValueType::USER_VAL);
+                  currentNote->setVeloOffset(velocity);
                   }
 
             if (mnp.unpitched()) {
@@ -4581,7 +4560,7 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                   }
 
             if (acc) {
-                  note->add(acc);
+                  currentNote->add(acc);
                   // save alter value for user accidental
                   if (acc->accidentalType() != AccidentalType::NONE)
                         alt = mnp.alter();
@@ -4599,11 +4578,11 @@ Note* MusicXMLParserPass2::note(const QString& partId,
 
       // handle notations
       if (cr) {
-            notations.addToScore(cr, note, noteStartTime.ticks(), _slurs, _glissandi, _spanners, _trills, _tie);
+            notations.addToScore(cr, currentNote, noteStartTime.ticks(), _slurs, _glissandi, _spanners, _trills, _tie);
             }
 
       // handle grace after state: remember current grace list size
-      if (grace && notations.mustStopGraceAFter()) {
+      if (note.grace && notations.mustStopGraceAFter()) {
             gac = gcl.size();
             }
 
@@ -4614,7 +4593,7 @@ Note* MusicXMLParserPass2::note(const QString& partId,
 
       // handle tuplet state for the current chord or rest
       if (cr) {
-            if (!chord && !grace) {
+            if (!note.chord && !note.grace) {
                   auto& tuplet = tuplets[voice];
                   // do tuplet if valid time-modification is not 1/1 and is not 1/2 (tremolo)
                   // TODO: check interaction tuplet and tremolo handling
@@ -4654,7 +4633,7 @@ Note* MusicXMLParserPass2::note(const QString& partId,
       if (cr) {
             // add lyrics and stop corresponding extends
             addLyrics(_logger, &_e, cr, lyric.numberedLyrics(), lyric.extendedLyrics(), _extendedLyrics);
-            if (rest) {
+            if (note.rest) {
                   // stop all extends
                   _extendedLyrics.setExtend(-1, cr->track(), cr->tick());
                   }
@@ -4672,14 +4651,10 @@ Note* MusicXMLParserPass2::note(const QString& partId,
       // don't count chord or grace note duration
       // note that this does not check the MusicXML requirement that notes in a chord
       // cannot have a duration longer than the first note in the chord
-      if (chord || grace)
+      if (note.chord || note.grace)
             dura.set(0, 1);
 
-      if (!(_e.isEndElement() && _e.name() == "note"))
-            qDebug("name %s line %lld", qPrintable(_e.name().toString()), _e.lineNumber());
-      Q_ASSERT(_e.isEndElement() && _e.name() == "note");
-
-      return note;
+      return currentNote;
       }
 
 //---------------------------------------------------------

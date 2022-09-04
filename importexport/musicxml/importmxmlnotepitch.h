@@ -34,6 +34,7 @@ public:
       mxmlNotePitch(MxmlLogger* logger) : _logger(logger) { /* nothing so far */ }
       void pitch(QXmlStreamReader& e);
       bool readProperties(QXmlStreamReader& e, Score* score);
+      void setProperties(const char step, const int alter, const int octave);
       Accidental* acc() const { return _acc; }
       AccidentalType accType() const { return _accType; }
       int alter() const { return _alter; }
