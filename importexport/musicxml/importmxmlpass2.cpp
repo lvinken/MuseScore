@@ -1514,11 +1514,11 @@ void MusicXMLParserPass2::skipLogCurrElem()
  Parse MusicXML in \a device and extract pass 2 data.
  */
 
-Score::FileError MusicXMLParserPass2::parse(QIODevice* device)
+Score::FileError MusicXMLParserPass2::parse(QIODevice* device, const MusicXML::MxmlData& mxmlData)
       {
       //qDebug("MusicXMLParserPass2::parse()");
       _e.setDevice(device);
-      Score::FileError res = parse();
+      Score::FileError res = parse(mxmlData);
       //qDebug("MusicXMLParserPass2::parse() res %d", int(res));
       return res;
       }
@@ -1531,27 +1531,11 @@ Score::FileError MusicXMLParserPass2::parse(QIODevice* device)
  Start the parsing process, after verifying the top-level node is score-partwise
  */
 
-Score::FileError MusicXMLParserPass2::parse()
+Score::FileError MusicXMLParserPass2::parse(const MusicXML::MxmlData& mxmlData)
       {
-      bool found = false;
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "score-partwise") {
-                  found = true;
-                  scorePartwise();
-                  }
-            else {
-                  _logger->logError("this is not a MusicXML score-partwise file", &_e);
-                  _e.skipCurrentElement();
-                  return Score::FileError::FILE_BAD_FORMAT;
-                  }
-            }
-
-      if (!found) {
-            _logger->logError("this is not a MusicXML score-partwise file", &_e);
-            return Score::FileError::FILE_BAD_FORMAT;
-            }
-
-      return Score::FileError::FILE_NO_ERROR;
+            qDebug("data (2):\n%s", mxmlData.scorePartwise.toString().data());
+            scorePartwise(mxmlData.scorePartwise);
+            return Score::FileError::FILE_NO_ERROR;
       }
 
 //---------------------------------------------------------
@@ -1562,11 +1546,10 @@ Score::FileError MusicXMLParserPass2::parse()
  Parse the MusicXML top-level (XPath /score-partwise) node.
  */
 
-void MusicXMLParserPass2::scorePartwise()
+void MusicXMLParserPass2::scorePartwise(const MusicXML::ScorePartwise& scorePartwise)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "score-partwise");
-
-      while (_e.readNextStartElement()) {
+#if 0
+            while (_e.readNextStartElement()) {
             if (_e.name() == "part") {
                   part();
                   }
@@ -1575,6 +1558,12 @@ void MusicXMLParserPass2::scorePartwise()
             else
                   skipLogCurrElem();
             }
+#endif
+            
+            // not required partList(scorePartwise.partList);
+            for (const auto& part : scorePartwise.parts)
+                  ;//MusicXMLParserPass2::part(part);
+
       // set last measure barline to normal or MuseScore will generate light-heavy EndBarline
       // TODO, handle other tracks?
       if (_score->lastMeasure()->endBarLineType() == BarLineType::NORMAL)
@@ -1632,10 +1621,9 @@ void MusicXMLParserPass2::scorePart()
  Parse the /score-partwise/part node.
  */
 
-void MusicXMLParserPass2::part()
+void MusicXMLParserPass2::part(const MusicXML::Part& part)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "part");
-      const QString id = _e.attributes().value("id").toString();
+            const QString id = part.id.data();
 
       if (!_pass1.hasPart(id)) {
             _logger->logError(QString("MusicXMLParserPass2::part cannot find part '%1'").arg(id), &_e);
@@ -1675,6 +1663,7 @@ void MusicXMLParserPass2::part()
 
       // read the measures
       int nr = 0; // current measure sequence number
+#if 0
       while (_e.readNextStartElement()) {
             if (_e.name() == "measure") {
                   Fraction t = _pass1.getMeasureStart(nr);
@@ -1689,6 +1678,7 @@ void MusicXMLParserPass2::part()
             else
                   skipLogCurrElem();
             }
+#endif
 
       // stop all remaining extends for this part
       Measure* lm = _pass1.getPart(id)->score()->lastMeasure();

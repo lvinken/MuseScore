@@ -241,7 +241,7 @@ private:
 class MusicXMLParserPass2 {
 public:
       MusicXMLParserPass2(Score* score, MusicXMLParserPass1& pass1, MxmlLogger* logger);
-      Score::FileError parse(QIODevice* device);
+      Score::FileError parse(QIODevice* device, const MusicXML::MxmlData& mxmlData);
 
       // part specific data interface functions
       void addSpanner(const MusicXmlSpannerDesc& desc);
@@ -251,11 +251,11 @@ public:
 private:
       void initPartState(const QString& partId);
       SpannerSet findIncompleteSpannersAtPartEnd();
-      Score::FileError parse();
-      void scorePartwise();
+      Score::FileError parse(const MusicXML::MxmlData& mxmlData);
+      void scorePartwise(const MusicXML::ScorePartwise& scorePartwise);
       void partList();
       void scorePart();
-      void part();
+      void part(const MusicXML::Part& part);
       void measChordNote( /*, const MxmlPhase2Note note, ChordRest& currChord */);
       void measChordFlush( /*, ChordRest& currChord */);
       void measure(const QString& partId, const Fraction time);

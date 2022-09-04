@@ -64,7 +64,7 @@ Score::FileError importMusicXMLfromBuffer(Score* score, const QString& /*name*/,
       // pass 2
       dev->seek(0);
       MusicXMLParserPass2 pass2(score, pass1, &logger);
-      return pass2.parse(dev);
+      return pass2.parse(dev, alternative.getData());
       }
 
 } // namespace Ms
