@@ -118,23 +118,15 @@ public:
       MusicXMLParserPass1(Score* score, MxmlLogger* logger);
       void initPartState(const QString& partId);
       Score::FileError parse(QIODevice* device, const MusicXML::MxmlData& mxmlData);
-      Score::FileError parse();
-      void scorePartwise();
       void identification();
       void credit(CreditWordsList& credits);
       void defaults();
       void pageLayout(PageFormat& pf, const qreal conversion);
-      void partList(MusicXmlPartGroupList& partGroupList);
       void partGroup(const int scoreParts, MusicXmlPartGroupList& partGroupList, MusicXmlPartGroupMap& partGroups);
-      void scorePart();
       void scoreInstrument(const QString& partId);
       void midiInstrument(const QString& partId);
-      void part();
-      void measure(const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr);
       void print(const int measureNr);
-      void attributes(const QString& partId, const Fraction cTime);
       void clef(const QString& partId);
-      void time(const Fraction cTime);
       void transpose(const QString& partId, const Fraction& tick);
       void divisions();
       void staves(const QString& partId);
@@ -142,11 +134,7 @@ public:
       void directionType(const Fraction cTime, QList<MxmlOctaveShiftDesc>& starts, QList<MxmlOctaveShiftDesc>& stops);
       void handleOctaveShift(const Fraction cTime, const QString& type, short size, MxmlOctaveShiftDesc& desc);
       void notations(MxmlStartStop& tupletStartStop);
-      void note(const QString& partId, const Fraction cTime, Fraction& missingPrev, Fraction& dura, Fraction& missingCurr, VoiceOverlapDetector& vod, MxmlTupletStates& tupletStates);
       void notePrintSpacingNo(Fraction& dura);
-      void duration(Fraction& dura);
-      void forward(Fraction& dura);
-      void backup(Fraction& dura);
       void timeModification(Fraction& timeMod);
       void pitch(int& step, float& alter, int& oct);
       void rest();
@@ -170,18 +158,18 @@ public:
 
 private:
       // functions
-      void newAttributes(const MusicXML::Attributes& attributes, const QString& partId, const Fraction cTime);
-      void newBackup(const unsigned int duration, Fraction& dura);
-      void newDuration(const unsigned int duration, Fraction& dura);
-      void newForward(const unsigned int duration, Fraction& dura);
-      void newMeasure(const MusicXML::Measure& measure, const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr);
-      void newNote(const MusicXML::Note& note, const QString& partId, const Fraction cTime, Fraction& missingPrev, Fraction& dura, Fraction& missingCurr, VoiceOverlapDetector& vod, MxmlTupletStates& tupletStates);
-      Score::FileError newParse(const MusicXML::MxmlData& mxmlData);
-      void newPart(const MusicXML::Part& part);
-      void newPartList(const MusicXML::PartList& partList);
-      void newScorePart(const MusicXML::ScorePart& scorePart);
-      void newScorePartwise(const MusicXML::ScorePartwise& scorePartwise);
-      void newTime(const MusicXML::Time& time, const Fraction cTime);
+      void attributes(const MusicXML::Attributes& attributes, const QString& partId, const Fraction cTime);
+      void backup(const unsigned int duration, Fraction& dura);
+      void duration(const unsigned int duration, Fraction& dura);
+      void forward(const unsigned int duration, Fraction& dura);
+      void measure(const MusicXML::Measure& measure, const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr);
+      void note(const MusicXML::Note& note, const QString& partId, const Fraction cTime, Fraction& missingPrev, Fraction& dura, Fraction& missingCurr, VoiceOverlapDetector& vod, MxmlTupletStates& tupletStates);
+      Score::FileError parse(const MusicXML::MxmlData& mxmlData);
+      void part(const MusicXML::Part& part);
+      void partList(const MusicXML::PartList& partList);
+      void scorePart(const MusicXML::ScorePart& scorePart);
+      void scorePartwise(const MusicXML::ScorePartwise& scorePartwise);
+      void time(const MusicXML::Time& time, const Fraction cTime);
 
       // generic pass 1 data
       QXmlStreamReader _e;
