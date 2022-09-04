@@ -438,16 +438,16 @@ static Instrument createInstrument(const MusicXMLInstrument& mxmlInstr, const In
 
       InstrumentTemplate* it = nullptr;
       if (!mxmlInstr.sound.isEmpty()) {
-          it = Ms::searchTemplateForMusicXmlId(mxmlInstr.sound);
-      }
+            it = Ms::searchTemplateForMusicXmlId(mxmlInstr.sound);
+            }
 
       if (!it) {
-          it = Ms::searchTemplateForInstrNameList({mxmlInstr.name});
-      }
+            it = Ms::searchTemplateForInstrNameList({ mxmlInstr.name });
+            }
 
       if (!it) {
-          it = Ms::searchTemplateForMidiProgram(mxmlInstr.midiProgram);
-      }
+            it = Ms::searchTemplateForMidiProgram(mxmlInstr.midiProgram);
+            }
 
       if (it) {
             // initialize from template with matching MusicXmlId
@@ -1533,9 +1533,9 @@ Score::FileError MusicXMLParserPass2::parse(QIODevice* device, const MusicXML::M
 
 Score::FileError MusicXMLParserPass2::parse(const MusicXML::MxmlData& mxmlData)
       {
-            qDebug("data (2):\n%s", mxmlData.scorePartwise.toString().data());
-            scorePartwise(mxmlData.scorePartwise);
-            return Score::FileError::FILE_NO_ERROR;
+      qDebug("data (2):\n%s", mxmlData.scorePartwise.toString().data());
+      scorePartwise(mxmlData.scorePartwise);
+      return Score::FileError::FILE_NO_ERROR;
       }
 
 //---------------------------------------------------------
@@ -1549,7 +1549,7 @@ Score::FileError MusicXMLParserPass2::parse(const MusicXML::MxmlData& mxmlData)
 void MusicXMLParserPass2::scorePartwise(const MusicXML::ScorePartwise& scorePartwise)
       {
 #if 0
-            while (_e.readNextStartElement()) {
+      while (_e.readNextStartElement()) {
             if (_e.name() == "part") {
                   part();
                   }
@@ -1559,10 +1559,10 @@ void MusicXMLParserPass2::scorePartwise(const MusicXML::ScorePartwise& scorePart
                   skipLogCurrElem();
             }
 #endif
-            
-            // not required partList(scorePartwise.partList);
-            for (const auto& part : scorePartwise.parts)
-                  ;//MusicXMLParserPass2::part(part);
+
+      // not required partList(scorePartwise.partList);
+      for (const auto& part : scorePartwise.parts)
+            ;      //MusicXMLParserPass2::part(part);
 
       // set last measure barline to normal or MuseScore will generate light-heavy EndBarline
       // TODO, handle other tracks?
@@ -1623,7 +1623,7 @@ void MusicXMLParserPass2::scorePart()
 
 void MusicXMLParserPass2::part(const MusicXML::Part& part)
       {
-            const QString id = part.id.data();
+      const QString id = part.id.data();
 
       if (!_pass1.hasPart(id)) {
             _logger->logError(QString("MusicXMLParserPass2::part cannot find part '%1'").arg(id), &_e);
@@ -2473,7 +2473,7 @@ void MusicXMLParserDirection::direction(const QString& partId,
                         t->setFrameRound(0);
                         }
 
-//TODO:ws            if (_hasDefaultY) t->textStyle().setYoff(_defaultY);
+                  //TODO:ws            if (_hasDefaultY) t->textStyle().setYoff(_defaultY);
                   addElemOffset(t, track, placement, measure, tick + _offset);
                   }
             }
@@ -2511,7 +2511,7 @@ void MusicXMLParserDirection::direction(const QString& partId,
                         dynaValue = 0;
                   dyn->setVelocity( dynaValue );
                   }
-//TODO:ws            if (_hasDefaultY) dyn->textStyle().setYoff(_defaultY);
+            //TODO:ws            if (_hasDefaultY) dyn->textStyle().setYoff(_defaultY);
             addElemOffset(dyn, track, placement, measure, tick + _offset);
             }
 
@@ -3197,7 +3197,7 @@ static bool determineBarLineType(const QString& barStyle, const QString& repeat,
       else if (barStyle == "light-heavy" && repeat.isEmpty())
             type = BarLineType::END;
       else if (barStyle == "heavy-light" && repeat.isEmpty())
-                  type = BarLineType::REVERSE_END;
+            type = BarLineType::REVERSE_END;
       else if (barStyle == "regular")
             type = BarLineType::NORMAL;
       else if (barStyle == "dashed")
@@ -5011,7 +5011,7 @@ void MusicXMLParserPass2::harmony(const QString& partId, Measure* measure, const
 
       FretDiagram* fd = 0;
       Harmony* ha = new Harmony(_score);
-//TODO:ws      ha->setUserOff(QPointF(rx, ry + dy - styleYOff));
+      //TODO:ws      ha->setUserOff(QPointF(rx, ry + dy - styleYOff));
       Fraction offset;
       while (_e.readNextStartElement()) {
             if (_e.name() == "root") {
@@ -6279,7 +6279,7 @@ void MusicXMLParserNotations::addToScore(ChordRest* const cr, Note* const note, 
       for (const auto& d : qAsConst(_dynamicsList)) {
             auto dynamic = new Dynamic(_score);
             dynamic->setDynamicType(d);
-//TODO:ws            if (hasYoffset) dyn->textStyle().setYoff(yoffset);
+            //TODO:ws            if (hasYoffset) dyn->textStyle().setYoff(yoffset);
             addElemOffset(dynamic, cr->track(), _dynamicsPlacement, cr->measure(), Fraction::fromTicks(tick));
             }
       }
