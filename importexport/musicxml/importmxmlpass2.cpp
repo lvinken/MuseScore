@@ -2030,7 +2030,7 @@ void MusicXMLParserPass2::measure(const MusicXML::Measure& measure,
       for (const auto& element : measure.elements) {
             if (element->elementType == MusicXML::ElementType::ATTRIBUTES) {
                   const MusicXML::Attributes& attributes = *static_cast<MusicXML::Attributes*>(element.get());
-                  // TODO MusicXMLParserPass2::attributes(partId, currentMeasure, time + mTime);
+                  MusicXMLParserPass2::attributes(attributes, partId, currentMeasure, time + mTime);
                   }
             else if (element->elementType == MusicXML::ElementType::BACKUP) {
                   const MusicXML::Backup& backup = *static_cast<MusicXML::Backup*>(element.get());
@@ -2149,10 +2149,9 @@ void MusicXMLParserPass2::measure(const MusicXML::Measure& measure,
  * -> check if it is necessary to insert them in order
  */
 
-void MusicXMLParserPass2::attributes(const QString& partId, Measure* measure, const Fraction& tick)
+void MusicXMLParserPass2::attributes(const MusicXML::Attributes& attributes, const QString& partId, Measure* measure, const Fraction& tick)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "attributes");
-
+#if 0
       while (_e.readNextStartElement()) {
             if (_e.name() == "clef")
                   clef(partId, measure, tick);
@@ -2171,6 +2170,9 @@ void MusicXMLParserPass2::attributes(const QString& partId, Measure* measure, co
             else
                   skipLogCurrElem();
             }
+#endif
+      if (attributes.divisions > 0)
+            _divs = attributes.divisions;
       }
 
 //---------------------------------------------------------
