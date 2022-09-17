@@ -263,7 +263,7 @@ private:
       void measureStyle(Measure* measure);
       void barline(const QString& partId, Measure* measure, const Fraction& tick);
       void key(const QString& partId, Measure* measure, const Fraction& tick);
-      void clef(const std::vector<MusicXML::Clef> clefs, const QString& partId, Measure* measure, const Fraction& tick);
+      void clef(const std::map<unsigned int, MusicXML::Clef> clefs, const QString& partId, Measure* measure, const Fraction& tick);
       void time(const MusicXML::Time& time, const QString& partId, Measure* measure, const Fraction& tick);
       void divisions();
       void transpose(const QString& partId, const Fraction& tick);

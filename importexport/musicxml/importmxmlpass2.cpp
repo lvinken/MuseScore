@@ -3632,7 +3632,7 @@ void MusicXMLParserPass2::key(const QString& partId, Measure* measure, const Fra
  Parse the /score-partwise/part/measure/attributes/clef node.
  */
 
-void MusicXMLParserPass2::clef(const std::vector<MusicXML::Clef> clefs, const QString& partId, Measure* measure, const Fraction& tick)
+void MusicXMLParserPass2::clef(const std::map<unsigned int, MusicXML::Clef> clefs, const QString& partId, Measure* measure, const Fraction& tick)
       {
       Part* part = _pass1.getPart(partId);
       Q_ASSERT(part);
@@ -3641,7 +3641,9 @@ void MusicXMLParserPass2::clef(const std::vector<MusicXML::Clef> clefs, const QS
       // - single staff
       // - multi-staff with same clef
       const bool afterBarline = false; // TODO _e.attributes().value("after-barline") == "yes";
-      for (unsigned int clefno = 0; clefno < clefs.size(); ++clefno) {
+      for (const auto& pair : clefs) {
+            const auto clefno = pair.first;
+            const auto& mxmlclef = pair.second;
 #if 0
       if (clefno <= 0 || clefno > part->nstaves()) {
             // conversion error (0) or other issue, assume staff 1
@@ -3655,9 +3657,9 @@ void MusicXMLParserPass2::clef(const std::vector<MusicXML::Clef> clefs, const QS
       ClefType clef   = ClefType::G;
       StaffTypes st = StaffTypes::STANDARD;
 
-      QString c { clefs.at(clefno).sign.data() };
+      QString c { mxmlclef.sign.data() };
       int i = 0;  // TODO clef-octave-change
-      int line { clefs.at(clefno).line };
+      int line { mxmlclef.line };
             qDebug("clefno %d c %s line %d", clefno, qPrintable(c), line);
 
       if (i && !(c == "F" || c == "G"))
