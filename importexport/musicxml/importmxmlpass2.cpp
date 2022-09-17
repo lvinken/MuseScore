@@ -2173,6 +2173,8 @@ void MusicXMLParserPass2::attributes(const MusicXML::Attributes& attributes, con
 #endif
       if (attributes.divisions > 0)
             _divs = attributes.divisions;
+      if (attributes.times.size() == 1)
+            time(attributes.times[0], partId, measure, tick);
       }
 
 //---------------------------------------------------------
@@ -3843,23 +3845,12 @@ static bool determineTimeSig(const QString beats, const QString beatType, const 
  Parse the /score-partwise/part/measure/attributes/time node.
  */
 
-void MusicXMLParserPass2::time(const QString& partId, Measure* measure, const Fraction& tick)
+void MusicXMLParserPass2::time(const MusicXML::Time& time, const QString& partId, Measure* measure, const Fraction& tick)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "time");
-
-      QString beats;
-      QString beatType;
-      QString timeSymbol = _e.attributes().value("symbol").toString();
-      bool printObject = _e.attributes().value("print-object") != "no";
-
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "beats")
-                  beats = _e.readElementText();
-            else if (_e.name() == "beat-type")
-                  beatType = _e.readElementText();
-            else
-                  skipLogCurrElem();
-            }
+      QString beats = time.beats.data();
+      QString beatType = time.beatType.data();
+      QString timeSymbol; // TODO = _e.attributes().value("symbol").toString();
+      bool printObject = true; // TODO _e.attributes().value("print-object") != "no";
 
       if (beats != "" && beatType != "") {
             // determine if timesig is valid

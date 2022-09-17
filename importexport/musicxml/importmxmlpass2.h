@@ -264,7 +264,7 @@ private:
       void barline(const QString& partId, Measure* measure, const Fraction& tick);
       void key(const QString& partId, Measure* measure, const Fraction& tick);
       void clef(const QString& partId, Measure* measure, const Fraction& tick);
-      void time(const QString& partId, Measure* measure, const Fraction& tick);
+      void time(const MusicXML::Time& time, const QString& partId, Measure* measure, const Fraction& tick);
       void divisions();
       void transpose(const QString& partId, const Fraction& tick);
       Note* note(const MusicXML::Note& note, const QString& partId, Measure* measure, const Fraction sTime, const Fraction prevTime,
