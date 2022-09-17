@@ -88,7 +88,15 @@ std::unique_ptr<Attributes> MxmlParser::parseAttributes()
             attributes->divisions = parseDivisions();
         }
         else if (m_e.name() == "clef") {
-            attributes->clefs.push_back(parseClef());
+            const auto numberClef = parseClef();
+            const auto number = numberClef.first;
+            const auto clef = numberClef.second;
+            if (attributes->clefs.count(number) == 0) {
+                attributes->clefs[number] = clef;
+            }
+            else {
+                // TODO: report non-unique number
+            }
         }
         else if (m_e.name() == "key") {
             attributes->keys.push_back(parseKey());
@@ -130,8 +138,15 @@ std::unique_ptr<Backup> MxmlParser::parseBackup()
     return backup;
 }
 
-Clef MxmlParser::parseClef()
+// TODO: error detection and reporting
+std::pair<unsigned int, Clef> MxmlParser::parseClef()
 {
+    bool ok1;
+    unsigned int number = m_e.attributes().value("number").toUInt(&ok1);
+    if (ok1) {
+        number--;
+    }
+
     Clef clef;
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "clef-octave-change") {
@@ -139,9 +154,9 @@ Clef MxmlParser::parseClef()
         }
         else if (m_e.name() == "line") {
             int line;
-            bool ok;
-            line = m_e.readElementText().toUInt(&ok);
-            if (ok) {
+            bool ok2;
+            line = m_e.readElementText().toUInt(&ok2);
+            if (ok2) {
                 clef.line = line;
             }
         }
@@ -152,7 +167,7 @@ Clef MxmlParser::parseClef()
             unexpectedElement();
         }
     }
-    return clef;
+    return { number, clef };
 }
 
 unsigned int MxmlParser::parseDivisions()

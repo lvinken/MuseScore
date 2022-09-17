@@ -35,13 +35,13 @@ std::string Attributes::toString() const
         }
     }
     result += "\n    staves \"" + std::to_string(staves) + "\"";
-    for (const auto& clef : clefs) {
-        result += "\n    clef";
-        if (!clef.sign.empty()) {
-            result += "\n     sign \"" + clef.sign + "\"";
+    for (const auto& pair : clefs) {
+        result += "\n    clef number=\"" + std::to_string(pair.first + 1) + "\"";
+        if (!pair.second.sign.empty()) {
+            result += "\n     sign \"" + pair.second.sign + "\"";
         }
-        if (clef.line) {
-            result += "\n     line \"" + std::to_string(clef.line) + "\"";
+        if (pair.second.line) {
+            result += "\n     line \"" + std::to_string(pair.second.line) + "\"";
         }
     }
     return result;
