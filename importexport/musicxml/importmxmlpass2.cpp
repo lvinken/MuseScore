@@ -2035,7 +2035,7 @@ void MusicXMLParserPass2::measure(const MusicXML::Measure& measure,
             else if (element->elementType == MusicXML::ElementType::BACKUP) {
                   const MusicXML::Backup& backup = *static_cast<MusicXML::Backup*>(element.get());
                   Fraction dura;
-                  // TODO MusicXMLParserPass2::backup(backup.duration, dura);
+                  MusicXMLParserPass2::backup(backup.duration, dura);
                   if (dura.isValid()) {
                         if (dura <= mTime)
                               mTime -= dura;
@@ -2054,7 +2054,7 @@ void MusicXMLParserPass2::measure(const MusicXML::Measure& measure,
             else if (element->elementType == MusicXML::ElementType::FORWARD) {
                   const MusicXML::Forward& forward = *static_cast<MusicXML::Forward*>(element.get());
                   Fraction dura;
-                  // TODO MusicXMLParserPass2::forward(forward.duration, dura);
+                  MusicXMLParserPass2::forward(forward.duration, dura);
                   if (dura.isValid()) {
                         mTime += dura;
                         if (mTime > mDura)
@@ -4682,7 +4682,7 @@ void MusicXMLParserPass2::notePrintSpacingNo(Fraction& dura)
                   _e.readNext();
                   }
             else if (_e.name() == "duration")
-                  duration(dura);
+                  ;  // TODO duration(dura);
             else if (_e.name() == "grace") {
                   grace = true;
                   _e.readNext();
@@ -4708,17 +4708,20 @@ void MusicXMLParserPass2::notePrintSpacingNo(Fraction& dura)
  Parse the /score-partwise/part/measure/note/duration node.
  */
 
-void MusicXMLParserPass2::duration(Fraction& dura)
+void MusicXMLParserPass2::duration(const unsigned int duration, Fraction& dura)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "duration");
-
-      dura.set(0, 0);        // invalid unless set correctly
-      const auto elementText = _e.readElementText();
-      if (elementText.toInt() > 0)
-            dura = calcTicks(elementText, _divs, _logger, &_e);
+      dura.set(0, 0);  // invalid unless set correctly
+      if (duration > 0) {
+            if (_divs > 0) {
+                  dura.set(duration, 4 * _divs);
+                  dura.reduce(); // prevent overflow in later Fraction operations
+                  }
+            else
+                  _logger->logError("illegal or uninitialized divisions", &_e);
+            }
       else
-            _logger->logError(QString("illegal duration %1").arg(dura.print()), &_e);
-      //qDebug("duration %s valid %d", qPrintable(dura.print()), dura.isValid());
+            _logger->logError("illegal duration", &_e);
+            //qDebug("duration %s valid %d", qPrintable(dura.print()), dura.isValid());
       }
 
 //---------------------------------------------------------
@@ -4814,7 +4817,7 @@ FiguredBass* MusicXMLParserPass2::figuredBass()
       while (_e.readNextStartElement()) {
             if (_e.name() == "duration") {
                   Fraction dura;
-                  duration(dura);
+                  ;  // TODO duration(dura);
                   if (dura.isValid() && dura > Fraction(0, 1))
                         fb->setTicks(dura);
                   }
@@ -5182,20 +5185,9 @@ void MusicXMLParserPass2::beam(Beam::Mode& beamMode)
  Parse the /score-partwise/part/measure/note/forward node.
  */
 
-void MusicXMLParserPass2::forward(Fraction& dura)
+void MusicXMLParserPass2::forward(const unsigned int duration, Fraction& dura)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "forward");
-
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "duration")
-                  duration(dura);
-            else if (_e.name() == "staff")
-                  _e.skipCurrentElement();  // skip but don't log
-            else if (_e.name() == "voice")
-                  _e.skipCurrentElement();  // skip but don't log
-            else
-                  skipLogCurrElem();
-            }
+      MusicXMLParserPass2::duration(duration, dura);
       }
 
 //---------------------------------------------------------
@@ -5206,16 +5198,9 @@ void MusicXMLParserPass2::forward(Fraction& dura)
  Parse the /score-partwise/part/measure/note/backup node.
  */
 
-void MusicXMLParserPass2::backup(Fraction& dura)
+void MusicXMLParserPass2::backup(const unsigned int duration, Fraction& dura)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "backup");
-
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "duration")
-                  duration(dura);
-            else
-                  skipLogCurrElem();
-            }
+      MusicXMLParserPass2::duration(duration, dura);
       }
 
 //---------------------------------------------------------

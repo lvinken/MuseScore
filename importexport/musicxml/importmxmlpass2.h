@@ -277,9 +277,9 @@ private:
       void harmony(const QString& partId, Measure* measure, const Fraction sTime);
       Accidental* accidental();
       void beam(Beam::Mode& beamMode);
-      void duration(Fraction& dura);
-      void forward(Fraction& dura);
-      void backup(Fraction& dura);
+      void duration(const unsigned int duration, Fraction& dura);
+      void forward(const unsigned int duration, Fraction& dura);
+      void backup(const unsigned int duration, Fraction& dura);
       void timeModification(Fraction& timeMod, TDuration& normalType);
       void stem(Direction& sd, bool& nost);
       void doEnding(const QString& partId, Measure* measure, const QString& number, const QString& type, const QString& text);
