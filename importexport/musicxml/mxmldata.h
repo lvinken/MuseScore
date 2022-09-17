@@ -56,7 +56,7 @@ struct Time : public Element {
 
 struct Attributes : public Element {
     Attributes();
-    std::vector<Clef> clefs;
+    std::vector<Clef> clefs;	// TODO handle number (use map<int, Clef> ?)
     unsigned int divisions { 0 };
     std::vector<Key> keys;
     unsigned int staves { 1 };
