@@ -210,7 +210,7 @@ Key MxmlParser::parseKey()
         if (m_e.name() == "fifths") {
             int fifths;
             bool ok;
-            fifths = m_e.readElementText().toUInt(&ok);
+            fifths = m_e.readElementText().toInt(&ok);
             if (ok) {
                 key.fifths = fifths;
             }
