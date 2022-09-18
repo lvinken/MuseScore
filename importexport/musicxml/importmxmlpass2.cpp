@@ -2163,9 +2163,10 @@ void MusicXMLParserPass2::attributes(const MusicXML::Attributes& attributes, con
 #endif
       if (attributes.divisions > 0)
             _divs = attributes.divisions;
+      clef(attributes.clefs, partId, measure, tick);
+      key(attributes.keys, partId, measure, tick);
       if (attributes.times.size() == 1)
             time(attributes.times[0], partId, measure, tick);
-      clef(attributes.clefs, partId, measure, tick);
       }
 
 //---------------------------------------------------------
@@ -3540,11 +3541,9 @@ static void flushAlteredTone(KeySigEvent& kse, QString& step, QString& alt, QStr
 
 // TODO: check currKeySig handling
 
-void MusicXMLParserPass2::key(const QString& partId, Measure* measure, const Fraction& tick)
+void MusicXMLParserPass2::key(const std::vector<MusicXML::Key>& keys, const QString& partId, Measure* measure, const Fraction& tick)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "key");
-
-      QString strKeyno = _e.attributes().value("number").toString();
+      QString strKeyno; // TODO = _e.attributes().value("number").toString();
       int keyno = -1; // assume no number (see below)
       if (strKeyno != "") {
             keyno = strKeyno.toInt();
@@ -3556,7 +3555,7 @@ void MusicXMLParserPass2::key(const QString& partId, Measure* measure, const Fra
             // convert to 0-based
             keyno--;
             }
-      bool printObject = _e.attributes().value("print-object") != "no";
+            bool printObject = true; // TODO _e.attributes().value("print-object") != "no";
 
       // for custom keys, a single altered tone is described by
       // key-step (required),  key-alter (required) and key-accidental (optional)
@@ -3567,6 +3566,7 @@ void MusicXMLParserPass2::key(const QString& partId, Measure* measure, const Fra
       QString keyAlter;
       QString keyAccidental;
 
+#if 0
       while (_e.readNextStartElement()) {
             if (_e.name() == "fifths")
                   key.setKey(Key(_e.readElementText().toInt()));
@@ -3611,6 +3611,14 @@ void MusicXMLParserPass2::key(const QString& partId, Measure* measure, const Fra
                   skipLogCurrElem();
             }
       flushAlteredTone(key, keyStep, keyAlter, keyAccidental);
+#endif
+
+      // TODO support different key for each staff
+      if (keys.size() != 1)
+            return;
+
+      const auto& mxmlKey = keys.at(0);
+      key.setKey(Key(mxmlKey.fifths));
 
       int nstaves = _pass1.getPart(partId)->nstaves();
       int staffIdx = _pass1.trackForPart(partId) / VOICES;
