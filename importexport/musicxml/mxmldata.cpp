@@ -136,6 +136,9 @@ std::string Note::toString() const
     else {
         result += "\n    pitch";
         result += "\n     step \"" + std::string { pitch.step } + "\"";
+        if (pitch.alter) {
+            result += "\n     alter \"" + std::to_string(pitch.alter) + "\"";
+        }
         result += "\n     octave \"" + std::to_string(pitch.octave) + "\"";
     }
     if (duration) {

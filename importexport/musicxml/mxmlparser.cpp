@@ -373,7 +373,12 @@ Pitch MxmlParser::parsePitch()
     Pitch pitch;
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "alter") {
-            m_e.skipCurrentElement();   // ignore
+            int alter;
+            bool ok;
+            alter = m_e.readElementText().toInt(&ok);
+            if (ok) {
+                pitch.alter = alter;
+            }
         }
         else if (m_e.name() == "octave") {
             int octave;
