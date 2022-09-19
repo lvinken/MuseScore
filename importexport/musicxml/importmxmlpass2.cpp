@@ -4304,16 +4304,10 @@ Note* MusicXMLParserPass2::note(const MusicXML::Note& note,
       const Fraction timeModification { static_cast<int>(note.timeModification.normalNotes), static_cast<int>(note.timeModification.actualNotes) };
       mnd.setProperties(note.duration, note.dots, timeModification);
       mxmlNotePitch mnp { _logger };
-      mnp.setProperties(note.pitch.step, /* TODO note.pitch.alter */ 0, note.pitch.octave);
+      mnp.setProperties(note.pitch.step, note.pitch.alter, note.pitch.octave);
 
 #if 0
             // TODO
-            if (mnp.readProperties(_e, _score)) {
-                  // element handled
-                  }
-            else if (mnd.readProperties(_e)) {
-                  // element handled
-                  }
             else if (_e.name() == "beam")
                   beam(bm);
             else if (_e.name() == "cue") {
