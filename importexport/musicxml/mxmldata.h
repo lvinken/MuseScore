@@ -58,9 +58,9 @@ struct Time : public Element {
 struct Attributes : public Element {
     Attributes();
     std::map<unsigned int, Clef> clefs;
-    unsigned int divisions { 0 };
+    unsigned int divisions { 0 }; // TODO make optional
     std::vector<Key> keys;
-    unsigned int staves { 1 };
+    unsigned int staves { 1 }; // TODO make optional
     std::vector<Time> times;
     std::string toString() const;
 };
