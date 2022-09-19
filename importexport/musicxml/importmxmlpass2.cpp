@@ -4305,6 +4305,17 @@ Note* MusicXMLParserPass2::note(const MusicXML::Note& note,
       mnd.setProperties(note.duration, note.dots, timeModification);
       mxmlNotePitch mnp { _logger };
       mnp.setProperties(note.pitch.step, note.pitch.alter, note.pitch.octave);
+      // lyrics on grace notes not (yet) supported by MuseScore
+      if (!note.grace) {
+            for (const auto& mxmlLyric : note.lyrics) {
+                  lyric.parse(mxmlLyric);
+                  }
+            }
+      else {
+            if (note.lyrics.size() > 0) {
+                  _logger->logDebugInfo("ignoring lyrics on grace notes", &_e);
+                  }
+            }
 
 #if 0
             // TODO
@@ -4317,16 +4328,6 @@ Note* MusicXMLParserPass2::note(const MusicXML::Note& note,
             else if (_e.name() == "instrument") {
                   instrumentId = _e.attributes().value("id").toString();
                   _e.readNext();
-                  }
-            else if (_e.name() == "lyric") {
-                  // lyrics on grace notes not (yet) supported by MuseScore
-                  if (!grace) {
-                        lyric.parse();
-                        }
-                  else {
-                        _logger->logDebugInfo("ignoring lyrics on grace notes", &_e);
-                        skipLogCurrElem();
-                        }
                   }
             else if (_e.name() == "notations") {
                   notations.parse();
@@ -5204,20 +5205,19 @@ void MusicXMLParserLyric::skipLogCurrElem()
 //   parse
 //---------------------------------------------------------
 
-void MusicXMLParserLyric::parse()
+void MusicXMLParserLyric::parse(const MusicXML::Lyric& mxmlLyric)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "lyric");
-
       std::unique_ptr<Lyrics> lyric { new Lyrics(_score) };
       // TODO in addlyrics: l->setTrack(trk);
 
       bool hasExtend = false;
-      const auto lyricNumber = _e.attributes().value("number").toString();
+      const auto lyricNumber = mxmlLyric.number.data();
       QColor lyricColor { QColor::Invalid };
-      lyricColor.setNamedColor(_e.attributes().value("color").toString());
+      // TODO lyricColor.setNamedColor(_e.attributes().value("color").toString());
       QString extendType;
-      QString formattedText;
+      QString formattedText = mxmlLyric.text.data();
 
+#if 0
       while (_e.readNextStartElement()) {
             if (_e.name() == "elision") {
                   // TODO verify elision handling
@@ -5252,6 +5252,7 @@ void MusicXMLParserLyric::parse()
             else
                   skipLogCurrElem();
             }
+#endif
 
       // if no lyric read (e.g. only 'extend "type=stop"'), no further action required
       if (formattedText == "") {
@@ -5282,8 +5283,6 @@ void MusicXMLParserLyric::parse()
 
       if (hasExtend && (extendType == "" || extendType == "start"))
             _extendedLyrics.insert(l);
-
-      Q_ASSERT(_e.isEndElement() && _e.name() == "lyric");
       }
 
 //---------------------------------------------------------

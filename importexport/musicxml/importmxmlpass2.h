@@ -126,7 +126,7 @@ public:
                           QXmlStreamReader& e, Score* score, MxmlLogger* logger);
       QSet<Lyrics*> extendedLyrics() const { return _extendedLyrics; }
       QMap<int, Lyrics*> numberedLyrics() const { return _numberedLyrics; }
-      void parse();
+      void parse(const MusicXML::Lyric& mxmlLyric);
 private:
       void skipLogCurrElem();
       const LyricNumberHandler _lyricNumberHandler;
