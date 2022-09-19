@@ -94,7 +94,7 @@ struct Lyric : public Element {
 
 struct Pitch : public Element {
     Pitch();
-    unsigned int alter { 0 }; // TODO support semitones
+    int alter { 0 }; // TODO support semitones
     unsigned int octave { 4 };
     char step { 'C' };  // TODO make type safe
 };
