@@ -16,6 +16,7 @@ enum class ElementType {
     ELEMENT,
     FORWARD,
     KEY,
+    LYRIC,
     MEASURE,
     NOTE,
     PART,
@@ -84,6 +85,13 @@ struct Measure : public Element {
     std::string toString() const;
 };
 
+struct Lyric : public Element {
+    Lyric();
+    std::string number;
+    std::string text;
+    std::string toString() const;
+};
+
 struct Pitch : public Element {
     Pitch();
     unsigned int alter { 0 }; // TODO support semitones
@@ -105,6 +113,7 @@ struct Note : public Element {
     unsigned int dots { 0 };
     unsigned int duration { 0 };
     bool grace { false };
+    std::vector<Lyric> lyrics;
     bool measureRest { false };
     Pitch pitch;            // TODO: make optional ?
     bool rest { false };    // TODO: support display-step and display-octave

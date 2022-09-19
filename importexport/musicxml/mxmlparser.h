@@ -27,6 +27,7 @@ private:
     std::unique_ptr<Forward> parseForward();
     Key parseKey();
     Measure parseMeasure();
+    Lyric parseLyric();
     std::unique_ptr<Note> parseNote();
     Part parsePart();
     void parsePartList();

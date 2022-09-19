@@ -225,6 +225,21 @@ Key MxmlParser::parseKey()
     return key;
 }
 
+Lyric MxmlParser::parseLyric()
+{
+      Lyric lyric;
+      lyric.number = std::string { m_e.attributes().value("number").toUtf8().data() };
+      while (m_e.readNextStartElement()) {
+            if (m_e.name() == "text") {
+                  lyric.text = m_e.readElementText().toUtf8().data();
+            }
+            else {
+                  unexpectedElement();
+            }
+      }
+      return lyric;
+}
+
 Measure MxmlParser::parseMeasure()
 {
     // TODO: verify (and handle) non-empty attribute number
@@ -288,7 +303,7 @@ std::unique_ptr<Note> MxmlParser::parseNote()
             m_e.skipCurrentElement();
         }
         else if (m_e.name() == "lyric") {
-            m_e.skipCurrentElement();   // ignore
+            note->lyrics.push_back(parseLyric());
         }
         else if (m_e.name() == "notations") {
             m_e.skipCurrentElement();   // ignore

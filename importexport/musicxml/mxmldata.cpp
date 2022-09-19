@@ -96,6 +96,20 @@ Key::Key()
     // nothing
 }
 
+Lyric::Lyric()
+      : Element(ElementType::LYRIC)
+{
+    // nothing
+}
+
+std::string Lyric::toString() const
+{
+    std::string result;
+    result += "\n    lyric number=\"" + number + "\"";
+    result += "\n     text \"" + text + "\"";
+    return result;
+}
+
 Measure::Measure()
     : Element(ElementType::MEASURE)
 {
@@ -157,6 +171,9 @@ std::string Note::toString() const
         result += timeModification.toString();
     }
     result += "\n    staff \"" + std::to_string(staff) + "\"";
+    for (const auto& lyric : lyrics) {
+        result += lyric.toString();
+    }
     return result;
 }
 
