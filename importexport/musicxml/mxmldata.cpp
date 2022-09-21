@@ -53,6 +53,50 @@ Backup::Backup()
     // nothing
 }
 
+Credit::Credit()
+    : Element(ElementType::CREDIT)
+{
+    // nothing
+}
+
+std::string Credit::toString() const
+{
+    std::string result;
+    result += "\n credit page=\"" + std::to_string(page + 1) + "\"";
+    for (const auto& creditType : creditTypes) {
+        result += "\n  credit-type \"" + creditType + "\"";
+    }
+    for (const auto& creditWords : creditWordses) {
+        result += "\n  credit-words";
+        if (creditWords.defaultX < -0.001 || creditWords.defaultX > 0.001) {
+            result += " default-x=\"" + std::to_string(creditWords.defaultX) + "\"";
+        }
+        if (creditWords.defaultY < -0.001 || creditWords.defaultY > 0.001) {
+            result += " default-y=\"" + std::to_string(creditWords.defaultY) + "\"";
+        }
+        if (creditWords.fontSize < -0.001 || creditWords.fontSize > 0.001) {
+            result += " font-size=\"" + std::to_string(creditWords.fontSize) + "\"";
+        }
+        if (creditWords.halign.size() > 0) {
+            result += " halign=\"" + creditWords.halign + "\"";
+        }
+        if (creditWords.justify.size() > 0) {
+             result += " justify=\"" + creditWords.justify + "\"";
+        }
+        if (creditWords.valign.size() > 0) {
+            result += " valign=\"" + creditWords.valign + "\"";
+        }
+        result += " \"" + creditWords.text + "\"";
+    }
+    return result;
+}
+
+CreditWords::CreditWords()
+    : Element(ElementType::CREDITWORDS)
+{
+    // nothing
+}
+
 std::string Backup::toString() const
 {
     std::string result;
@@ -239,6 +283,9 @@ std::string ScorePartwise::toString() const
 {
     std::string result;
     result += "score-partwise version=\"" + version + "\"";
+    for (const auto& credit : credits) {
+        result += credit.toString();
+    }
     result += partList.toString();
     for (const auto& part : parts) {
         result += part.toString();

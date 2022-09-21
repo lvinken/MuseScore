@@ -170,6 +170,39 @@ std::pair<unsigned int, Clef> MxmlParser::parseClef()
     return { number, clef };
 }
 
+Credit MxmlParser::parseCredit()
+{
+    Credit credit;
+
+    unsigned int page;
+    bool ok;
+    page = m_e.attributes().value("page").toUInt(&ok);
+    if (ok && page > 0) {
+        credit.page = page - 1;
+    }
+
+    while (m_e.readNextStartElement()) {
+        if (m_e.name() == "credit-words") {
+            CreditWords creditWords;
+            creditWords.defaultX = m_e.attributes().value("default-x").toFloat();
+            creditWords.defaultY = m_e.attributes().value("default-y").toFloat();
+            creditWords.fontSize = m_e.attributes().value("font-size").toFloat();
+            creditWords.justify = m_e.attributes().value("justify").toUtf8().data();
+            creditWords.halign = m_e.attributes().value("halign").toUtf8().data();
+            creditWords.valign = m_e.attributes().value("valign").toUtf8().data();
+            creditWords.text = m_e.readElementText().toUtf8().data();
+            credit.creditWordses.push_back(creditWords);
+        }
+        else if (m_e.name() == "credit-type") {
+            credit.creditTypes.push_back(m_e.readElementText().toUtf8().data());
+        }
+        else {
+            unexpectedElement();
+        }
+    }
+    return credit;
+}
+
 unsigned int MxmlParser::parseDivisions()
 {
     unsigned int divisions;
@@ -448,7 +481,10 @@ ScorePart MxmlParser::parseScorePart()
 void MxmlParser::parseScorePartwise()
 {
     while (m_e.readNextStartElement()) {
-        if (m_e.name() == "identification") {
+        if (m_e.name() == "credit") {
+            m_data.scorePartwise.credits.push_back(parseCredit());
+        }
+        else if (m_e.name() == "identification") {
             m_e.skipCurrentElement();   // ignore
         }
         else if (m_e.name() == "part") {

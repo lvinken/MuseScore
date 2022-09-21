@@ -13,6 +13,8 @@ enum class ElementType {
     ATTRIBUTES,
     BACKUP,
     CLEF,
+    CREDIT,
+    CREDITWORDS,
     ELEMENT,
     FORWARD,
     KEY,
@@ -36,6 +38,25 @@ struct Element {
     virtual ~Element() {};
     ElementType elementType { ElementType::INVALID };
     virtual std::string toString() const { return ""; }
+};
+
+struct CreditWords : public Element {
+      CreditWords();
+      float defaultX { 0.0 }; // TODO make optional
+      float defaultY { 0.0 }; // TODO make optional
+      float fontSize { 0.0 }; // TODO make optional
+      std::string justify;    // TODO make type safe
+      std::string halign;     // TODO make type safe
+      std::string valign;     // TODO make type safe
+      std::string text;
+};
+
+struct Credit : public Element {
+      Credit();
+      std::vector<std::string> creditTypes;
+      std::vector<CreditWords> creditWordses;
+      unsigned int page { 0 };
+      std::string toString() const;
 };
 
 struct Clef : public Element {
@@ -146,6 +167,7 @@ struct ScorePart : public Element {
 
 struct ScorePartwise : public Element {
     ScorePartwise();
+    std::vector<Credit> credits;
     bool isFound { false };
     PartList partList;
     std::vector<Part> parts;

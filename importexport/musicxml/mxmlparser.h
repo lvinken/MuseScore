@@ -23,6 +23,7 @@ private:
     std::unique_ptr<Attributes> parseAttributes();
     std::unique_ptr<Backup> parseBackup();
     std::pair<unsigned int, Clef> parseClef();
+    Credit parseCredit();
     unsigned int parseDivisions();
     std::unique_ptr<Forward> parseForward();
     Key parseKey();
