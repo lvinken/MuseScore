@@ -119,7 +119,7 @@ public:
       void initPartState(const QString& partId);
       Score::FileError parse(QIODevice* device, const MusicXML::MxmlData& mxmlData);
       void identification();
-      void credit(CreditWordsList& credits);
+      void credit(const std::vector<MusicXML::Credit>& credits, CreditWordsList& creditWordsList);
       void defaults();
       void pageLayout(PageFormat& pf, const qreal conversion);
       void partGroup(const int scoreParts, MusicXmlPartGroupList& partGroupList, MusicXmlPartGroupMap& partGroups);
