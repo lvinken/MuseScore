@@ -106,7 +106,8 @@ Defaults::Defaults()
 std::string Defaults::toString() const
 {
     std::string result;
-    result += "   defaults";
+    result += "\n defaults";
+    result += scaling.toString();
     result += pageLayout.toString();
     return result;
 }
@@ -295,6 +296,21 @@ Pitch::Pitch()
     : Element(ElementType::PITCH)
 {
     // nothing
+}
+
+Scaling::Scaling()
+    : Element(ElementType::SCALING)
+{
+    // nothing
+}
+
+std::string Scaling::toString() const
+{
+    std::string result;
+    result += "\n  scaling";
+    result += "\n   millimeters \"" + std::to_string(millimeters) + "\"";
+    result += "\n   tenths \"" + std::to_string(tenths) + "\"";
+    return result;
 }
 
 ScorePart::ScorePart()

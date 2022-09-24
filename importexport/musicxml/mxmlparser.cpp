@@ -210,6 +210,9 @@ Defaults MxmlParser::parseDefaults()
         if (m_e.name() == "page-layout") {
             defaults.pageLayout = parsePageLayout();
         }
+        else if (m_e.name() == "scaling") {
+            defaults.scaling = parseScaling();
+        }
         else {
             unexpectedElement();
         }
@@ -513,6 +516,23 @@ Pitch MxmlParser::parsePitch()
     return pitch;
 }
 
+Scaling MxmlParser::parseScaling()
+{
+    // TODO error handling
+    Scaling scaling;
+    while (m_e.readNextStartElement()) {
+        if (m_e.name() == "millimeters") {
+            scaling.millimeters = m_e.readElementText().toFloat();
+        }
+        else if (m_e.name() == "tenths") {
+            scaling.tenths = m_e.readElementText().toFloat();
+        }
+        else {
+            unexpectedElement();
+        }
+    }
+    return scaling;
+}
 
 ScorePart MxmlParser::parseScorePart()
 {

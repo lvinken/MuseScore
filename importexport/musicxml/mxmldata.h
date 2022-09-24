@@ -26,6 +26,7 @@ enum class ElementType {
     PART,
     PARTLIST,
     PITCH,
+    SCALING,
     SCOREPART,
     SCOREPARTWISE,
     TIME,
@@ -111,9 +112,17 @@ struct PageLayout : public Element {
     std::string toString() const;
 };
 
+struct Scaling : public Element {
+    Scaling();
+    float millimeters { 0.0 };
+    float tenths { 0.0 };
+    std::string toString() const;
+};
+
 struct Defaults : public Element {
     Defaults();
-    PageLayout pageLayout;
+    Scaling scaling;       // TODO make optional
+    PageLayout pageLayout; // TODO make optional
     std::string toString() const;
 };
 

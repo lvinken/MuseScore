@@ -36,6 +36,7 @@ private:
     void parsePartList();
     std::string parsePartName();
     Pitch parsePitch();
+    Scaling parseScaling();
     ScorePart parseScorePart();
     void parseScorePartwise();
     Time parseTime();
