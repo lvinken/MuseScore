@@ -216,8 +216,8 @@ static int MusicXMLStepAltOct2Pitch(int step, int alter, int octave)
 
 static void xmlSetPitch(Note* n, int step, int alter, int octave, const int octaveShift, const Instrument* const instr)
       {
-      qDebug("xmlSetPitch(n=%p, step=%d, alter=%d, octave=%d, octaveShift=%d)",
-             n, step, alter, octave, octaveShift);
+      //qDebug("xmlSetPitch(n=%p, step=%d, alter=%d, octave=%d, octaveShift=%d)",
+      //       n, step, alter, octave, octaveShift);
 
       //const Staff* staff = n->score()->staff(track / VOICES);
       //const Instrument* instr = staff->part()->instr();
@@ -236,7 +236,7 @@ static void xmlSetPitch(Note* n, int step, int alter, int octave, const int octa
       int tpc2 = step2tpc(step, AccidentalVal(alter));
       int tpc1 = Ms::transposeTpc(tpc2, intval, true);
       n->setPitch(pitch, tpc1, tpc2);
-      qDebug("  pitch=%d tpc1=%d tpc2=%d", n->pitch(), n->tpc1(), n->tpc2());
+      //qDebug("  pitch=%d tpc1=%d tpc2=%d", n->pitch(), n->tpc1(), n->tpc2());
       }
 
 //---------------------------------------------------------
@@ -2069,7 +2069,6 @@ void MusicXMLParserPass2::measure(const MusicXML::Measure& measure,
                   int alt = -10;                          // any number outside range of xml-tag "alter"
                   // note: chord and grace note handling done in note()
                   // dura > 0 iff valid rest or first note of chord found
-                  qDebug("1");
                   Note* n = MusicXMLParserPass2::note(note, partId, currentMeasure, time + mTime, time + prevTime, missingPrev, dura, missingCurr, cv, gcl, gac, beam, fbl, alt, tupletStates, tuplets);
                   if (n && !n->chord()->isGrace())
                         prevChord = n->chord();        // remember last non-grace chord
