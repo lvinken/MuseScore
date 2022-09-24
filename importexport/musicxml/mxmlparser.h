@@ -24,12 +24,14 @@ private:
     std::unique_ptr<Backup> parseBackup();
     std::pair<unsigned int, Clef> parseClef();
     Credit parseCredit();
+    Defaults parseDefaults();
     unsigned int parseDivisions();
     std::unique_ptr<Forward> parseForward();
     Key parseKey();
     Measure parseMeasure();
     Lyric parseLyric();
     std::unique_ptr<Note> parseNote();
+    PageLayout parsePageLayout();
     Part parsePart();
     void parsePartList();
     std::string parsePartName();

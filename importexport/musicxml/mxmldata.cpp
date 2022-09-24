@@ -97,6 +97,20 @@ CreditWords::CreditWords()
     // nothing
 }
 
+Defaults::Defaults()
+    : Element(ElementType::DEFAULTS)
+{
+    // nothing
+}
+
+std::string Defaults::toString() const
+{
+    std::string result;
+    result += "   defaults";
+    result += pageLayout.toString();
+    return result;
+}
+
 std::string Backup::toString() const
 {
     std::string result;
@@ -221,6 +235,30 @@ std::string Note::toString() const
     return result;
 }
 
+PageLayout::PageLayout()
+    : Element(ElementType::PAGELAYOUT)
+{
+    // nothing
+}
+
+std::string PageLayout::toString() const
+    {
+    std::string result;
+    result += "\n  page-layout\"";
+    result += "\n   page-height \"" + std::to_string(pageHeight) + "\"";
+    result += "\n   page-width \"" + std::to_string(pageWidth) + "\"";
+    result += "\n   even left-margin \"" + std::to_string(evenLeftMargin) + "\"";
+    result += "\n   even right-margin \"" + std::to_string(evenRightMargin) + "\"";
+    result += "\n   even top-margin \"" + std::to_string(evenTopMargin) + "\"";
+    result += "\n   even bottom-margin \"" + std::to_string(evenBottomMargin) + "\"";
+    result += "\n   odd left-margin \"" + std::to_string(oddLeftMargin) + "\"";
+    result += "\n   odd right-margin \"" + std::to_string(oddRightMargin) + "\"";
+    result += "\n   odd top-margin \"" + std::to_string(oddTopMargin) + "\"";
+    result += "\n   odd bottom-margin \"" + std::to_string(oddBottomMargin) + "\"";
+    result += "\n   two-sided \"" + std::string { twoSided ? "true" : "false" } + "\"";
+    return result;
+    }
+
 Part::Part()
     : Element(ElementType::PART)
 {
@@ -283,6 +321,7 @@ std::string ScorePartwise::toString() const
 {
     std::string result;
     result += "score-partwise version=\"" + version + "\"";
+    result += defaults.toString();
     for (const auto& credit : credits) {
         result += credit.toString();
     }

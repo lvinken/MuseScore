@@ -15,12 +15,14 @@ enum class ElementType {
     CLEF,
     CREDIT,
     CREDITWORDS,
+    DEFAULTS,
     ELEMENT,
     FORWARD,
     KEY,
     LYRIC,
     MEASURE,
     NOTE,
+    PAGELAYOUT,
     PART,
     PARTLIST,
     PITCH,
@@ -41,22 +43,22 @@ struct Element {
 };
 
 struct CreditWords : public Element {
-      CreditWords();
-      float defaultX { 0.0 }; // TODO make optional
-      float defaultY { 0.0 }; // TODO make optional
-      float fontSize { 0.0 }; // TODO make optional
-      std::string justify;    // TODO make type safe
-      std::string halign;     // TODO make type safe
-      std::string valign;     // TODO make type safe
-      std::string text;
+    CreditWords();
+    float defaultX { 0.0 }; // TODO make optional
+    float defaultY { 0.0 }; // TODO make optional
+    float fontSize { 0.0 }; // TODO make optional
+    std::string justify;    // TODO make type safe
+    std::string halign;     // TODO make type safe
+    std::string valign;     // TODO make type safe
+    std::string text;
 };
 
 struct Credit : public Element {
-      Credit();
-      std::vector<std::string> creditTypes;
-      std::vector<CreditWords> creditWordses;
-      unsigned int page { 0 };
-      std::string toString() const;
+    Credit();
+    std::vector<std::string> creditTypes;
+    std::vector<CreditWords> creditWordses;
+    unsigned int page { 0 };
+    std::string toString() const;
 };
 
 struct Clef : public Element {
@@ -91,6 +93,28 @@ struct Backup : public Element {
     Backup();
     std::string toString() const;
     unsigned int duration { 0 };
+};
+
+struct PageLayout : public Element {
+    PageLayout();
+    float pageHeight { 0.0 };
+    float pageWidth { 0.0 };
+    float evenLeftMargin { 0.0 };
+    float evenRightMargin { 0.0 };
+    float evenTopMargin { 0.0 };
+    float evenBottomMargin { 0.0 };
+    float oddLeftMargin { 0.0 };
+    float oddRightMargin { 0.0 };
+    float oddTopMargin { 0.0 };
+    float oddBottomMargin { 0.0 };
+    bool twoSided { false };
+    std::string toString() const;
+};
+
+struct Defaults : public Element {
+    Defaults();
+    PageLayout pageLayout;
+    std::string toString() const;
 };
 
 struct Forward : public Element {
@@ -168,6 +192,7 @@ struct ScorePart : public Element {
 struct ScorePartwise : public Element {
     ScorePartwise();
     std::vector<Credit> credits;
+    Defaults defaults;
     bool isFound { false };
     PartList partList;
     std::vector<Part> parts;

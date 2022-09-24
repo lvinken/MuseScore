@@ -203,6 +203,20 @@ Credit MxmlParser::parseCredit()
     return credit;
 }
 
+Defaults MxmlParser::parseDefaults()
+{
+    Defaults defaults;
+    while (m_e.readNextStartElement()) {
+        if (m_e.name() == "page-layout") {
+            defaults.pageLayout = parsePageLayout();
+        }
+        else {
+            unexpectedElement();
+        }
+    }
+    return defaults;
+}
+
 unsigned int MxmlParser::parseDivisions()
 {
     unsigned int divisions;
@@ -376,6 +390,56 @@ std::unique_ptr<Note> MxmlParser::parseNote()
     return note;
 }
 
+PageLayout MxmlParser::parsePageLayout()
+{
+    // TODO: page-height and page-width are both either present or not present
+    // TODO: page-margins is optional, but all its children are required
+    PageLayout pageLayout;
+    while (m_e.readNextStartElement()) {
+        if (m_e.name() == "page-margins") {
+            QString type = m_e.attributes().value("type").toString();
+            if (type == "")
+                type = "both";
+            qreal lm = 0.0, rm = 0.0, tm = 0.0, bm = 0.0;
+            while (m_e.readNextStartElement()) {
+                if (m_e.name() == "left-margin")
+                    lm = m_e.readElementText().toFloat();
+                else if (m_e.name() == "right-margin")
+                    rm = m_e.readElementText().toFloat();
+                else if (m_e.name() == "top-margin")
+                    tm = m_e.readElementText().toFloat();
+                else if (m_e.name() == "bottom-margin")
+                    bm = m_e.readElementText().toFloat();
+                else
+                    unexpectedElement();
+                }
+                pageLayout.twoSided = type == "odd" || type == "even";
+                if (type == "odd" || type == "both") {
+                    pageLayout.oddLeftMargin = lm;
+                    pageLayout.oddRightMargin = rm;
+                    pageLayout.oddTopMargin = tm;
+                    pageLayout.oddBottomMargin = bm;
+                }
+                if (type == "even" || type == "both") {
+                    pageLayout.evenLeftMargin = lm;
+                    pageLayout.evenRightMargin = rm;
+                    pageLayout.evenTopMargin = tm;
+                    pageLayout.evenBottomMargin = bm;
+                }
+            }
+        else if (m_e.name() == "page-height") {
+            pageLayout.pageHeight = m_e.readElementText().toFloat();
+        }
+        else if (m_e.name() == "page-width") {
+            pageLayout.pageWidth = m_e.readElementText().toFloat();
+        }
+        else {
+            unexpectedElement();
+        }
+    }
+    return pageLayout;
+}
+
 Part MxmlParser::parsePart()
 {
     // TODO: verify (and handle) non-empty attribute id
@@ -483,6 +547,9 @@ void MxmlParser::parseScorePartwise()
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "credit") {
             m_data.scorePartwise.credits.push_back(parseCredit());
+        }
+        else if (m_e.name() == "defaults") {
+            m_data.scorePartwise.defaults = parseDefaults();
         }
         else if (m_e.name() == "identification") {
             m_e.skipCurrentElement();   // ignore
