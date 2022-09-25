@@ -203,20 +203,21 @@ Credit MxmlParser::parseCredit()
     return credit;
 }
 
-Defaults MxmlParser::parseDefaults()
+Defaults MxmlParser::parseDefaults(bool& read)
 {
     Defaults defaults;
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "page-layout") {
-            defaults.pageLayout = parsePageLayout();
+            defaults.pageLayout = parsePageLayout(defaults.pageLayoutRead);
         }
         else if (m_e.name() == "scaling") {
-            defaults.scaling = parseScaling();
+            defaults.scaling = parseScaling(defaults.scalingRead);
         }
         else {
             unexpectedElement();
         }
     }
+    read = true;
     return defaults;
 }
 
@@ -393,53 +394,63 @@ std::unique_ptr<Note> MxmlParser::parseNote()
     return note;
 }
 
-PageLayout MxmlParser::parsePageLayout()
+PageLayout MxmlParser::parsePageLayout(bool& read)
 {
-    // TODO: page-height and page-width are both either present or not present
-    // TODO: page-margins is optional, but all its children are required
+    // page-height and page-width are both either present or not present
+    // page-margins is optional, but all its children are required
     PageLayout pageLayout;
+    bool pageHeightOk { false };
+    bool pageWidthOk { false };
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "page-margins") {
+            bool leftMarginOk { false };
+            bool rightMarginOk { false };
+            bool topMarginOk { false };
+            bool bottomMarginOk { false };
             QString type = m_e.attributes().value("type").toString();
             if (type == "")
                 type = "both";
             qreal lm = 0.0, rm = 0.0, tm = 0.0, bm = 0.0;
             while (m_e.readNextStartElement()) {
                 if (m_e.name() == "left-margin")
-                    lm = m_e.readElementText().toFloat();
+                    lm = m_e.readElementText().toFloat(&leftMarginOk);
                 else if (m_e.name() == "right-margin")
-                    rm = m_e.readElementText().toFloat();
+                    rm = m_e.readElementText().toFloat(&rightMarginOk);
                 else if (m_e.name() == "top-margin")
-                    tm = m_e.readElementText().toFloat();
+                    tm = m_e.readElementText().toFloat(&topMarginOk);
                 else if (m_e.name() == "bottom-margin")
-                    bm = m_e.readElementText().toFloat();
+                    bm = m_e.readElementText().toFloat(&bottomMarginOk);
                 else
                     unexpectedElement();
-                }
-                pageLayout.twoSided = type == "odd" || type == "even";
-                if (type == "odd" || type == "both") {
-                    pageLayout.oddLeftMargin = lm;
-                    pageLayout.oddRightMargin = rm;
-                    pageLayout.oddTopMargin = tm;
-                    pageLayout.oddBottomMargin = bm;
-                }
-                if (type == "even" || type == "both") {
-                    pageLayout.evenLeftMargin = lm;
-                    pageLayout.evenRightMargin = rm;
-                    pageLayout.evenTopMargin = tm;
-                    pageLayout.evenBottomMargin = bm;
-                }
             }
+            pageLayout.twoSided = type == "odd" || type == "even";
+            if (type == "odd" || type == "both") {
+                pageLayout.oddLeftMargin = lm;
+                pageLayout.oddRightMargin = rm;
+                pageLayout.oddTopMargin = tm;
+                pageLayout.oddBottomMargin = bm;
+                pageLayout.oddMarginsRead = leftMarginOk && rightMarginOk && topMarginOk && bottomMarginOk;
+            }
+            if (type == "even" || type == "both") {
+                pageLayout.evenLeftMargin = lm;
+                pageLayout.evenRightMargin = rm;
+                pageLayout.evenTopMargin = tm;
+                pageLayout.evenBottomMargin = bm;
+                pageLayout.evenMarginsRead = leftMarginOk && rightMarginOk && topMarginOk && bottomMarginOk;
+            }
+        }
         else if (m_e.name() == "page-height") {
-            pageLayout.pageHeight = m_e.readElementText().toFloat();
+            pageLayout.pageHeight = m_e.readElementText().toFloat(&pageHeightOk);
         }
         else if (m_e.name() == "page-width") {
-            pageLayout.pageWidth = m_e.readElementText().toFloat();
+            pageLayout.pageWidth = m_e.readElementText().toFloat(&pageWidthOk);
         }
         else {
             unexpectedElement();
         }
     }
+    pageLayout.pageSizeRead = pageHeightOk && pageWidthOk;
+    read = true;
     return pageLayout;
 }
 
@@ -516,20 +527,25 @@ Pitch MxmlParser::parsePitch()
     return pitch;
 }
 
-Scaling MxmlParser::parseScaling()
+Scaling MxmlParser::parseScaling(bool& read)
 {
     // TODO error handling
     Scaling scaling;
+    bool millimetersOk { false };
+    bool tenthsOk { false };
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "millimeters") {
-            scaling.millimeters = m_e.readElementText().toFloat();
+            scaling.millimeters = m_e.readElementText().toFloat(&millimetersOk);
         }
         else if (m_e.name() == "tenths") {
-            scaling.tenths = m_e.readElementText().toFloat();
+            scaling.tenths = m_e.readElementText().toFloat(&tenthsOk);
         }
         else {
             unexpectedElement();
         }
+    }
+    if (millimetersOk && tenthsOk) {
+        read = true;
     }
     return scaling;
 }
@@ -569,7 +585,7 @@ void MxmlParser::parseScorePartwise()
             m_data.scorePartwise.credits.push_back(parseCredit());
         }
         else if (m_e.name() == "defaults") {
-            m_data.scorePartwise.defaults = parseDefaults();
+            m_data.scorePartwise.defaults = parseDefaults(m_data.scorePartwise.defaultsRead);
         }
         else if (m_e.name() == "identification") {
             m_e.skipCurrentElement();   // ignore

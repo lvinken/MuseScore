@@ -100,14 +100,17 @@ struct PageLayout : public Element {
     PageLayout();
     float pageHeight { 0.0 };
     float pageWidth { 0.0 };
+    bool pageSizeRead { false };
     float evenLeftMargin { 0.0 };
     float evenRightMargin { 0.0 };
     float evenTopMargin { 0.0 };
     float evenBottomMargin { 0.0 };
+    bool evenMarginsRead { false };
     float oddLeftMargin { 0.0 };
     float oddRightMargin { 0.0 };
     float oddTopMargin { 0.0 };
     float oddBottomMargin { 0.0 };
+    bool oddMarginsRead { false };
     bool twoSided { false };
     std::string toString() const;
 };
@@ -122,7 +125,9 @@ struct Scaling : public Element {
 struct Defaults : public Element {
     Defaults();
     Scaling scaling;       // TODO make optional
+    bool scalingRead { false };
     PageLayout pageLayout; // TODO make optional
+    bool pageLayoutRead { false };
     std::string toString() const;
 };
 
@@ -202,6 +207,7 @@ struct ScorePartwise : public Element {
     ScorePartwise();
     std::vector<Credit> credits;
     Defaults defaults;
+    bool defaultsRead { false };
     bool isFound { false };
     PartList partList;
     std::vector<Part> parts;
