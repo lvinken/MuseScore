@@ -992,8 +992,6 @@ void MusicXMLParserPass1::scorePartwise(const MusicXML::ScorePartwise& scorePart
                   }
             else if (_e.name() == "identification")
                   identification();
-            else if (_e.name() == "defaults")
-                  defaults();
             else if (_e.name() == "movement-number")
                   _score->setMetaTag("movementNumber", _e.readElementText());
             else if (_e.name() == "movement-title")
@@ -1001,6 +999,7 @@ void MusicXMLParserPass1::scorePartwise(const MusicXML::ScorePartwise& scorePart
             }
 #endif
 
+      defaults(scorePartwise.defaults);
       credit(scorePartwise.credits, _credits);
       partList(scorePartwise.partList);
       for (const auto& part : scorePartwise.parts)
@@ -1405,11 +1404,8 @@ static void setPageFormat(Score* score, const PageFormat& pf)
  read the general score layout settings.
  */
 
-void MusicXMLParserPass1::defaults()
+void MusicXMLParserPass1::defaults(const MusicXML::Defaults& defaults)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "defaults");
-      //_logger->logDebugTrace("MusicXMLParserPass1::defaults", &_e);
-
       double millimeter = _score->spatium()/10.0;
       double tenths = 1.0;
       QString lyricFontFamily;
@@ -1417,6 +1413,21 @@ void MusicXMLParserPass1::defaults()
       QString wordFontFamily;
       QString wordFontSize;
 
+      if (defaults.scalingRead) {
+            millimeter = defaults.scaling.millimeters;
+            tenths = defaults.scaling.tenths;
+            double _spatium = DPMM * (millimeter * 10.0 / tenths);
+            if (preferences.getBool(PREF_IMPORT_MUSICXML_IMPORTLAYOUT))
+                  _score->setSpatium(_spatium);
+
+            PageFormat pf;
+            pageLayout(defaults.pageLayout, pf, millimeter / (tenths * INCH));
+            if (preferences.getBool(PREF_IMPORT_MUSICXML_IMPORTLAYOUT))
+                  setPageFormat(_score, pf);
+
+            }
+
+#if 0
       while (_e.readNextStartElement()) {
             if (_e.name() == "appearance")
                   _e.skipCurrentElement();  // skip but don't log
@@ -1432,12 +1443,6 @@ void MusicXMLParserPass1::defaults()
                   double _spatium = DPMM * (millimeter * 10.0 / tenths);
                   if (preferences.getBool(PREF_IMPORT_MUSICXML_IMPORTLAYOUT))
                         _score->setSpatium(_spatium);
-                  }
-            else if (_e.name() == "page-layout") {
-                  PageFormat pf;
-                  pageLayout(pf, millimeter / (tenths * INCH));
-                  if (preferences.getBool(PREF_IMPORT_MUSICXML_IMPORTLAYOUT))
-                        setPageFormat(_score, pf);
                   }
             else if (_e.name() == "system-layout") {
                   while (_e.readNextStartElement()) {
@@ -1495,6 +1500,7 @@ void MusicXMLParserPass1::defaults()
       updateStyles(_score, wordFontFamily, wordFontSize, lyricFontFamily, lyricFontSize);
 
       _score->setDefaultsRead(true); // TODO only if actually succeeded ?
+#endif
       }
 
 //---------------------------------------------------------
@@ -1509,62 +1515,33 @@ void MusicXMLParserPass1::defaults()
  MusicXML file.
  */
 
-void MusicXMLParserPass1::pageLayout(PageFormat& pf, const qreal conversion)
+void MusicXMLParserPass1::pageLayout(const MusicXML::PageLayout& pageLayout, PageFormat& pf, const qreal conversion)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "page-layout");
-      _logger->logDebugTrace("MusicXMLParserPass1::pageLayout", &_e);
-
       qreal _oddRightMargin  = 0.0;
       qreal _evenRightMargin = 0.0;
       QSizeF size;
 
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "page-margins") {
-                  QString type = _e.attributes().value("type").toString();
-                  if (type == "")
-                        type = "both";
-                  qreal lm = 0.0, rm = 0.0, tm = 0.0, bm = 0.0;
-                  while (_e.readNextStartElement()) {
-                        if (_e.name() == "left-margin")
-                              lm = _e.readElementText().toDouble() * conversion;
-                        else if (_e.name() == "right-margin")
-                              rm = _e.readElementText().toDouble() * conversion;
-                        else if (_e.name() == "top-margin")
-                              tm = _e.readElementText().toDouble() * conversion;
-                        else if (_e.name() == "bottom-margin")
-                              bm = _e.readElementText().toDouble() * conversion;
-                        else
-                              skipLogCurrElem();
-                        }
-                  pf.twosided = type == "odd" || type == "even";
-                  if (type == "odd" || type == "both") {
-                        pf.oddLeftMargin = lm;
-                        _oddRightMargin = rm;
-                        pf.oddTopMargin = tm;
-                        pf.oddBottomMargin = bm;
-                        }
-                  if (type == "even" || type == "both") {
-                        pf.evenLeftMargin = lm;
-                        _evenRightMargin = rm;
-                        pf.evenTopMargin = tm;
-                        pf.evenBottomMargin = bm;
-                        }
-                  }
-            else if (_e.name() == "page-height") {
-                  double val = _e.readElementText().toDouble();
-                  size.rheight() = val * conversion;
-                  // set pageHeight and pageWidth for use by doCredits()
-                  _pageSize.setHeight(static_cast<int>(val + 0.5));
-                  }
-            else if (_e.name() == "page-width") {
-                  double val = _e.readElementText().toDouble();
-                  size.rwidth() = val * conversion;
-                  // set pageHeight and pageWidth for use by doCredits()
-                  _pageSize.setWidth(static_cast<int>(val + 0.5));
-                  }
-            else
-                  skipLogCurrElem();
+      if (pageLayout.pageSizeRead) {
+            size.rheight() = pageLayout.pageHeight * conversion;
+            size.rwidth() = pageLayout.pageWidth * conversion;
+            // set pageHeight and pageWidth for use by doCredits()
+            _pageSize.setHeight(static_cast<int>(pageLayout.pageHeight + 0.5));
+            _pageSize.setWidth(static_cast<int>(pageLayout.pageWidth + 0.5));
             }
+      if (pageLayout.oddMarginsRead) {
+            pf.oddLeftMargin = pageLayout.oddLeftMargin * conversion;
+            _oddRightMargin = pageLayout.oddRightMargin * conversion;
+            pf.oddTopMargin = pageLayout.oddTopMargin * conversion;
+            pf.oddBottomMargin = pageLayout.oddBottomMargin * conversion;
+            }
+      if (pageLayout.evenMarginsRead) {
+            pf.evenLeftMargin = pageLayout.evenLeftMargin * conversion;
+            _evenRightMargin = pageLayout.evenRightMargin * conversion;
+            pf.evenTopMargin = pageLayout.evenTopMargin * conversion;
+            pf.evenBottomMargin = pageLayout.evenBottomMargin * conversion;
+            qDebug("odd lm %g rm %g tm %g bm %g", pf.evenLeftMargin, _evenRightMargin, pf.evenTopMargin, pf.evenBottomMargin);
+            }
+
       pf.size = size;
       qreal w1 = size.width() - pf.oddLeftMargin - _oddRightMargin;
       qreal w2 = size.width() - pf.evenLeftMargin - _evenRightMargin;

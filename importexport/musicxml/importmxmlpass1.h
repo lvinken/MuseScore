@@ -120,8 +120,6 @@ public:
       Score::FileError parse(QIODevice* device, const MusicXML::MxmlData& mxmlData);
       void identification();
       void credit(const std::vector<MusicXML::Credit>& credits, CreditWordsList& creditWordsList);
-      void defaults();
-      void pageLayout(PageFormat& pf, const qreal conversion);
       void partGroup(const int scoreParts, MusicXmlPartGroupList& partGroupList, MusicXmlPartGroupMap& partGroups);
       void scoreInstrument(const QString& partId);
       void midiInstrument(const QString& partId);
@@ -160,10 +158,12 @@ private:
       // functions
       void attributes(const MusicXML::Attributes& attributes, const QString& partId, const Fraction cTime);
       void backup(const unsigned int duration, Fraction& dura);
+      void defaults(const MusicXML::Defaults& defaults);
       void duration(const unsigned int duration, Fraction& dura);
       void forward(const unsigned int duration, Fraction& dura);
       void measure(const MusicXML::Measure& measure, const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr);
       void note(const MusicXML::Note& note, const QString& partId, const Fraction cTime, Fraction& missingPrev, Fraction& dura, Fraction& missingCurr, VoiceOverlapDetector& vod, MxmlTupletStates& tupletStates);
+      void pageLayout(const MusicXML::PageLayout& pageLayout, PageFormat& pf, const qreal conversion);
       Score::FileError parse(const MusicXML::MxmlData& mxmlData);
       void part(const MusicXML::Part& part);
       void partList(const MusicXML::PartList& partList);
