@@ -590,6 +590,12 @@ void MxmlParser::parseScorePartwise()
         else if (m_e.name() == "identification") {
             m_e.skipCurrentElement();   // ignore
         }
+        else if (m_e.name() == "movement-number") {
+            m_data.scorePartwise.movementNumber = m_e.readElementText().toUtf8().data();
+        }
+        else if (m_e.name() == "movement-title") {
+            m_data.scorePartwise.movementTitle = m_e.readElementText().toUtf8().data();
+        }
         else if (m_e.name() == "part") {
             m_data.scorePartwise.parts.push_back(parsePart());
         }
@@ -597,7 +603,7 @@ void MxmlParser::parseScorePartwise()
             parsePartList();
         }
         else if (m_e.name() == "work") {
-            m_e.skipCurrentElement();   // ignore
+            m_data.scorePartwise.work = parseWork();
         }
         else {
             unexpectedElement();
@@ -642,6 +648,23 @@ TimeModification MxmlParser::parseTimeModification()
         return timeModification;
     }
     return {};
+}
+
+Work MxmlParser::parseWork()
+{
+    Work work;
+    while (m_e.readNextStartElement()) {
+        if (m_e.name() == "work-number") {
+            work.workNumber = m_e.readElementText().toUtf8().data();
+        }
+        else if (m_e.name() == "work-title") {
+            work.workTitle = m_e.readElementText().toUtf8().data();
+        }
+        else {
+            unexpectedElement();
+        }
+    }
+    return work;
 }
 
 void MxmlParser::unexpectedElement()

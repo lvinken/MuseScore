@@ -203,15 +203,24 @@ struct ScorePart : public Element {
     std::string toString() const;
 };
 
+struct Work {
+    std::string workNumber;
+    std::string workTitle;
+    std::string toString() const;
+};
+
 struct ScorePartwise : public Element {
     ScorePartwise();
     std::vector<Credit> credits;
     Defaults defaults;
     bool defaultsRead { false };
     bool isFound { false };
+    std::string movementNumber;
+    std::string movementTitle;
     PartList partList;
     std::vector<Part> parts;
     std::string version { "1.0" };
+    Work work;
     std::string toString() const;
 };
 

@@ -41,6 +41,7 @@ private:
     void parseScorePartwise();
     Time parseTime();
     TimeModification parseTimeModification();
+    Work parseWork();
     void unexpectedElement();
 
     MxmlData m_data;

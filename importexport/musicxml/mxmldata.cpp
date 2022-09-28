@@ -347,6 +347,13 @@ std::string ScorePartwise::toString() const
 {
     std::string result;
     result += "score-partwise version=\"" + version + "\"";
+    result += work.toString();
+    if (!movementNumber.empty()) {
+        result += "\n movement-number \"" + movementNumber + "\"";
+    }
+    if (!movementNumber.empty()) {
+        result += "\n movement-title \"" + movementTitle + "\"";
+    }
     if (defaultsRead) {
         result += defaults.toString();
     }
@@ -383,6 +390,22 @@ std::string TimeModification::toString() const
     result += "\n    time-modification";
     result += "\n     actual-notes \"" + std::to_string(actualNotes) + "\"";
     result += "\n     normal-notes \"" + std::to_string(normalNotes) + "\"";
+    return result;
+}
+
+std::string Work::toString() const
+{
+    if (workNumber.empty() && workTitle.empty()) {
+        return "";
+    }
+    std::string result;
+    result += "\n work";
+    if (!workNumber.empty()) {
+        result += "\n  work-number \"" + workNumber + "\"";
+    }
+    if (!workTitle.empty()) {
+        result += "\n  work-title \"" + workTitle + "\"";
+    }
     return result;
 }
 
