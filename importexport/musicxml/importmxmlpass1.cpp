@@ -970,6 +970,29 @@ static bool allStaffGroupsIdentical(Part const* const p)
       }
 
 //---------------------------------------------------------
+//   setNonEmptyMetaTag
+//---------------------------------------------------------
+
+static void setNonEmptyMetaTag(Score* const score, const char* const tagName, const std::string tagValue)
+      {
+      if (!tagValue.empty()) {
+            score->setMetaTag(tagName, tagValue.data());
+            }
+      }
+
+//---------------------------------------------------------
+//   movementWork
+//---------------------------------------------------------
+
+static void movementWork(const MusicXML::ScorePartwise& scorePartwise, Score* const score)
+      {
+      setNonEmptyMetaTag(score, "movementNumber", scorePartwise.movementNumber);
+      setNonEmptyMetaTag(score, "movementTitle", scorePartwise.movementTitle);
+      setNonEmptyMetaTag(score, "workNumber", scorePartwise.work.workNumber);
+      setNonEmptyMetaTag(score, "workTitle", scorePartwise.work.workTitle);
+      }
+
+//---------------------------------------------------------
 //   scorePartwise
 //---------------------------------------------------------
 
@@ -977,28 +1000,11 @@ void MusicXMLParserPass1::scorePartwise(const MusicXML::ScorePartwise& scorePart
       {
       MusicXmlPartGroupList partGroupList;
 #if 0
-      while (_e.readNextStartElement()) {
-            else if (_e.name() == "part-list")
-                  partList(partGroupList);
-            else if (_e.name() == "work") {
-                  while (_e.readNextStartElement()) {
-                        if (_e.name() == "work-number")
-                              _score->setMetaTag("workNumber", _e.readElementText());
-                        else if (_e.name() == "work-title")
-                              _score->setMetaTag("workTitle", _e.readElementText());
-                        else
-                              skipLogCurrElem();
-                        }
-                  }
             else if (_e.name() == "identification")
                   identification();
-            else if (_e.name() == "movement-number")
-                  _score->setMetaTag("movementNumber", _e.readElementText());
-            else if (_e.name() == "movement-title")
-                  _score->setMetaTag("movementTitle", _e.readElementText());
-            }
 #endif
 
+      movementWork(scorePartwise, _score);
       defaults(scorePartwise.defaults);
       credit(scorePartwise.credits, _credits);
       partList(scorePartwise.partList);
