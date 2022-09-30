@@ -170,6 +170,14 @@ std::pair<unsigned int, Clef> MxmlParser::parseClef()
     return { number, clef };
 }
 
+Creator MxmlParser::parseCreator()
+{
+    Creator creator;
+    creator.type = m_e.attributes().value("type").toUtf8().data();
+    creator.text = m_e.readElementText().toUtf8().data();
+    return creator;
+}
+
 Credit MxmlParser::parseCredit()
 {
     Credit credit;
@@ -252,6 +260,23 @@ std::unique_ptr<Forward> MxmlParser::parseForward()
         }
     }
     return forward;
+}
+
+Identification MxmlParser::parseIdentification()
+{
+    Identification identification;
+    while (m_e.readNextStartElement()) {
+        if (m_e.name() == "creator") {
+            identification.creators.push_back(parseCreator());
+        }
+        else if (m_e.name() == "rights") {
+            identification.rightses.push_back(parseRights());
+        }
+        else {
+            unexpectedElement();
+        }
+    }
+    return identification;
 }
 
 Key MxmlParser::parseKey()
@@ -527,6 +552,14 @@ Pitch MxmlParser::parsePitch()
     return pitch;
 }
 
+Rights MxmlParser::parseRights()
+{
+    Rights rights;
+    rights.type = m_e.attributes().value("type").toUtf8().data();
+    rights.text = m_e.readElementText().toUtf8().data();
+    return rights;
+}
+
 Scaling MxmlParser::parseScaling(bool& read)
 {
     // TODO error handling
@@ -588,7 +621,7 @@ void MxmlParser::parseScorePartwise()
             m_data.scorePartwise.defaults = parseDefaults(m_data.scorePartwise.defaultsRead);
         }
         else if (m_e.name() == "identification") {
-            m_e.skipCurrentElement();   // ignore
+            m_data.scorePartwise.identification = parseIdentification();
         }
         else if (m_e.name() == "movement-number") {
             m_data.scorePartwise.movementNumber = m_e.readElementText().toUtf8().data();

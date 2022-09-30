@@ -53,6 +53,17 @@ Backup::Backup()
     // nothing
 }
 
+std::string Creator::toString() const
+{
+    std::string result;
+    result += "\n  creator";
+    if (!type.empty()) {
+        result += " type=\"" + type + "\"";
+    }
+    result += " \"" + text + "\"";
+    return result;
+}
+
 Credit::Credit()
     : Element(ElementType::CREDIT)
 {
@@ -149,6 +160,19 @@ std::string Forward::toString() const
     result += "   forward";
     if (duration) {
         result += "\n    duration \"" + std::to_string(duration) + "\"";
+    }
+    return result;
+}
+
+std::string Identification::toString() const
+{
+    std::string result;
+    result += "\n identification";
+    for (const auto& creator : creators) {
+         result += creator.toString();
+    }
+    for (const auto& rights : rightses) {
+         result += rights.toString();
     }
     return result;
 }
@@ -323,6 +347,17 @@ std::string Scaling::toString() const
     return result;
 }
 
+std::string Rights::toString() const
+{
+    std::string result;
+    result += "\n  rights";
+    if (!type.empty()) {
+        result += " type=\"" + type + "\"";
+    }
+    result += " \"" + text + "\"";
+    return result;
+}
+
 ScorePart::ScorePart()
     : Element(ElementType::SCOREPART)
 {
@@ -354,6 +389,7 @@ std::string ScorePartwise::toString() const
     if (!movementNumber.empty()) {
         result += "\n movement-title \"" + movementTitle + "\"";
     }
+    result += identification.toString();
     if (defaultsRead) {
         result += defaults.toString();
     }

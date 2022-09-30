@@ -137,6 +137,25 @@ struct Forward : public Element {
     unsigned int duration { 0 };
 };
 
+struct Creator {
+    std::string text;
+    std::string type;
+    std::string toString() const;
+};
+
+struct Rights {
+    std::string text;
+    std::string type;
+    std::string toString() const;
+};
+
+// TODO: make optional ?
+struct Identification {
+    std::vector<Creator> creators;
+    std::vector<Rights> rightses;
+    std::string toString() const;
+};
+
 struct Measure : public Element {
     Measure();
     std::vector<std::unique_ptr<Element>> elements;
@@ -214,6 +233,7 @@ struct ScorePartwise : public Element {
     std::vector<Credit> credits;
     Defaults defaults;
     bool defaultsRead { false };
+    Identification identification;
     bool isFound { false };
     std::string movementNumber;
     std::string movementTitle;

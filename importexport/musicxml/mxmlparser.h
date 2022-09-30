@@ -23,10 +23,12 @@ private:
     std::unique_ptr<Attributes> parseAttributes();
     std::unique_ptr<Backup> parseBackup();
     std::pair<unsigned int, Clef> parseClef();
+    Creator parseCreator();
     Credit parseCredit();
     Defaults parseDefaults(bool& read);
     unsigned int parseDivisions();
     std::unique_ptr<Forward> parseForward();
+    Identification parseIdentification();
     Key parseKey();
     Measure parseMeasure();
     Lyric parseLyric();
@@ -36,6 +38,7 @@ private:
     void parsePartList();
     std::string parsePartName();
     Pitch parsePitch();
+    Rights parseRights();
     Scaling parseScaling(bool& read);
     ScorePart parseScorePart();
     void parseScorePartwise();
