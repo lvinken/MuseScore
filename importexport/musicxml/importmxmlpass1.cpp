@@ -1424,28 +1424,8 @@ void MusicXMLParserPass1::defaults(const MusicXML::Defaults& defaults)
             }
 
 #if 0
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "appearance")
-                  _e.skipCurrentElement();  // skip but don't log
-            else if (_e.name() == "scaling") {
-                  while (_e.readNextStartElement()) {
-                        if (_e.name() == "millimeters")
-                              millimeter = _e.readElementText().toDouble();
-                        else if (_e.name() == "tenths")
-                              tenths = _e.readElementText().toDouble();
-                        else
-                              skipLogCurrElem();
-                        }
-                  double _spatium = DPMM * (millimeter * 10.0 / tenths);
-                  if (preferences.getBool(PREF_IMPORT_MUSICXML_IMPORTLAYOUT))
-                        _score->setSpatium(_spatium);
-                  }
             else if (_e.name() == "system-layout") {
                   while (_e.readNextStartElement()) {
-                        if (_e.name() == "system-dividers")
-                              _e.skipCurrentElement();  // skip but don't log
-                        else if (_e.name() == "system-margins")
-                              _e.skipCurrentElement();  // skip but don't log
                         else if (_e.name() == "system-distance") {
                               Spatium val(_e.readElementText().toDouble() / 10.0);
                               if (preferences.getBool(PREF_IMPORT_MUSICXML_IMPORTLAYOUT)) {
@@ -1453,12 +1433,6 @@ void MusicXMLParserPass1::defaults(const MusicXML::Defaults& defaults)
                                     //qDebug("system distance %f", val.val());
                                     }
                               }
-                        else if (_e.name() == "top-system-distance")
-                              _e.skipCurrentElement();  // skip but don't log
-                        else
-                              skipLogCurrElem();
-                        }
-                  }
             else if (_e.name() == "staff-layout") {
                   while (_e.readNextStartElement()) {
                         if (_e.name() == "staff-distance") {
@@ -1466,12 +1440,7 @@ void MusicXMLParserPass1::defaults(const MusicXML::Defaults& defaults)
                               if (preferences.getBool(PREF_IMPORT_MUSICXML_IMPORTLAYOUT))
                                     _score->style().set(Sid::staffDistance, val);
                               }
-                        else
-                              skipLogCurrElem();
-                        }
                   }
-            else if (_e.name() == "music-font")
-                  _e.skipCurrentElement();  // skip but don't log
             else if (_e.name() == "word-font") {
                   wordFontFamily = _e.attributes().value("font-family").toString();
                   wordFontSize = _e.attributes().value("font-size").toString();
@@ -1482,10 +1451,6 @@ void MusicXMLParserPass1::defaults(const MusicXML::Defaults& defaults)
                   lyricFontSize = _e.attributes().value("font-size").toString();
                   _e.skipCurrentElement();
                   }
-            else if (_e.name() == "lyric-language")
-                  _e.skipCurrentElement();  // skip but don't log
-            else
-                  skipLogCurrElem();
             }
 
       /*
@@ -2213,24 +2178,8 @@ void MusicXMLParserPass1::attributes(const MusicXML::Attributes& attributes, con
       {
 #if 0
       // TODO
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "clef")
-                  clef(partId);
-            else if (_e.name() == "divisions")
-                  divisions();
-            else if (_e.name() == "key")
-                  _e.skipCurrentElement();  // skip but don't log
-            else if (_e.name() == "instruments")
-                  _e.skipCurrentElement();  // skip but don't log
-            else if (_e.name() == "staff-details")
-                  _e.skipCurrentElement();  // skip but don't log
-            else if (_e.name() == "time")
-                  time(cTime);
             else if (_e.name() == "transpose")
                   transpose(partId, cTime);
-            else
-                  skipLogCurrElem();
-            }
 #endif
       if (attributes.divisions > 0)
             _divs = attributes.divisions;
@@ -2245,6 +2194,7 @@ void MusicXMLParserPass1::attributes(const MusicXML::Attributes& attributes, con
 
 /**
  Parse the /score-partwise/part/measure/attributes/clef node.
+ Note: Currently this is a NOP
  TODO: Store the clef type, to simplify staff type setting in pass 2.
  */
 
