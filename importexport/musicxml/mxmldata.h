@@ -143,6 +143,19 @@ struct Creator {
     std::string toString() const;
 };
 
+struct Supports {
+    std::string attribute;
+    std::string element;
+    std::string type;
+    std::string value;
+    std::string toString() const;
+};
+
+struct Encoding {
+    std::vector<Supports> supportses;
+    std::string toString() const;
+};
+
 struct Rights {
     std::string text;
     std::string type;
@@ -152,7 +165,9 @@ struct Rights {
 // TODO: make optional ?
 struct Identification {
     std::vector<Creator> creators;
+    Encoding encoding;
     std::vector<Rights> rightses;
+    std::string source;
     std::string toString() const;
 };
 

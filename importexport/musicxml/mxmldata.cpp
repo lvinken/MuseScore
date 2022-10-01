@@ -148,6 +148,16 @@ Element::Element(const ElementType& p_elementType)
     elementType = p_elementType;
 }
 
+std::string Encoding::toString() const
+{
+    std::string result;
+    result += "\n  encoding";
+    for (const auto& supports : supportses) {
+         result += supports.toString();
+    }
+    return result;
+}
+
 Forward::Forward()
     : Element(ElementType::FORWARD)
 {
@@ -173,6 +183,10 @@ std::string Identification::toString() const
     }
     for (const auto& rights : rightses) {
          result += rights.toString();
+    }
+    result += encoding.toString();
+    if (!source.empty()) {
+        result += "\n  " + source;
     }
     return result;
 }
@@ -344,6 +358,25 @@ std::string Scaling::toString() const
     result += "\n  scaling";
     result += "\n   millimeters \"" + std::to_string(millimeters) + "\"";
     result += "\n   tenths \"" + std::to_string(tenths) + "\"";
+    return result;
+}
+
+std::string Supports::toString() const
+{
+    std::string result;
+    result += "\n   supports";
+    if (!attribute.empty()) {
+        result += " attribute=\"" + attribute + "\"";
+    }
+    if (!element.empty()) {
+        result += " element=\"" + element + "\"";
+    }
+    if (!type.empty()) {
+        result += " type=\"" + type + "\"";
+    }
+    if (!value.empty()) {
+        result += " value=\"" + value + "\"";
+    }
     return result;
 }
 

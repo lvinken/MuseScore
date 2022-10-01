@@ -240,6 +240,20 @@ unsigned int MxmlParser::parseDivisions()
     return 0;
 }
 
+Encoding MxmlParser::parseEncoding()
+{
+    Encoding encoding;
+    while (m_e.readNextStartElement()) {
+        if (m_e.name() == "supports") {
+            encoding.supportses.push_back(parseSupports());
+        }
+        else {
+            unexpectedElement();
+        }
+    }
+    return encoding;
+}
+
 std::unique_ptr<Forward> MxmlParser::parseForward()
 {
     std::unique_ptr<Forward> forward(new Forward);
@@ -268,6 +282,9 @@ Identification MxmlParser::parseIdentification()
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "creator") {
             identification.creators.push_back(parseCreator());
+        }
+        else if (m_e.name() == "encoding") {
+            identification.encoding = parseEncoding();
         }
         else if (m_e.name() == "rights") {
             identification.rightses.push_back(parseRights());
@@ -642,6 +659,17 @@ void MxmlParser::parseScorePartwise()
             unexpectedElement();
         }
     }
+}
+
+Supports MxmlParser::parseSupports()
+{
+    Supports supports;
+    supports.attribute = std::string { m_e.attributes().value("attribute").toUtf8().data() };
+    supports.element = std::string { m_e.attributes().value("element").toUtf8().data() };
+    supports.type = std::string { m_e.attributes().value("type").toUtf8().data() };
+    supports.value = std::string { m_e.attributes().value("value").toUtf8().data() };
+    m_e.skipCurrentElement();
+    return supports;
 }
 
 Time MxmlParser::parseTime()

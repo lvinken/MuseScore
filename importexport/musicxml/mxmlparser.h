@@ -27,6 +27,7 @@ private:
     Credit parseCredit();
     Defaults parseDefaults(bool& read);
     unsigned int parseDivisions();
+    Encoding parseEncoding();
     std::unique_ptr<Forward> parseForward();
     Identification parseIdentification();
     Key parseKey();
@@ -41,6 +42,7 @@ private:
     Rights parseRights();
     Scaling parseScaling(bool& read);
     ScorePart parseScorePart();
+    Supports parseSupports();
     void parseScorePartwise();
     Time parseTime();
     TimeModification parseTimeModification();
