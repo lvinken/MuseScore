@@ -118,7 +118,6 @@ public:
       MusicXMLParserPass1(Score* score, MxmlLogger* logger);
       void initPartState(const QString& partId);
       Score::FileError parse(QIODevice* device, const MusicXML::MxmlData& mxmlData);
-      void identification();
       void credit(const std::vector<MusicXML::Credit>& credits, CreditWordsList& creditWordsList);
       void partGroup(const int scoreParts, MusicXmlPartGroupList& partGroupList, MusicXmlPartGroupMap& partGroups);
       void scoreInstrument(const QString& partId);
@@ -161,6 +160,7 @@ private:
       void defaults(const MusicXML::Defaults& defaults);
       void duration(const unsigned int duration, Fraction& dura);
       void forward(const unsigned int duration, Fraction& dura);
+      void identification(const MusicXML::Identification& identification);
       void measure(const MusicXML::Measure& measure, const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr);
       void note(const MusicXML::Note& note, const QString& partId, const Fraction cTime, Fraction& missingPrev, Fraction& dura, Fraction& missingCurr, VoiceOverlapDetector& vod, MxmlTupletStates& tupletStates);
       void pageLayout(const MusicXML::PageLayout& pageLayout, PageFormat& pf, const qreal conversion);

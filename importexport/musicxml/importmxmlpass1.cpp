@@ -999,12 +999,9 @@ static void movementWork(const MusicXML::ScorePartwise& scorePartwise, Score* co
 void MusicXMLParserPass1::scorePartwise(const MusicXML::ScorePartwise& scorePartwise)
       {
       MusicXmlPartGroupList partGroupList;
-#if 0
-            else if (_e.name() == "identification")
-                  identification();
-#endif
 
       movementWork(scorePartwise, _score);
+      identification(scorePartwise.identification);
       defaults(scorePartwise.defaults);
       credit(scorePartwise.credits, _credits);
       partList(scorePartwise.partList);
@@ -1073,38 +1070,31 @@ void MusicXMLParserPass1::scorePartwise(const MusicXML::ScorePartwise& scorePart
  read the metadata.
  */
 
-void MusicXMLParserPass1::identification()
+void MusicXMLParserPass1::identification(const MusicXML::Identification& identification)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "identification");
-      _logger->logDebugTrace("MusicXMLParserPass1::identification", &_e);
-
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "creator") {
-                  // type is an arbitrary label
-                  QString strType = _e.attributes().value("type").toString();
-                  _score->setMetaTag(strType, _e.readElementText());
-                  }
-            else if (_e.name() == "rights")
-                  _score->setMetaTag("copyright", _e.readElementText());
-            else if (_e.name() == "encoding") {
-                  // TODO
-                  while (_e.readNextStartElement()) {
-                        if (_e.name() == "supports" && _e.attributes().value("element") == "beam" && _e.attributes().value("type") == "yes")
-                              _hasBeamingInfo = true;
-                        _e.skipCurrentElement();
-                        }
+#if 0
                   // _score->setMetaTag("encoding", _e.readElementText()); works with DOM but not with pull parser
                   // temporarily fake the encoding tag (compliant with DOM parser) to help the autotester
                   if (MScore::debugMode)
                         _score->setMetaTag("encoding", "MuseScore 0.7.02007-09-10");
                   }
-            else if (_e.name() == "source")
-                  _score->setMetaTag("source", _e.readElementText());
-            else if (_e.name() == "miscellaneous")
-                  // TODO
-                  _e.skipCurrentElement();  // skip but don't log
-            else
-                  skipLogCurrElem();
+#endif
+      for (const auto& creator : identification.creators) {
+            if (!creator.type.empty()) {
+                  _score->setMetaTag(creator.type.data(), creator.text.data());
+                  }
+            }
+      if (!identification.rightses.empty() && !identification.rightses.at(0).text.empty()) {
+            // use only the first rights
+            _score->setMetaTag("copyright", identification.rightses.at(0).text.data());
+            }
+      for (const auto& supports : identification.encoding.supportses) {
+            if (supports.element == "beam" && supports.type == "yes") {
+                  _hasBeamingInfo = true;
+                  }
+            }
+      if (!identification.source.empty()) {
+            _score->setMetaTag("source", identification.source.data());
             }
       }
 
