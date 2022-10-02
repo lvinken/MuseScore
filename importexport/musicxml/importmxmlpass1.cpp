@@ -1404,10 +1404,6 @@ void MusicXMLParserPass1::defaults(const MusicXML::Defaults& defaults)
       {
       double millimeter = _score->spatium()/10.0;
       double tenths = 1.0;
-      QString lyricFontFamily;
-      QString lyricFontSize;
-      QString wordFontFamily;
-      QString wordFontSize;
 
       if (defaults.scalingRead) {
             millimeter = defaults.scaling.millimeters;
@@ -1441,18 +1437,13 @@ void MusicXMLParserPass1::defaults(const MusicXML::Defaults& defaults)
                                     _score->style().set(Sid::staffDistance, val);
                               }
                   }
-            else if (_e.name() == "word-font") {
-                  wordFontFamily = _e.attributes().value("font-family").toString();
-                  wordFontSize = _e.attributes().value("font-size").toString();
-                  _e.skipCurrentElement();
-                  }
-            else if (_e.name() == "lyric-font") {
-                  lyricFontFamily = _e.attributes().value("font-family").toString();
-                  lyricFontSize = _e.attributes().value("font-size").toString();
-                  _e.skipCurrentElement();
-                  }
             }
+#endif
 
+      QString wordFontFamily { defaults.wordFont.fontFamily.data() };
+      QString wordFontSize { defaults.wordFont.fontSize.data() };
+      QString lyricFontFamily { defaults.lyricFont.fontFamily.data() };
+      QString lyricFontSize { defaults.lyricFont.fontSize.data() };
       /*
       qDebug("word font family '%s' size '%s' lyric font family '%s' size '%s'",
              qPrintable(wordFontFamily), qPrintable(wordFontSize),
@@ -1461,7 +1452,6 @@ void MusicXMLParserPass1::defaults(const MusicXML::Defaults& defaults)
       updateStyles(_score, wordFontFamily, wordFontSize, lyricFontFamily, lyricFontSize);
 
       _score->setDefaultsRead(true); // TODO only if actually succeeded ?
-#endif
       }
 
 //---------------------------------------------------------
