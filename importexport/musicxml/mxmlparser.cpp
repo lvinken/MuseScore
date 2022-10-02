@@ -600,6 +600,38 @@ Scaling MxmlParser::parseScaling(bool& read)
     return scaling;
 }
 
+ScoreInstrument MxmlParser::parseScoreInstrument()
+{
+    // TODO: verify (and handle) non-empty attribute id
+    ScoreInstrument scoreInstrument;
+    scoreInstrument.id = std::string { m_e.attributes().value("id").toUtf8().data() };
+    while (m_e.readNextStartElement()) {
+        if (m_e.name() == "instrument-name") {
+            scoreInstrument.instrumentName = m_e.readElementText().toUtf8().data();
+        }
+        else if (m_e.name() == "instrument-sound") {
+            scoreInstrument.instrumentSound = m_e.readElementText().toUtf8().data();
+        }
+        else if (m_e.name() == "virtual-instrument") {
+            while (m_e.readNextStartElement()) {
+                if (m_e.name() == "virtual-library") {
+                    scoreInstrument.virtualLibrary = m_e.readElementText().toUtf8().data();
+                }
+                else if (m_e.name() == "virtual-name") {
+                    scoreInstrument.virtualName = m_e.readElementText().toUtf8().data();
+                }
+                else {
+                    unexpectedElement();
+                }
+            }
+        }
+        else {
+            unexpectedElement();
+        }
+    }
+    return scoreInstrument;
+}
+
 ScorePart MxmlParser::parseScorePart()
 {
     // TODO: verify (and handle) non-empty attribute id
@@ -620,7 +652,7 @@ ScorePart MxmlParser::parseScorePart()
             scorePart.partName = parsePartName();
         }
         else if (m_e.name() == "score-instrument") {
-            m_e.skipCurrentElement();   // ignore
+            scorePart.scoreInstruments.push_back(parseScoreInstrument());
         }
         else {
             unexpectedElement();

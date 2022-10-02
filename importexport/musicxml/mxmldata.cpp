@@ -391,6 +391,28 @@ std::string Rights::toString() const
     return result;
 }
 
+std::string ScoreInstrument::toString() const
+{
+    std::string result;
+    result += "\n   score-instrument id=\"" + id + "\"";
+    if (!instrumentName.empty()) {
+        result += "\n    instrument-name \"" + instrumentName + "\"";
+    }
+    if (!instrumentSound.empty()) {
+        result += "\n    instrument-sound \"" + instrumentSound + "\"";
+    }
+    if (!virtualLibrary.empty() || !virtualName.empty()) {
+        result += "\n    virtual-instrument";
+        if (!virtualLibrary.empty()) {
+            result += "\n     virtual-library \"" + virtualLibrary + "\"";
+        }
+        if (!virtualName.empty()) {
+            result += "\n     virtual-name \"" + virtualName + "\"";
+        }
+    }
+    return result;
+}
+
 ScorePart::ScorePart()
     : Element(ElementType::SCOREPART)
 {
@@ -408,6 +430,9 @@ std::string ScorePart::toString() const
             result += " print-object=\"no\"";
         }
         result += " \"" + partAbbreviation + "\"";
+    }
+    for (const auto& scoreInstrument : scoreInstruments) {
+        result += scoreInstrument.toString();
     }
     return result;
 }

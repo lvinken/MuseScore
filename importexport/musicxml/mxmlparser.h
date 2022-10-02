@@ -41,6 +41,7 @@ private:
     Pitch parsePitch();
     Rights parseRights();
     Scaling parseScaling(bool& read);
+    ScoreInstrument parseScoreInstrument();
     ScorePart parseScorePart();
     Supports parseSupports();
     void parseScorePartwise();

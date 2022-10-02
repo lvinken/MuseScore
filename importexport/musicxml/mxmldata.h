@@ -230,12 +230,22 @@ struct PartList : public Element {
     std::string toString() const;
 };
 
+struct ScoreInstrument {
+    std::string id;
+    std::string instrumentName;
+    std::string instrumentSound;
+    std::string virtualLibrary;
+    std::string virtualName;
+    std::string toString() const;
+};
+
 struct ScorePart : public Element {
     ScorePart();
     std::string id;
     std::string partAbbreviation;
     bool partAbbreviationPrintObject { true };
     std::string partName;
+    std::vector<ScoreInstrument> scoreInstruments;
     std::string toString() const;
 };
 
