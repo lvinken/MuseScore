@@ -1719,18 +1719,20 @@ void MusicXMLParserPass1::scorePart(const MusicXML::ScorePart& scorePart)
       // TODO _parts[id].setPrintName(!(_e.attributes().value("print-object") == "no"));
       QString name = scorePart.partName.data();
       _parts[id].setName(name);
-
-#if 0
-      // TODO else if (_e.name() == "part-abbreviation") {
       // Element part-name contains the displayed (abbreviated) part name
       // It is displayed by default, but can be suppressed (print-object=”no”)
       // As of MusicXML 3.0, formatting is deprecated, with part-name in plain text
       // and the formatted version in the part-abbreviation-display element
-      _parts[id].setPrintAbbr(!(_e.attributes().value("print-object") == "no"));
-      QString name = _e.readElementText();
-      _parts[id].setAbbr(name);
+      _parts[id].setPrintAbbr(scorePart.partAbbreviationPrintObject);
+      _parts[id].setAbbr(scorePart.partAbbreviation.data());
+      for (const auto& scoreInstr : scorePart.scoreInstruments) {
+            scoreInstrument(scoreInstr, id);
+            }
+      for (const auto& midiInstr : scorePart.midiInstruments) {
+            midiInstrument(midiInstr, id);
+            }
 
-      // TODO scoreInstrument(id);
+#if 0
       // TODO else if (_e.name() == "midi-device") {
       if (!_e.attributes().hasAttribute("port")) {
             _e.readElementText();       // empty string
@@ -1749,7 +1751,6 @@ void MusicXMLParserPass1::scorePart(const MusicXML::ScorePart& scorePart)
 
       _e.readElementText();       // empty string
       }
-// TODO midiInstrument(id);
 #endif
       }
 
@@ -1761,55 +1762,17 @@ void MusicXMLParserPass1::scorePart(const MusicXML::ScorePart& scorePart)
  Parse the /score-partwise/part-list/score-part/score-instrument node.
  */
 
-void MusicXMLParserPass1::scoreInstrument(const QString& partId)
+void MusicXMLParserPass1::scoreInstrument(const MusicXML::ScoreInstrument& scoreInstrument, const QString& partId)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "score-instrument");
-      _logger->logDebugTrace("MusicXMLParserPass1::scoreInstrument", &_e);
-      QString instrId = _e.attributes().value("id").toString();
-
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "ensemble")
-                  skipLogCurrElem();
-            else if (_e.name() == "instrument-name") {
-                  QString instrName = _e.readElementText();
-                  /*
-                  qDebug("partId '%s' instrId '%s' instrName '%s'",
-                         qPrintable(partId),
-                         qPrintable(instrId),
-                         qPrintable(instrName)
-                         );
-                   */
-                  _instruments[partId].insert(instrId, MusicXMLInstrument(instrName));
-                  // Element instrument-name is typically not displayed in the score,
-                  // but used only internally
-                  if (_instruments[partId].contains(instrId))
-                        _instruments[partId][instrId].name = instrName;
-                  }
-            else if (_e.name() == "instrument-sound") {
-                  QString instrSound = _e.readElementText();
-                  if (_instruments[partId].contains(instrId))
-                        _instruments[partId][instrId].sound = instrSound;
-                  }
-            else if (_e.name() == "virtual-instrument") {
-                  while (_e.readNextStartElement()) {
-                        if (_e.name() == "virtual-library") {
-                              QString virtualLibrary = _e.readElementText();
-                              if (_instruments[partId].contains(instrId))
-                                    _instruments[partId][instrId].virtLib = virtualLibrary;
-                              }
-                        else if (_e.name() == "virtual-name") {
-                              QString virtualName = _e.readElementText();
-                              if (_instruments[partId].contains(instrId))
-                                    _instruments[partId][instrId].virtName = virtualName;
-                              }
-                        else
-                              skipLogCurrElem();
-                        }
-                  }
-            else
-                  skipLogCurrElem();
+      QString instrId { scoreInstrument.id.data() };
+      QString instrName { scoreInstrument.instrumentName.data() };
+      _instruments[partId].insert(instrId, MusicXMLInstrument(instrName));
+      if (_instruments[partId].contains(instrId)) {
+            _instruments[partId][instrId].name = instrName;
+            _instruments[partId][instrId].sound = scoreInstrument.instrumentSound.data();
+            _instruments[partId][instrId].virtLib = scoreInstrument.virtualLibrary.data();
+            _instruments[partId][instrId].virtName = scoreInstrument.virtualName.data();
             }
-      Q_ASSERT(_e.isEndElement() && _e.name() == "score-instrument");
       }
 
 //---------------------------------------------------------
@@ -1820,30 +1783,10 @@ void MusicXMLParserPass1::scoreInstrument(const QString& partId)
  Parse the /score-partwise/part-list/score-part/midi-instrument node.
  */
 
-void MusicXMLParserPass1::midiInstrument(const QString& partId)
+void MusicXMLParserPass1::midiInstrument(const MusicXML::MidiInstrument& midiInstrument, const QString& partId)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "midi-instrument");
-      _logger->logDebugTrace("MusicXMLParserPass1::midiInstrument", &_e);
-      QString instrId = _e.attributes().value("id").toString();
-
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "midi-bank")
-                  skipLogCurrElem();
-            else if (_e.name() == "midi-channel") {
-                  int channel = _e.readElementText().toInt();
-                  if (channel < 1) {
-                        _logger->logError(QString("incorrect midi-channel: %1").arg(channel), &_e);
-                        channel = 1;
-                        }
-                  else if (channel > 16) {
-                        _logger->logError(QString("incorrect midi-channel: %1").arg(channel), &_e);
-                        channel = 16;
-                        }
-                  if (_instruments[partId].contains(instrId))
-                        _instruments[partId][instrId].midiChannel = channel - 1;
-                  }
+#if 0
             else if (_e.name() == "midi-program") {
-                  int program = _e.readElementText().toInt();
                   // Bug fix for Cubase 6.5.5 which generates <midi-program>0</midi-program>
                   // Check program number range
                   if (program < 1) {
@@ -1854,35 +1797,25 @@ void MusicXMLParserPass1::midiInstrument(const QString& partId)
                         _logger->logError(QString("incorrect midi-program: %1").arg(program), &_e);
                         program = 128;
                         }
-                  if (_instruments[partId].contains(instrId))
-                        _instruments[partId][instrId].midiProgram = program - 1;
+#endif
+      QString instrId { midiInstrument.id.data() };
+      if (_instruments[partId].contains(instrId)) {
+            if (midiInstrument.midiChannelRead) {
+                  _instruments[partId][instrId].midiChannel = midiInstrument.midiChannel;
                   }
-            else if (_e.name() == "midi-unpitched") {
-                  if (_instruments[partId].contains(instrId))
-                        _instruments[partId][instrId].unpitched = _e.readElementText().toInt() - 1;
+            if (midiInstrument.midiProgramRead) {
+                  _instruments[partId][instrId].midiProgram = midiInstrument.midiProgram;
                   }
-            else if (_e.name() == "volume") {
-                  double vol = _e.readElementText().toDouble();
-                  if (vol >= 0 && vol <= 100) {
-                        if (_instruments[partId].contains(instrId))
-                              _instruments[partId][instrId].midiVolume = static_cast<int>((vol / 100) * 127);
-                        }
-                  else
-                        _logger->logError(QString("incorrect midi-volume: %1").arg(vol), &_e);
+            if (midiInstrument.midiUnpitchedRead) {
+                  _instruments[partId][instrId].unpitched = midiInstrument.midiUnpitched;
                   }
-            else if (_e.name() == "pan") {
-                  double pan = _e.readElementText().toDouble();
-                  if (pan >= -90 && pan <= 90) {
-                        if (_instruments[partId].contains(instrId))
-                              _instruments[partId][instrId].midiPan = static_cast<int>(((pan + 90) / 180) * 127);
-                        }
-                  else
-                        _logger->logError(QString("incorrect midi-volume: %g1").arg(pan), &_e);
+            if (midiInstrument.panRead) {
+                  _instruments[partId][instrId].midiPan = static_cast<int>(((midiInstrument.pan + 90) / 180) * 127);
                   }
-            else
-                  skipLogCurrElem();
+            if (midiInstrument.volumeRead) {
+                  _instruments[partId][instrId].midiVolume = static_cast<int>((midiInstrument.volume / 100) * 127);
+                  }
             }
-      Q_ASSERT(_e.isEndElement() && _e.name() == "midi-instrument");
       }
 
 //---------------------------------------------------------
