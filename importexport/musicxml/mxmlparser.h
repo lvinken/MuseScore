@@ -28,6 +28,7 @@ private:
     Defaults parseDefaults(bool& read);
     unsigned int parseDivisions();
     Encoding parseEncoding();
+    Font parseFont();
     std::unique_ptr<Forward> parseForward();
     Identification parseIdentification();
     Key parseKey();

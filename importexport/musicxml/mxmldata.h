@@ -122,12 +122,22 @@ struct Scaling : public Element {
     std::string toString() const;
 };
 
+struct Font {
+    std::string fontFamily;
+    std::string fontSize;
+    std::string toString() const;
+};
+
 struct Defaults : public Element {
     Defaults();
+    Font lyricFont;      // TODO make optional
+    bool lyricFontRead { false };
     Scaling scaling;       // TODO make optional
     bool scalingRead { false };
     PageLayout pageLayout; // TODO make optional
     bool pageLayoutRead { false };
+    Font wordFont;      // TODO make optional
+    bool wordFontRead { false };
     std::string toString() const;
 };
 

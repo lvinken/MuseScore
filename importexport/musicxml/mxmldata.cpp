@@ -124,6 +124,12 @@ std::string Defaults::toString() const
     if (pageLayoutRead) {
         result += pageLayout.toString();
     }
+    if (wordFontRead) {
+        result += "\n  word-font" + wordFont.toString();
+    }
+    if (lyricFontRead) {
+        result += "\n  lyric-font" + lyricFont.toString();
+    }
     return result;
 }
 
@@ -154,6 +160,18 @@ std::string Encoding::toString() const
     result += "\n  encoding";
     for (const auto& supports : supportses) {
          result += supports.toString();
+    }
+    return result;
+}
+
+std::string Font::toString() const
+{
+    std::string result;
+    if (!fontFamily.empty()) {
+        result += " font-family=\"" + fontFamily + "\"";
+    }
+    if (!fontSize.empty()) {
+        result += " font-size=\"" + fontSize + "\"";
     }
     return result;
 }

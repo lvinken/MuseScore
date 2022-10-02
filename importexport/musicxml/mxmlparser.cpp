@@ -215,11 +215,19 @@ Defaults MxmlParser::parseDefaults(bool& read)
 {
     Defaults defaults;
     while (m_e.readNextStartElement()) {
-        if (m_e.name() == "page-layout") {
+        if (m_e.name() == "lyric-font") {
+            defaults.lyricFont = parseFont();
+            defaults.lyricFontRead = true;
+        }
+        else if (m_e.name() == "page-layout") {
             defaults.pageLayout = parsePageLayout(defaults.pageLayoutRead);
         }
         else if (m_e.name() == "scaling") {
             defaults.scaling = parseScaling(defaults.scalingRead);
+        }
+        else if (m_e.name() == "word-font") {
+            defaults.wordFont = parseFont();
+            defaults.wordFontRead = true;
         }
         else {
             unexpectedElement();
@@ -252,6 +260,15 @@ Encoding MxmlParser::parseEncoding()
         }
     }
     return encoding;
+}
+
+Font MxmlParser::parseFont()
+{
+    Font font;
+    font.fontFamily = std::string { m_e.attributes().value("font-family").toUtf8().data() };
+    font.fontSize = std::string { m_e.attributes().value("font-size").toUtf8().data() };
+    m_e.skipCurrentElement();
+    return font;
 }
 
 std::unique_ptr<Forward> MxmlParser::parseForward()
