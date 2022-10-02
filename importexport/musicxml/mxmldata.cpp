@@ -227,6 +227,28 @@ std::string Measure::toString() const
     return result;
 }
 
+std::string MidiInstrument::toString() const
+{
+    std::string result;
+    result += "\n   midi-instrument id=\"" + id + "\"";
+    if (midiChannelRead) {
+        result += "\n    midi-channel \"" + std::to_string(midiChannel + 1) + "\"";
+    }
+    if (midiProgramRead) {
+        result += "\n    midi-program \"" + std::to_string(midiProgram + 1) + "\"";
+    }
+    if (midiUnpitchedRead) {
+        result += "\n    midi-unpitched \"" + std::to_string(midiUnpitched + 1) + "\"";
+    }
+    if (volumeRead) {
+        result += "\n    volume \"" + std::to_string(volume) + "\"";
+    }
+    if (panRead) {
+        result += "\n    pan \"" + std::to_string(pan) + "\"";
+    }
+    return result;
+}
+
 Note::Note()
     : Element(ElementType::NOTE)
 {
@@ -433,6 +455,9 @@ std::string ScorePart::toString() const
     }
     for (const auto& scoreInstrument : scoreInstruments) {
         result += scoreInstrument.toString();
+    }
+    for (const auto& midiInstrument : midiInstruments) {
+        result += midiInstrument.toString();
     }
     return result;
 }

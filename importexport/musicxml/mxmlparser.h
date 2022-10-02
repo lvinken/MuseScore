@@ -32,6 +32,7 @@ private:
     Identification parseIdentification();
     Key parseKey();
     Measure parseMeasure();
+    MidiInstrument parseMidiInstrument();
     Lyric parseLyric();
     std::unique_ptr<Note> parseNote();
     PageLayout parsePageLayout(bool& read);

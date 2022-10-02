@@ -178,6 +178,21 @@ struct Measure : public Element {
     std::string toString() const;
 };
 
+struct MidiInstrument {
+    std::string id;
+    int midiChannel { 0 };  // TODO: make optional
+    bool midiChannelRead { false };
+    int midiProgram { 0 };  // TODO: make optional
+    bool midiProgramRead { false };
+    int midiUnpitched { 0 };  // TODO: make optional
+    bool midiUnpitchedRead { false };
+    float pan { 0.0 };  // TODO: make optional
+    bool panRead { false };
+    float volume { 0.0 };  // TODO: make optional
+    bool volumeRead { false };
+    std::string toString() const;
+};
+
 struct Lyric : public Element {
     Lyric();
     std::string number;
@@ -242,6 +257,7 @@ struct ScoreInstrument {
 struct ScorePart : public Element {
     ScorePart();
     std::string id;
+    std::vector<MidiInstrument> midiInstruments;
     std::string partAbbreviation;
     bool partAbbreviationPrintObject { true };
     std::string partName;

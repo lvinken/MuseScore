@@ -364,6 +364,50 @@ Measure MxmlParser::parseMeasure()
     return measure;
 }
 
+MidiInstrument MxmlParser::parseMidiInstrument()
+{
+    // TODO add error detection and handling
+    // TODO: verify (and handle) non-empty attribute id
+    MidiInstrument midiInstrument;
+    // IDREF required
+    midiInstrument.id = std::string { m_e.attributes().value("id").toUtf8().data() };
+    while (m_e.readNextStartElement()) {
+        if (m_e.name() == "midi-channel") {
+            // content: midi-16
+            midiInstrument.midiChannel = m_e.readElementText().toUInt(&midiInstrument.midiChannelRead);
+            if (midiInstrument.midiChannelRead) {
+                --midiInstrument.midiChannel;
+            }
+        }
+        else if (m_e.name() == "midi-program") {
+            // content: midi-128
+            midiInstrument.midiProgram = m_e.readElementText().toUInt(&midiInstrument.midiProgramRead);
+                if (midiInstrument.midiProgramRead) {
+                    --midiInstrument.midiProgram;
+                }
+        }
+        else if (m_e.name() == "midi-unpitched") {
+            // content: midi-128
+            midiInstrument.midiUnpitched = m_e.readElementText().toUInt(&midiInstrument.midiUnpitchedRead);
+            if (midiInstrument.midiUnpitchedRead) {
+                --midiInstrument.midiUnpitched;
+            }
+        }
+        else if (m_e.name() == "pan") {
+            // content: rotation-degrees
+            midiInstrument.pan = m_e.readElementText().toFloat(&midiInstrument.panRead);
+        }
+        else if (m_e.name() == "volume") {
+            // content: percent
+            midiInstrument.volume = m_e.readElementText().toFloat(&midiInstrument.volumeRead);
+        }
+        else {
+            unexpectedElement();
+        }
+    }
+    return midiInstrument;
+}
+
 std::unique_ptr<Note> MxmlParser::parseNote()
 {
     // TODO add error detection and handling
@@ -642,7 +686,7 @@ ScorePart MxmlParser::parseScorePart()
             m_e.skipCurrentElement();   // ignore
         }
         else if (m_e.name() == "midi-instrument") {
-            m_e.skipCurrentElement();   // ignore
+            scorePart.midiInstruments.push_back(parseMidiInstrument());
         }
         else if (m_e.name() == "part-abbreviation") {
             scorePart.partAbbreviationPrintObject = !(m_e.attributes().value("print-object") == "no");
