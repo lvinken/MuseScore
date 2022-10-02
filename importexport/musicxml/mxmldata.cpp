@@ -402,6 +402,13 @@ std::string ScorePart::toString() const
     std::string result;
     result += "\n  score-part id=\"" + id + "\"";
     result += "\n   part-name \"" + partName + "\"";
+    if (!partAbbreviation.empty()) {
+        result += "\n   part-abbreviation";
+        if (!partAbbreviationPrintObject) {
+            result += " print-object=\"no\"";
+        }
+        result += " \"" + partAbbreviation + "\"";
+    }
     return result;
 }
 

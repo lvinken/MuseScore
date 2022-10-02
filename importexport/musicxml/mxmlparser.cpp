@@ -613,7 +613,8 @@ ScorePart MxmlParser::parseScorePart()
             m_e.skipCurrentElement();   // ignore
         }
         else if (m_e.name() == "part-abbreviation") {
-            m_e.skipCurrentElement();   // ignore
+            scorePart.partAbbreviationPrintObject = !(m_e.attributes().value("print-object") == "no");
+            scorePart.partAbbreviation = m_e.readElementText().toUtf8().data();
         }
         else if (m_e.name() == "part-name") {
             scorePart.partName = parsePartName();

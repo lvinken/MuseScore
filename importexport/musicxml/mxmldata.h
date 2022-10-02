@@ -233,6 +233,8 @@ struct PartList : public Element {
 struct ScorePart : public Element {
     ScorePart();
     std::string id;
+    std::string partAbbreviation;
+    bool partAbbreviationPrintObject { true };
     std::string partName;
     std::string toString() const;
 };
