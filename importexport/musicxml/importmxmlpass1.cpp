@@ -1414,31 +1414,16 @@ void MusicXMLParserPass1::defaults(const MusicXML::Defaults& defaults)
 
             PageFormat pf;
             pageLayout(defaults.pageLayout, pf, millimeter / (tenths * INCH));
-            if (preferences.getBool(PREF_IMPORT_MUSICXML_IMPORTLAYOUT))
+            if (preferences.getBool(PREF_IMPORT_MUSICXML_IMPORTLAYOUT)) {
                   setPageFormat(_score, pf);
-
-            }
-
-#if 0
-            else if (_e.name() == "system-layout") {
-                  while (_e.readNextStartElement()) {
-                        else if (_e.name() == "system-distance") {
-                              Spatium val(_e.readElementText().toDouble() / 10.0);
-                              if (preferences.getBool(PREF_IMPORT_MUSICXML_IMPORTLAYOUT)) {
-                                    _score->style().set(Sid::minSystemDistance, val);
-                                    //qDebug("system distance %f", val.val());
-                                    }
-                              }
-            else if (_e.name() == "staff-layout") {
-                  while (_e.readNextStartElement()) {
-                        if (_e.name() == "staff-distance") {
-                              Spatium val(_e.readElementText().toDouble() / 10.0);
-                              if (preferences.getBool(PREF_IMPORT_MUSICXML_IMPORTLAYOUT))
-                                    _score->style().set(Sid::staffDistance, val);
-                              }
+                  if (defaults.staffLayout.staffDistanceRead) {
+                        _score->style().set(Sid::staffDistance, defaults.staffLayout.staffDistance / 10);
+                        }
+                  if (defaults.systemLayout.systemDistanceRead) {
+                        _score->style().set(Sid::minSystemDistance, defaults.systemLayout.systemDistance / 10);
+                        }
                   }
             }
-#endif
 
       QString wordFontFamily { defaults.wordFont.fontFamily.data() };
       QString wordFontSize { defaults.wordFont.fontSize.data() };
