@@ -225,6 +225,12 @@ Defaults MxmlParser::parseDefaults(bool& read)
         else if (m_e.name() == "scaling") {
             defaults.scaling = parseScaling(defaults.scalingRead);
         }
+        else if (m_e.name() == "staff-layout") {
+              defaults.staffLayout = parseStaffLayout();
+        }
+        else if (m_e.name() == "system-layout") {
+              defaults.systemLayout = parseSystemLayout();
+        }
         else if (m_e.name() == "word-font") {
             defaults.wordFont = parseFont();
             defaults.wordFontRead = true;
@@ -755,6 +761,20 @@ void MxmlParser::parseScorePartwise()
     }
 }
 
+StaffLayout MxmlParser::parseStaffLayout()
+{
+    StaffLayout staffLayout;
+    while (m_e.readNextStartElement()) {
+        if (m_e.name() == "staff-distance") {
+            staffLayout.staffDistance = m_e.readElementText().toFloat(&staffLayout.staffDistanceRead);
+        }
+        else {
+            unexpectedElement();
+        }
+    }
+    return staffLayout;
+}
+
 Supports MxmlParser::parseSupports()
 {
     Supports supports;
@@ -764,6 +784,20 @@ Supports MxmlParser::parseSupports()
     supports.value = std::string { m_e.attributes().value("value").toUtf8().data() };
     m_e.skipCurrentElement();
     return supports;
+}
+
+SystemLayout MxmlParser::parseSystemLayout()
+{
+     SystemLayout systemLayout;
+     while (m_e.readNextStartElement()) {
+         if (m_e.name() == "system-distance") {
+             systemLayout.systemDistance = m_e.readElementText().toFloat(&systemLayout.systemDistanceRead);
+         }
+         else {
+             unexpectedElement();
+         }
+     }
+     return systemLayout;
 }
 
 Time MxmlParser::parseTime()

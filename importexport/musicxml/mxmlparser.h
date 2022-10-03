@@ -45,7 +45,9 @@ private:
     Scaling parseScaling(bool& read);
     ScoreInstrument parseScoreInstrument();
     ScorePart parseScorePart();
+    StaffLayout parseStaffLayout();
     Supports parseSupports();
+    SystemLayout parseSystemLayout();
     void parseScorePartwise();
     Time parseTime();
     TimeModification parseTimeModification();

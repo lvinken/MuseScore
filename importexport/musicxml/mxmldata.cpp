@@ -124,6 +124,12 @@ std::string Defaults::toString() const
     if (pageLayoutRead) {
         result += pageLayout.toString();
     }
+    if (systemLayout.systemDistanceRead) {
+        result += systemLayout.toString();
+    }
+    if (staffLayout.staffDistanceRead) {
+        result += staffLayout.toString();
+    }
     if (wordFontRead) {
         result += "\n  word-font" + wordFont.toString();
     }
@@ -507,6 +513,26 @@ std::string ScorePartwise::toString() const
     result += partList.toString();
     for (const auto& part : parts) {
         result += part.toString();
+    }
+    return result;
+}
+
+std::string StaffLayout::toString() const
+{
+    std::string result;
+    if (staffDistanceRead) {
+        result += "\n  staff-layout\"";
+        result += "\n   staff-distance \"" + std::to_string(staffDistance) + "\"";
+    }
+    return result;
+}
+
+std::string SystemLayout::toString() const
+{
+    std::string result;
+    if (systemDistanceRead) {
+        result += "\n  system-layout\"";
+        result += "\n   system-distance \"" + std::to_string(systemDistance) + "\"";
     }
     return result;
 }

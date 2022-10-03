@@ -128,6 +128,18 @@ struct Font {
     std::string toString() const;
 };
 
+struct StaffLayout {
+    float staffDistance { 0.0 };  // TODO make optional
+    bool staffDistanceRead { false };
+    std::string toString() const;
+};
+
+struct SystemLayout {
+    float systemDistance { 0.0 }; // TODO make optional
+    bool systemDistanceRead { false };
+    std::string toString() const;
+};
+
 struct Defaults : public Element {
     Defaults();
     Font lyricFont;      // TODO make optional
@@ -136,6 +148,8 @@ struct Defaults : public Element {
     bool scalingRead { false };
     PageLayout pageLayout; // TODO make optional
     bool pageLayoutRead { false };
+    StaffLayout staffLayout;      // TODO make optional ?
+    SystemLayout systemLayout;    // TODO make optional ?
     Font wordFont;      // TODO make optional
     bool wordFontRead { false };
     std::string toString() const;
