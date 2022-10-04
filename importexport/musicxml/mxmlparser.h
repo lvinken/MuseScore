@@ -51,6 +51,7 @@ private:
     void parseScorePartwise();
     Time parseTime();
     TimeModification parseTimeModification();
+    Transpose parseTranspose();
     Work parseWork();
     void unexpectedElement();
 

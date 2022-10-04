@@ -112,6 +112,10 @@ std::unique_ptr<Attributes> MxmlParser::parseAttributes()
         else if (m_e.name() == "time") {
             attributes->times.push_back(parseTime());
         }
+        else if (m_e.name() == "transpose") {
+              attributes->transpose = parseTranspose();
+              attributes->transposeRead = true;
+        }
         else {
             unexpectedElement();
         }
@@ -837,6 +841,26 @@ TimeModification MxmlParser::parseTimeModification()
         return timeModification;
     }
     return {};
+}
+
+Transpose MxmlParser::parseTranspose()
+{
+    Transpose transpose;
+    while (m_e.readNextStartElement()) {
+        if (m_e.name() == "chromatic") {
+            transpose.chromatic = m_e.readElementText().toInt();
+        }
+        else if (m_e.name() == "diatonic") {
+            transpose.diatonic = m_e.readElementText().toInt();
+        }
+        else if (m_e.name() == "octave-change") {
+            transpose.octaveChange = m_e.readElementText().toInt();
+        }
+        else {
+            unexpectedElement();
+        }
+    }
+    return transpose;
 }
 
 Work MxmlParser::parseWork()

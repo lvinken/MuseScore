@@ -80,6 +80,13 @@ struct Time : public Element {
     std::string beatType;
 };
 
+struct Transpose {
+    int chromatic { 0 };      // TODO support microtones ?
+    int diatonic { 0 };       // optional, missing means 0
+    int octaveChange { 0 };   // optional, missing means 0
+    std::string toString() const;
+};
+
 struct Attributes : public Element {
     Attributes();
     std::map<unsigned int, Clef> clefs;
@@ -87,6 +94,8 @@ struct Attributes : public Element {
     std::vector<Key> keys;
     unsigned int staves { 1 }; // TODO make optional
     std::vector<Time> times;
+    Transpose transpose; // TODO make optional
+    bool transposeRead { false };
     std::string toString() const;
 };
 
@@ -226,7 +235,7 @@ struct Lyric : public Element {
 
 struct Pitch : public Element {
     Pitch();
-    int alter { 0 }; // TODO support semitones
+    int alter { 0 }; // TODO support microtones
     unsigned int octave { 4 };
     char step { 'C' };  // TODO make type safe
 };

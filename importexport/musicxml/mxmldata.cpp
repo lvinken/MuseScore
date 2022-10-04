@@ -44,6 +44,9 @@ std::string Attributes::toString() const
             result += "\n     line \"" + std::to_string(pair.second.line) + "\"";
         }
     }
+    if (transposeRead) {
+        result += transpose.toString();
+    }
     return result;
 }
 
@@ -560,6 +563,16 @@ std::string TimeModification::toString() const
     result += "\n    time-modification";
     result += "\n     actual-notes \"" + std::to_string(actualNotes) + "\"";
     result += "\n     normal-notes \"" + std::to_string(normalNotes) + "\"";
+    return result;
+}
+
+std::string Transpose::toString() const
+{
+    std::string result;
+    result += "\n    transpose";
+    result += "\n     diatonic \"" + std::to_string(diatonic) + "\"";
+    result += "\n     chromatic \"" + std::to_string(chromatic) + "\"";
+    result += "\n     octave-change \"" + std::to_string(octaveChange) + "\"";
     return result;
 }
 
