@@ -122,7 +122,6 @@ public:
       void partGroup(const int scoreParts, MusicXmlPartGroupList& partGroupList, MusicXmlPartGroupMap& partGroups);
       void print(const int measureNr);
       void clef(const QString& partId);
-      void transpose(const QString& partId, const Fraction& tick);
       void divisions();
       void staves(const QString& partId);
       void direction(const QString& partId, const Fraction cTime);

@@ -2084,16 +2084,24 @@ void MusicXMLParserPass1::print(const int measureNr)
 
 void MusicXMLParserPass1::attributes(const MusicXML::Attributes& attributes, const QString& partId, const Fraction cTime)
       {
-#if 0
-      // TODO
-            else if (_e.name() == "transpose")
-                  transpose(partId, cTime);
-#endif
       if (attributes.divisions > 0)
             _divs = attributes.divisions;
       setNumberOfStavesForPart(_partMap.value(partId), attributes.staves);
       if (attributes.times.size() == 1)
             time(attributes.times[0], cTime);
+      if (attributes.transposeRead) {
+            Interval interval;
+            interval.diatonic = attributes.transpose.diatonic;
+            interval.chromatic = attributes.transpose.chromatic;
+            int i = attributes.transpose.octaveChange;
+            interval.diatonic += i * 7;
+            interval.chromatic += i * 12;
+
+            if (_parts[partId]._intervals.count(cTime) == 0)
+                  _parts[partId]._intervals[cTime] = interval;
+            else
+                  qDebug("duplicate transpose at tick %s", qPrintable(cTime.print()));
+            }
       }
 
 //---------------------------------------------------------
@@ -2221,41 +2229,6 @@ void MusicXMLParserPass1::time(const MusicXML::Time& time, const Fraction cTime)
                   _score->sigmap()->add(cTime.ticks(), _timeSigDura);
                   }
             }
-      }
-
-//---------------------------------------------------------
-//   transpose
-//---------------------------------------------------------
-
-/**
- Parse the /score-partwise/part/measure/attributes/transpose node.
- */
-
-void MusicXMLParserPass1::transpose(const QString& partId, const Fraction& tick)
-      {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "transpose");
-
-      Interval interval;
-      while (_e.readNextStartElement()) {
-            int i = _e.readElementText().toInt();
-            if (_e.name() == "diatonic") {
-                  interval.diatonic = i;
-                  }
-            else if (_e.name() == "chromatic") {
-                  interval.chromatic = i;
-                  }
-            else if (_e.name() == "octave-change") {
-                  interval.diatonic += i * 7;
-                  interval.chromatic += i * 12;
-                  }
-            else
-                  skipLogCurrElem();
-            }
-
-      if (_parts[partId]._intervals.count(tick) == 0)
-            _parts[partId]._intervals[tick] = interval;
-      else
-            qDebug("duplicate transpose at tick %s", qPrintable(tick.print()));
       }
 
 //---------------------------------------------------------
