@@ -399,7 +399,11 @@ MidiDevice MxmlParser::parseMidiDevice()
     MidiDevice midiDevice;
     // IDREF required
     midiDevice.id = std::string { m_e.attributes().value("id").toUtf8().data() };
-    midiDevice.port = std::string { m_e.attributes().value("port").toUtf8().data() };
+    // content: midi-16
+    midiDevice.port = m_e.attributes().value("port").toUInt(&midiDevice.portRead);
+    if (midiDevice.portRead) {
+        --midiDevice.port;
+    }
     m_e.skipCurrentElement();
     return midiDevice;
 }

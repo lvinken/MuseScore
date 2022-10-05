@@ -258,8 +258,8 @@ std::string MidiDevice::toString() const
 {
     std::string result;
     result += "\n   midi-device id=\"" + id + "\"";
-    if (!port.empty()) {
-        result += " port=\"" + port + "\"";
+    if (portRead) {
+        result += " port=\"" + std::to_string(port + 1) + "\"";
     }
     return result;
 }

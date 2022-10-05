@@ -213,7 +213,8 @@ struct Measure : public Element {
 
 struct MidiDevice {
     std::string id;
-    std::string port;
+    int port { 0 }; // TODO: make optional
+    bool portRead { false };
     std::string toString() const;
 };
 
