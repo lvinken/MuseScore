@@ -33,6 +33,7 @@ private:
     Identification parseIdentification();
     Key parseKey();
     Measure parseMeasure();
+    MidiDevice parseMidiDevice();
     MidiInstrument parseMidiInstrument();
     Lyric parseLyric();
     std::unique_ptr<Note> parseNote();

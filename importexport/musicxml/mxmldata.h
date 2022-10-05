@@ -211,6 +211,12 @@ struct Measure : public Element {
     std::string toString() const;
 };
 
+struct MidiDevice {
+    std::string id;
+    std::string port;
+    std::string toString() const;
+};
+
 struct MidiInstrument {
     std::string id;
     int midiChannel { 0 };  // TODO: make optional
@@ -290,6 +296,8 @@ struct ScoreInstrument {
 struct ScorePart : public Element {
     ScorePart();
     std::string id;
+    MidiDevice midiDevice; // TODO: there may be zero or more than one ...
+    bool midiDeviceRead { false };
     std::vector<MidiInstrument> midiInstruments;
     std::string partAbbreviation;
     bool partAbbreviationPrintObject { true };

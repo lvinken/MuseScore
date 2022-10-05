@@ -254,6 +254,16 @@ std::string Measure::toString() const
     return result;
 }
 
+std::string MidiDevice::toString() const
+{
+    std::string result;
+    result += "\n   midi-device id=\"" + id + "\"";
+    if (!port.empty()) {
+        result += " port=\"" + port + "\"";
+    }
+    return result;
+}
+
 std::string MidiInstrument::toString() const
 {
     std::string result;
@@ -482,6 +492,9 @@ std::string ScorePart::toString() const
     }
     for (const auto& scoreInstrument : scoreInstruments) {
         result += scoreInstrument.toString();
+    }
+    if (midiDeviceRead) {
+        result += midiDevice.toString();
     }
     for (const auto& midiInstrument : midiInstruments) {
         result += midiInstrument.toString();

@@ -391,6 +391,19 @@ Measure MxmlParser::parseMeasure()
     return measure;
 }
 
+
+MidiDevice MxmlParser::parseMidiDevice()
+{
+    // TODO add error detection and handling
+    // TODO: verify (and handle) non-empty attribute id
+    MidiDevice midiDevice;
+    // IDREF required
+    midiDevice.id = std::string { m_e.attributes().value("id").toUtf8().data() };
+    midiDevice.port = std::string { m_e.attributes().value("port").toUtf8().data() };
+    m_e.skipCurrentElement();
+    return midiDevice;
+}
+
 MidiInstrument MxmlParser::parseMidiInstrument()
 {
     // TODO add error detection and handling
@@ -710,7 +723,8 @@ ScorePart MxmlParser::parseScorePart()
     scorePart.id = std::string { m_e.attributes().value("id").toUtf8().data() };
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "midi-device") {
-            m_e.skipCurrentElement();   // ignore
+            scorePart.midiDevice = parseMidiDevice();
+            scorePart.midiDeviceRead = true;
         }
         else if (m_e.name() == "midi-instrument") {
             scorePart.midiInstruments.push_back(parseMidiInstrument());
