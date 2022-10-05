@@ -1703,30 +1703,20 @@ void MusicXMLParserPass1::scorePart(const MusicXML::ScorePart& scorePart)
       for (const auto& scoreInstr : scorePart.scoreInstruments) {
             scoreInstrument(scoreInstr, id);
             }
+      if (scorePart.midiDeviceRead && scorePart.midiDevice.portRead) {
+            QString instrId { scorePart.midiDevice.id.data() };
+            // If instrId is missing, the device assignment affects all
+            // score-instrument elements in the score-part
+            if (instrId.isEmpty()) {
+                  for (auto it = _instruments[id].cbegin(); it != _instruments[id].cend(); ++it)
+                        _instruments[id][it.key()].midiPort = scorePart.midiDevice.port;
+                  }
+            else if (_instruments[id].contains(instrId))
+                  _instruments[id][instrId].midiPort = scorePart.midiDevice.port;
+            }
       for (const auto& midiInstr : scorePart.midiInstruments) {
             midiInstrument(midiInstr, id);
             }
-
-#if 0
-      // TODO else if (_e.name() == "midi-device") {
-      if (!_e.attributes().hasAttribute("port")) {
-            _e.readElementText();       // empty string
-            continue;
-            }
-      QString instrId = _e.attributes().value("id").toString();
-      QString port = _e.attributes().value("port").toString();
-      // If instrId is missing, the device assignment affects all
-      // score-instrument elements in the score-part
-      if (instrId.isEmpty()) {
-            for (auto it = _instruments[id].cbegin(); it != _instruments[id].cend(); ++it)
-                  _instruments[id][it.key()].midiPort = port.toInt() - 1;
-            }
-      else if (_instruments[id].contains(instrId))
-            _instruments[id][instrId].midiPort = port.toInt() - 1;
-
-      _e.readElementText();       // empty string
-      }
-#endif
       }
 
 //---------------------------------------------------------
