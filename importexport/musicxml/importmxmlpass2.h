@@ -281,7 +281,7 @@ private:
       void forward(const unsigned int duration, Fraction& dura);
       void backup(const unsigned int duration, Fraction& dura);
       void timeModification(Fraction& timeMod, TDuration& normalType);
-      void stem(Direction& sd, bool& nost);
+      void stem(const QString& s, Direction& sd, bool& nost);
       void doEnding(const QString& partId, Measure* measure, const QString& number, const QString& type, const QString& text);
       void staffDetails(const QString& partId);
       void staffTuning(StringData* t);

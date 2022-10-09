@@ -4279,18 +4279,23 @@ Note* MusicXMLParserPass2::note(const MusicXML::Note& note,
             }
 #endif
 
-      bool cue = false;
-      bool small = false;
+      bool cue = note.cue;
+      bool small = note.typeSize == "cue";
       const QString type = note.type.data();
       QString voice = note.voice.data();
       Direction stemDir = Direction::AUTO;
       bool noStem = false;
+      stem(note.stem.data(), stemDir, noStem);
       NoteHead::Group headGroup = NoteHead::Group::HEAD_NORMAL;
+      if (!note.noteheadText.empty()) {
+          headGroup = convertNotehead(note.noteheadText.data());
+      }
       QColor noteColor = QColor::Invalid;
       noteColor.setNamedColor(_e.attributes().value("color").toString());
       QColor noteheadColor = QColor::Invalid;
-      bool noteheadParentheses = false;
-      QString noteheadFilled;
+      noteheadColor.setNamedColor(note.noteheadColor.data());
+      bool noteheadParentheses { note.noteheadParentheses == "yes" };
+      QString noteheadFilled { note.noteheadFilled.data() };
       int velocity = round(_e.attributes().value("dynamics").toDouble() * 0.9);
       bool graceSlash = false;
       bool printObject = _e.attributes().value("print-object") != "no";
@@ -4320,10 +4325,6 @@ Note* MusicXMLParserPass2::note(const MusicXML::Note& note,
             // TODO
             else if (_e.name() == "beam")
                   beam(bm);
-            else if (_e.name() == "cue") {
-                  cue = true;
-                  _e.readNext();
-                  }
             else if (_e.name() == "instrument") {
                   instrumentId = _e.attributes().value("id").toString();
                   _e.readNext();
@@ -4331,20 +4332,6 @@ Note* MusicXMLParserPass2::note(const MusicXML::Note& note,
             else if (_e.name() == "notations") {
                   notations.parse();
                   }
-            else if (_e.name() == "notehead") {
-                  noteheadColor.setNamedColor(_e.attributes().value("color").toString());
-                  noteheadParentheses = _e.attributes().value("parentheses") == "yes";
-                  noteheadFilled = _e.attributes().value("filled").toString();
-                  headGroup = convertNotehead(_e.readElementText());
-                  }
-            else if (_e.name() == "stem")
-                  stem(stemDir, noStem);
-            else if (_e.name() == "type") {
-                  small = _e.attributes().value("size") == "cue";
-                  type = _e.readElementText();
-                  }
-            else if (_e.name() == "voice")
-                  voice = _e.readElementText();
 #endif
 
       const int staff = note.staff - 1;    // convert staff to zero-based
@@ -6224,15 +6211,11 @@ void MusicXMLParserNotations::addToScore(ChordRest* const cr, Note* const note, 
  Parse the /score-partwise/part/measure/note/stem node.
  */
 
-void MusicXMLParserPass2::stem(Direction& sd, bool& nost)
+void MusicXMLParserPass2::stem(const QString& s, Direction& sd, bool& nost)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "stem");
-
       // defaults
       sd = Direction::AUTO;
       nost = false;
-
-      QString s = _e.readElementText();
 
       if (s == "up")
             sd = Direction::UP;
