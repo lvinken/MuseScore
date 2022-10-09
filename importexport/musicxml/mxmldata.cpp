@@ -299,6 +299,9 @@ std::string Note::toString() const
     if (grace) {
         result += "\n    grace";
     }
+    if (cue) {
+        result += "\n    cue";
+    }
     if (chord) {
         result += "\n    chord";
     }
@@ -322,13 +325,35 @@ std::string Note::toString() const
         result += "\n    voice \"" + voice + "\"";
     }
     if (!type.empty()) {
-        result += "\n    type \"" + type + "\"";
+        result += "\n    type";
+        if (!typeSize.empty()) {
+            result += " size=\"" + typeSize + "\"";
+        }
+        result += " \"" + type + "\"";
     }
     for (unsigned int i = 0; i < dots; ++i) {
         result += "\n    dot";
     }
     if (timeModification.isValid()) {
         result += timeModification.toString();
+    }
+    if (!stem.empty()) {
+        result += "\n    stem \"" + stem + "\"";
+    }
+    if (!noteheadColor.empty() || !noteheadFilled.empty() || !noteheadParentheses.empty() || !noteheadText.empty()) {
+        result += "\n    notehead";
+        if (!noteheadColor.empty()) {
+            result += " color=\"" + noteheadColor + "\"";
+        }
+        if (!noteheadFilled.empty()) {
+            result += " filled=\"" + noteheadFilled + "\"";
+        }
+        if (!noteheadParentheses.empty()) {
+            result += " parentheses=\"" + noteheadParentheses + "\"";
+        }
+        if (!noteheadText.empty()) {
+            result += " \"" + noteheadText + "\"";
+        }
     }
     result += "\n    staff \"" + std::to_string(staff) + "\"";
     for (const auto& lyric : lyrics) {

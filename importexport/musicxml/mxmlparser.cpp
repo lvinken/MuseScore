@@ -467,6 +467,10 @@ std::unique_ptr<Note> MxmlParser::parseNote()
             note->chord = true;
             m_e.skipCurrentElement();
         }
+        else if (m_e.name() == "cue") {
+            note->cue = true;
+            m_e.skipCurrentElement();
+        }
         else if (m_e.name() == "dot") {
             note->dots++;
             m_e.skipCurrentElement();
@@ -489,6 +493,12 @@ std::unique_ptr<Note> MxmlParser::parseNote()
         else if (m_e.name() == "notations") {
             m_e.skipCurrentElement();   // ignore
         }
+        else if (m_e.name() == "notehead") {
+            note->noteheadColor = m_e.attributes().value("color").toUtf8().data();
+            note->noteheadFilled = m_e.attributes().value("filled").toUtf8().data();
+            note->noteheadParentheses = m_e.attributes().value("parentheses").toUtf8().data();
+            note->noteheadText = m_e.readElementText().toUtf8().data();
+        }
         else if (m_e.name() == "pitch") {
             note->pitch = parsePitch();
         }
@@ -498,20 +508,21 @@ std::unique_ptr<Note> MxmlParser::parseNote()
             m_e.skipCurrentElement();
         }
         else if (m_e.name() == "staff") {
-              unsigned int staff;
-              bool ok;
-              staff = m_e.readElementText().toUInt(&ok);
-              if (ok) {
-                    note->staff = staff;
-              }
+            unsigned int staff;
+            bool ok;
+            staff = m_e.readElementText().toUInt(&ok);
+            if (ok) {
+                note->staff = staff;
+            }
         }
         else if (m_e.name() == "stem") {
-            m_e.skipCurrentElement();   // ignore
+            note->stem = m_e.readElementText().toUtf8().data();
         }
         else if (m_e.name() == "time-modification") {
             note->timeModification = parseTimeModification();
         }
         else if (m_e.name() == "type") {
+            note->typeSize = m_e.attributes().value("size").toUtf8().data();
             note->type = m_e.readElementText().toUtf8().data();
         }
         else if (m_e.name() == "voice") {

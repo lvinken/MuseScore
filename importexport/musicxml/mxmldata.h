@@ -258,17 +258,24 @@ struct TimeModification : public Element {
 struct Note : public Element {
     Note();
     bool chord { false };
+    bool cue { false };
     unsigned int dots { 0 };
     unsigned int duration { 0 };
     bool grace { false };
     std::vector<Lyric> lyrics;
     bool measureRest { false };
+    std::string noteheadColor; // TODO: make type-safe
+    std::string noteheadFilled; // TODO: this is an optional yes-no, when no longer a string, make optional
+    std::string noteheadParentheses; // TODO: this is an optional yes-no, when no longer a string, make optional
+    std::string noteheadText;
     Pitch pitch;            // TODO: make optional ?
     bool rest { false };    // TODO: support display-step and display-octave
     unsigned int staff { 1 };
+    std::string stem; // TODO: make type-safe
     TimeModification timeModification;
     std::string toString() const;
     std::string type;
+    std::string typeSize;
     std::string voice;
 };
 
