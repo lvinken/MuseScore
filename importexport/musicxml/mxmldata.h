@@ -257,11 +257,13 @@ struct TimeModification : public Element {
 
 struct Note : public Element {
     Note();
+    std::string beam; // TODO: make type-safe, support multiple beams
     bool chord { false };
     bool cue { false };
     unsigned int dots { 0 };
     unsigned int duration { 0 };
     bool grace { false };
+    std::string instrument; // TODO: support multiple instrument
     std::vector<Lyric> lyrics;
     bool measureRest { false };
     std::string noteheadColor; // TODO: make type-safe

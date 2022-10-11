@@ -321,6 +321,9 @@ std::string Note::toString() const
     if (duration) {
         result += "\n    duration \"" + std::to_string(duration) + "\"";
     }
+    if (!instrument.empty()) {
+        result += "\n    instrument \"" + instrument + "\"";
+    }
     if (!voice.empty()) {
         result += "\n    voice \"" + voice + "\"";
     }
@@ -356,6 +359,9 @@ std::string Note::toString() const
         }
     }
     result += "\n    staff \"" + std::to_string(staff) + "\"";
+    if (!beam.empty()) {
+        result += "\n    beam number=\"1\" \"" + beam + "\"";
+    }
     for (const auto& lyric : lyrics) {
         result += lyric.toString();
     }

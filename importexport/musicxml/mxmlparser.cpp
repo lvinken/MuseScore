@@ -461,7 +461,12 @@ std::unique_ptr<Note> MxmlParser::parseNote()
             m_e.skipCurrentElement();   // ignore
         }
         else if (m_e.name() == "beam") {
-            m_e.skipCurrentElement();   // ignore
+            if (m_e.attributes().value("number") == "1") {
+                note->beam = m_e.readElementText().toUtf8().data();
+            }
+            else {
+                m_e.skipCurrentElement();   // ignore
+            }
         }
         else if (m_e.name() == "chord") {
             note->chord = true;
@@ -485,6 +490,10 @@ std::unique_ptr<Note> MxmlParser::parseNote()
         }
         else if (m_e.name() == "grace") {
             note->grace = true;
+            m_e.skipCurrentElement();
+        }
+        else if (m_e.name() == "instrument") {
+            note->instrument = m_e.attributes().value("id").toUtf8().data();
             m_e.skipCurrentElement();
         }
         else if (m_e.name() == "lyric") {
