@@ -4300,7 +4300,8 @@ Note* MusicXMLParserPass2::note(const MusicXML::Note& note,
       bool graceSlash = false;
       bool printObject = _e.attributes().value("print-object") != "no";
       Beam::Mode bm  = Beam::Mode::AUTO;
-      QString instrumentId;
+      beam(note.beam.data(), bm);
+      QString instrumentId { note.instrument.data() };
       MusicXMLParserLyric lyric { _pass1.getMusicXmlPart(partId).lyricNumberHandler(), _e, _score, _logger };
       MusicXMLParserNotations notations { _e, _score, _logger };
 
@@ -4323,12 +4324,6 @@ Note* MusicXMLParserPass2::note(const MusicXML::Note& note,
 
 #if 0
             // TODO
-            else if (_e.name() == "beam")
-                  beam(bm);
-            else if (_e.name() == "instrument") {
-                  instrumentId = _e.attributes().value("id").toString();
-                  _e.readNext();
-                  }
             else if (_e.name() == "notations") {
                   notations.parse();
                   }
@@ -5111,14 +5106,9 @@ void MusicXMLParserPass2::harmony(const QString& partId, Measure* measure, const
  Sets beamMode in case of begin, continue or end beam number 1.
  */
 
-void MusicXMLParserPass2::beam(Beam::Mode& beamMode)
+void MusicXMLParserPass2::beam(const QString& s, Beam::Mode& beamMode)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "beam");
-
-      int beamNo = _e.attributes().value("number").toInt();
-
-      if (beamNo == 1) {
-            QString s = _e.readElementText();
+      if (s != "") {
             if (s == "begin")
                   beamMode = Beam::Mode::BEGIN;
             else if (s == "end")
@@ -5130,10 +5120,8 @@ void MusicXMLParserPass2::beam(Beam::Mode& beamMode)
             else if (s == "forward hook")
                   ;
             else
-                  _logger->logError(QString("unknown beam keyword '%1'").arg(s), &_e);
+                  _logger->logError(QString("unknown beam keyword '%1'").arg(s), nullptr);
             }
-      else
-            _e.skipCurrentElement();
       }
 
 //---------------------------------------------------------
@@ -6217,16 +6205,18 @@ void MusicXMLParserPass2::stem(const QString& s, Direction& sd, bool& nost)
       sd = Direction::AUTO;
       nost = false;
 
-      if (s == "up")
-            sd = Direction::UP;
-      else if (s == "down")
-            sd = Direction::DOWN;
-      else if (s == "none")
-            nost = true;
-      else if (s == "double")
-            ;
-      else
-            _logger->logError(QString("unknown stem direction %1").arg(s), &_e);
+      if (s != "") {
+            if (s == "up")
+                  sd = Direction::UP;
+            else if (s == "down")
+                  sd = Direction::DOWN;
+            else if (s == "none")
+                  nost = true;
+            else if (s == "double")
+                  ;
+            else
+                  _logger->logError(QString("unknown stem direction %1").arg(s), nullptr);
+            }
       }
 
 //---------------------------------------------------------

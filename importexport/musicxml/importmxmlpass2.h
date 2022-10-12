@@ -276,7 +276,7 @@ private:
       FretDiagram* frame();
       void harmony(const QString& partId, Measure* measure, const Fraction sTime);
       Accidental* accidental();
-      void beam(Beam::Mode& beamMode);
+      void beam(const QString& s, Beam::Mode& beamMode);
       void duration(const unsigned int duration, Fraction& dura);
       void forward(const unsigned int duration, Fraction& dura);
       void backup(const unsigned int duration, Fraction& dura);
