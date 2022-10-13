@@ -17,7 +17,7 @@ Attributes::Attributes()
 std::string Attributes::toString() const
 {
     std::string result;
-    result += "   attributes";
+    result += "\n   attributes";
     if (divisions) {
         result += "\n    divisions \"" + std::to_string(divisions) + "\"";
     }
@@ -145,7 +145,7 @@ std::string Defaults::toString() const
 std::string Backup::toString() const
 {
     std::string result;
-    result += "   backup";
+    result += "\n   backup";
     if (duration) {
         result += "\n    duration \"" + std::to_string(duration) + "\"";
     }
@@ -194,7 +194,7 @@ Forward::Forward()
 std::string Forward::toString() const
 {
     std::string result;
-    result += "   forward";
+    result += "\n   forward";
     if (duration) {
         result += "\n    duration \"" + std::to_string(duration) + "\"";
     }
@@ -249,7 +249,7 @@ std::string Measure::toString() const
     std::string result;
     result += "\n  measure number=\"" + number + "\"";
     for (const auto& element : elements) {
-        result += "\n" + element->toString();
+        result += element->toString();
     }
     return result;
 }
@@ -295,7 +295,7 @@ Note::Note()
 std::string Note::toString() const
 {
     std::string result;
-    result += "   note";
+    result += "\n   note";
     if (grace) {
         result += "\n    grace";
     }
@@ -478,6 +478,43 @@ std::string Rights::toString() const
         result += " type=\"" + type + "\"";
     }
     result += " \"" + text + "\"";
+    return result;
+}
+
+Sound::Sound()
+    : Element(ElementType::SOUND)
+    {
+    // nothing
+    }
+
+std::string Sound::toString() const
+{
+    std::string result;
+    result += "\n   sound";
+    if (!capo.empty()) {
+        result += " capo=\"" + capo + "\"";
+    }
+    if (!coda.empty()) {
+        result += " coda=\"" + coda + "\"";
+    }
+    if (!dacapo.empty()) {
+        result += " dacapo=\"" + dacapo + "\"";
+    }
+    if (!dalsegno.empty()) {
+        result += " dalsegno=\"" + dalsegno + "\"";
+    }
+    if (!dynamics.empty()) {
+        result += " dynamics=\"" + dynamics + "\"";
+    }
+    if (!fine.empty()) {
+        result += " fine=\"" + fine + "\"";
+    }
+    if (!segno.empty()) {
+        result += " segno=\"" + segno + "\"";
+    }
+    if (tempo > 0.001) {
+        result += " tempo=\"" + std::to_string(tempo) + "\"";
+    }
     return result;
 }
 

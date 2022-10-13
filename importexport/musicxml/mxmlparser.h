@@ -46,6 +46,7 @@ private:
     Scaling parseScaling(bool& read);
     ScoreInstrument parseScoreInstrument();
     ScorePart parseScorePart();
+    std::unique_ptr<Sound> parseSound();
     StaffLayout parseStaffLayout();
     Supports parseSupports();
     SystemLayout parseSystemLayout();

@@ -384,6 +384,9 @@ Measure MxmlParser::parseMeasure()
         else if (m_e.name() == "note") {
             measure.elements.push_back(parseNote());
         }
+        else if (m_e.name() == "sound") {
+              measure.elements.push_back(parseSound());
+        }
         else {
             unexpectedElement();
         }
@@ -801,6 +804,22 @@ void MxmlParser::parseScorePartwise()
             unexpectedElement();
         }
     }
+}
+
+std::unique_ptr<Sound> MxmlParser::parseSound()
+{
+    // TODO add error detection and handling
+    std::unique_ptr<Sound> sound(new Sound);
+    sound->capo = std::string { m_e.attributes().value("capo").toUtf8().data() };
+    sound->coda = std::string { m_e.attributes().value("coda").toUtf8().data() };
+    sound->dacapo = std::string { m_e.attributes().value("dacapo").toUtf8().data() };
+    sound->dalsegno = std::string { m_e.attributes().value("dalsegno").toUtf8().data() };
+    sound->dynamics = std::string { m_e.attributes().value("dynamics").toUtf8().data() };
+    sound->fine = std::string { m_e.attributes().value("fine").toUtf8().data() };
+    sound->segno = std::string { m_e.attributes().value("segno").toUtf8().data() };
+    sound->tempo = m_e.attributes().value("tempo").toFloat();
+    m_e.skipCurrentElement();
+    return sound;
 }
 
 StaffLayout MxmlParser::parseStaffLayout()

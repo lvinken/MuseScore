@@ -29,6 +29,7 @@ enum class ElementType {
     SCALING,
     SCOREPART,
     SCOREPARTWISE,
+    SOUND,
     TIME,
     TIMEMODIFICATION,
 };
@@ -201,6 +202,20 @@ struct Identification {
     Encoding encoding;
     std::vector<Rights> rightses;
     std::string source;
+    std::string toString() const;
+};
+
+// Parent elements: <direction>, <measure> (partwise), <part> (timewise)
+struct Sound : public Element {
+    Sound();
+    std::string capo;
+    std::string coda;
+    std::string dacapo;
+    std::string dalsegno;
+    std::string dynamics;
+    std::string fine;
+    std::string segno;
+    float tempo { 0.0 };  // TODO: make optional
     std::string toString() const;
 };
 
