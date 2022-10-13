@@ -4360,7 +4360,6 @@ Note* MusicXMLParserPass2::note(const MusicXML::Note& note,
 
       if (!_pass1.determineStaffMoveVoice(partId, staff, voice, msMove, msTrack, msVoice)) {
             _logger->logDebugInfo(QString("could not map staff %1 voice '%2'").arg(staff + 1).arg(voice), &_e);
-            Q_ASSERT(_e.isEndElement() && _e.name() == "note");
             return 0;
             }
 
