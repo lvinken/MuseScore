@@ -22,6 +22,7 @@ private:
     bool parse();
     std::unique_ptr<Attributes> parseAttributes();
     std::unique_ptr<Backup> parseBackup();
+    std::unique_ptr<Barline> parseBarline();
     std::pair<unsigned int, Clef> parseClef();
     Creator parseCreator();
     Credit parseCredit();

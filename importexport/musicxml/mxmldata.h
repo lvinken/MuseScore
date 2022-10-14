@@ -12,6 +12,7 @@ enum class ElementType {
     INVALID = 0,
     ATTRIBUTES,
     BACKUP,
+    BARLINE,
     CLEF,
     CREDIT,
     CREDITWORDS,
@@ -104,6 +105,18 @@ struct Backup : public Element {
     Backup();
     std::string toString() const;
     unsigned int duration { 0 };
+};
+
+struct Barline : public Element {
+    Barline();
+    std::string location;
+    std::string barStyle;
+    std::string endingNumber;
+    std::string endingType;
+    std::string endingText;
+    std::string repeatDirection;
+    int repeatTimes { 0 }; // TODO make optional nonNegativeInteger
+    std::string toString() const;
 };
 
 struct PageLayout : public Element {

@@ -56,6 +56,46 @@ Backup::Backup()
     // nothing
 }
 
+Barline::Barline()
+    : Element(ElementType::BARLINE)
+{
+    // nothing
+}
+
+std::string Barline::toString() const
+{
+    std::string result;
+    result += "\n   barline";
+    if (!location.empty()) {
+        result += " location=\"" + location + "\"";
+    }
+    if (!barStyle.empty()) {
+        result += "\n    bar-style \"" + barStyle + "\"";
+    }
+    if (!endingNumber.empty() || !endingText.empty() || !endingType.empty()) {
+        result += "\n    ending";
+        if (!endingNumber.empty()) {
+            result += " number=\"" + endingNumber + "\"";
+        }
+        if (!endingType.empty()) {
+            result += " type=\"" + endingType + "\"";
+        }
+        if (!endingText.empty()) {
+            result += " \"" + endingText + "\"";
+        }
+    }
+    if (!repeatDirection.empty() || repeatTimes > 0) {
+        result += "\n    repeat";
+        if (!repeatDirection.empty()) {
+            result += " direction=\"" + repeatDirection + "\"";
+        }
+        if (repeatTimes > 0) {
+            result += " times=\"" + std::to_string(repeatTimes) + "\"";
+        }
+    }
+    return result;
+}
+
 std::string Creator::toString() const
 {
     std::string result;

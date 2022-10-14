@@ -142,6 +142,31 @@ std::unique_ptr<Backup> MxmlParser::parseBackup()
     return backup;
 }
 
+std::unique_ptr<Barline> MxmlParser::parseBarline()
+{
+    // TODO add error detection and handling
+    std::unique_ptr<Barline> barline(new Barline);
+    barline->location = m_e.attributes().value("location").toUtf8().data();
+
+    while (m_e.readNextStartElement()) {
+        if (m_e.name() == "bar-style")
+            barline->barStyle = m_e.readElementText().toUtf8().data();
+        else if (m_e.name() == "ending") {
+            barline->endingNumber = m_e.attributes().value("number").toUtf8().data();
+            barline->endingType   = m_e.attributes().value("type").toUtf8().data();
+            barline->endingText = m_e.readElementText().toUtf8().data();
+        }
+        else if (m_e.name() == "repeat") {
+            barline->repeatDirection = m_e.attributes().value("direction").toUtf8().data();
+            barline->repeatTimes = m_e.attributes().value("number").toUInt();
+            m_e.skipCurrentElement();
+        }
+        else
+            unexpectedElement();
+    }
+    return barline;
+}
+
 // TODO: error detection and reporting
 std::pair<unsigned int, Clef> MxmlParser::parseClef()
 {
@@ -373,7 +398,7 @@ Measure MxmlParser::parseMeasure()
             measure.elements.push_back(parseBackup());
         }
         else if (m_e.name() == "barline") {
-            m_e.skipCurrentElement();   // ignore
+            measure.elements.push_back(parseBarline());
         }
         else if (m_e.name() == "direction") {
             m_e.skipCurrentElement();   // ignore
