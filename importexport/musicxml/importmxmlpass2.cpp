@@ -1995,32 +1995,6 @@ void MusicXMLParserPass2::measure(const MusicXML::Measure& measure,
             }
       else if (_e.name() == "harmony")
             harmony(partId, measure, time + mTime);
-      else if (_e.name() == "sound") {
-            QString tempo = _e.attributes().value("tempo").toString();
-
-            if (!tempo.isEmpty()) {
-                  // sound tempo="..."
-                  // create an invisible default TempoText
-                  // to prevent duplicates, only if none is present yet
-                  Fraction tick = time + mTime;
-                  if (hasTempoTextAtTick(_score->tempomap(), tick.ticks())) {
-                        _logger->logError(QString("duplicate tempo at tick %1").arg(tick.ticks()), &_e);
-                        }
-                  else {
-                        double tpo = tempo.toDouble() / 60;
-                        TempoText* t = new TempoText(_score);
-                        t->setXmlText(QString("%1 = %2").arg(TempoText::duration2tempoTextString(TDuration(TDuration::DurationType::V_QUARTER)), tempo));
-                        t->setVisible(false);
-                        t->setTempo(tpo);
-                        t->setFollowText(true);
-
-                        _score->setTempo(tick, tpo);
-
-                        addElemOffset(t, _pass1.trackForPart(partId), "above", measure, tick);
-                        }
-                  }
-            _e.skipCurrentElement();
-            }
       else if (_e.name() == "barline")
             barline(partId, measure, time + mTime);
       }
@@ -2087,6 +2061,34 @@ void MusicXMLParserPass2::measure(const MusicXML::Measure& measure,
                         mTime += missingCurr;
                         }
                   //qDebug("added note %p chord %p gac %d", n, n ? n->chord() : 0, gac);
+                  }
+            else if (element->elementType == MusicXML::ElementType::SOUND) {
+                  const auto& sound = *static_cast<MusicXML::Sound*>(element.get());
+                  if (sound.tempo > 0.001) {
+                        // sound tempo="..."
+                        // create an invisible default TempoText
+                        // to prevent duplicates, only if none is present yet
+                        Fraction tick = time + mTime;
+                        if (hasTempoTextAtTick(_score->tempomap(), tick.ticks())) {
+                              _logger->logError(QString("duplicate tempo at tick %1").arg(tick.ticks()), &_e);
+                        }
+                        else {
+                              double tpo = sound.tempo / 60;
+                              QString tempo;
+                              tempo.setNum(sound.tempo);
+                              TempoText* t = new TempoText(_score);
+                              t->setXmlText(QString("%1 = %2")
+                                            .arg(TempoText::duration2tempoTextString(TDuration(TDuration::DurationType::V_QUARTER)))
+                                            .arg(tempo));
+                              t->setVisible(false);
+                              t->setTempo(tpo);
+                              t->setFollowText(true);
+
+                              _score->setTempo(tick, tpo);
+
+                              addElemOffset(t, _pass1.trackForPart(partId), "above", currentMeasure, tick);
+                              }
+                        }
                   }
 
             /*
