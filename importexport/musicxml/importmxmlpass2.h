@@ -261,7 +261,7 @@ private:
       void measure(const MusicXML::Measure& measure, const QString& partId, const Fraction time);
       void attributes(const MusicXML::Attributes& attributes, const QString& partId, Measure* measure, const Fraction& tick);
       void measureStyle(Measure* measure);
-      void barline(const QString& partId, Measure* measure, const Fraction& tick);
+      void barline(const MusicXML::Barline& barline, const QString& partId, Measure* measure, const Fraction& tick);
       void key(const std::vector<MusicXML::Key>& keys, const QString& partId, Measure* measure, const Fraction& tick);
       void clef(const std::map<unsigned int, MusicXML::Clef> clefs, const QString& partId, Measure* measure, const Fraction& tick);
       void time(const MusicXML::Time& time, const QString& partId, Measure* measure, const Fraction& tick);

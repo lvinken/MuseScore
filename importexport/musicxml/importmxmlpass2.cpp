@@ -1995,8 +1995,6 @@ void MusicXMLParserPass2::measure(const MusicXML::Measure& measure,
             }
       else if (_e.name() == "harmony")
             harmony(partId, measure, time + mTime);
-      else if (_e.name() == "barline")
-            barline(partId, measure, time + mTime);
       }
 #endif
 #if 1
@@ -2024,6 +2022,10 @@ void MusicXMLParserPass2::measure(const MusicXML::Measure& measure,
                               mTime.set(0, 1);
                               }
                         }
+                  }
+            else if (element->elementType == MusicXML::ElementType::BARLINE) {
+                  const MusicXML::Barline& barline = *static_cast<MusicXML::Barline*>(element.get());
+                  MusicXMLParserPass2::barline(barline, partId, currentMeasure, time + mTime);
                   }
             else if (element->elementType == MusicXML::ElementType::FORWARD) {
                   const MusicXML::Forward& forward = *static_cast<MusicXML::Forward*>(element.get());
@@ -3305,44 +3307,18 @@ static void addBarlineToMeasure(Measure* measure, const Fraction tick, std::uniq
  - final
  */
 
-void MusicXMLParserPass2::barline(const QString& partId, Measure* measure, const Fraction& tick)
+void MusicXMLParserPass2::barline(const MusicXML::Barline& barline, const QString& partId, Measure* measure, const Fraction& tick)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "barline");
-
-      QString loc = _e.attributes().value("location").toString();
+      QString loc { barline.location.data() };
       if (loc == "")
             loc = "right";
-      QString barStyle;
-      QString endingNumber;
-      QString endingType;
-      QString endingText;
-      QString repeat;
-      QString count;
-
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "bar-style")
-                  barStyle = _e.readElementText();
-            else if (_e.name() == "ending") {
-                  endingNumber = _e.attributes().value("number").toString();
-                  endingType   = _e.attributes().value("type").toString();
-                  endingText = _e.readElementText();
-                  }
-            else if (_e.name() == "repeat") {
-                  repeat = _e.attributes().value("direction").toString();
-                  count = _e.attributes().value("times").toString();
-                  if (count.isEmpty()) {
-                        count = "2";
-                        }
-                  measure->setRepeatCount(count.toInt());
-                  _e.skipCurrentElement();
-                  }
-            else
-                  skipLogCurrElem();
-            }
+      QString repeat { barline.repeatDirection.data() };
+      int count = (barline.repeatTimes > 0) ? barline.repeatTimes : 2;
+      measure->setRepeatCount(count);
 
       BarLineType type = BarLineType::NORMAL;
       bool visible = true;
-      if (determineBarLineType(barStyle, repeat, type, visible)) {
+      if (determineBarLineType(barline.barStyle.data(), repeat, type, visible)) {
             const auto track = _pass1.trackForPart(partId);
             if (type == BarLineType::START_REPEAT) {
                   // combine start_repeat flag with current state initialized during measure parsing
@@ -3356,20 +3332,20 @@ void MusicXMLParserPass2::barline(const QString& partId, Measure* measure, const
                   measure->setEndBarLineType(type, track, visible);
                   }
             else {
-                  if (barStyle == "tick"
-                      || barStyle == "short"
-                      || barStyle == "none"
-                      || barStyle == "dashed"
-                      || barStyle == "dotted"
-                      || barStyle == "light-light"
-                      || barStyle == "regular") {
-                        auto b = createBarline(measure->score(), track, type, visible, barStyle);
+                  if (barline.barStyle == "tick"
+                      || barline.barStyle == "short"
+                      || barline.barStyle == "none"
+                      || barline.barStyle == "dashed"
+                      || barline.barStyle == "dotted"
+                      || barline.barStyle == "light-light"
+                      || barline.barStyle == "regular") {
+                        auto b = createBarline(measure->score(), track, type, visible, barline.barStyle.data());
                         addBarlineToMeasure(measure, tick, std::move(b));
                         }
                   }
             }
 
-      doEnding(partId, measure, endingNumber, endingType, endingText);
+      doEnding(partId, measure, barline.endingNumber.data(), barline.endingType.data(), barline.endingText.data());
       }
 
 //---------------------------------------------------------
