@@ -20,6 +20,7 @@ private:
     void log_error(const QString& text);
     void log_warning(const QString& text);
     bool parse();
+    Accidental parseAccidental();
     std::unique_ptr<Attributes> parseAttributes();
     std::unique_ptr<Backup> parseBackup();
     std::unique_ptr<Barline> parseBarline();

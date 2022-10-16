@@ -8,6 +8,23 @@
 
 namespace MusicXML {
 
+std::string Accidental::toString() const
+{
+    std::string result;
+    result += "\n    accidental";
+    if (cautionary) {
+        result += " cautionary=\"yes\"";
+    }
+    if (editorial) {
+        result += " editorial=\"yes\"";
+    }
+    if (parentheses) {
+        result += " parentheses=\"yes\"";
+    }
+    result += " \"" + text + "\"";
+    return result;
+}
+
 Attributes::Attributes()
     : Element(ElementType::ATTRIBUTES)
 {
@@ -382,6 +399,9 @@ std::string Note::toString() const
     }
     for (unsigned int i = 0; i < dots; ++i) {
         result += "\n    dot";
+    }
+    if (accidentalRead) {
+        result += accidental.toString();
     }
     if (timeModification.isValid()) {
         result += timeModification.toString();

@@ -45,6 +45,14 @@ struct Element {
     virtual std::string toString() const { return ""; }
 };
 
+struct Accidental {
+    bool cautionary { false }; // TODO make optional
+    bool editorial { false }; // TODO make optional
+    bool parentheses { false }; // TODO make optional
+    std::string text;
+    std::string toString() const;
+};
+
 struct CreditWords : public Element {
     CreditWords();
     float defaultX { 0.0 }; // TODO make optional
@@ -287,6 +295,8 @@ struct TimeModification : public Element {
 
 struct Note : public Element {
     Note();
+    Accidental accidental; // TODO: make optional
+    bool accidentalRead { false };
     std::string beam; // TODO: make type-safe, support multiple beams
     bool chord { false };
     bool cue { false };

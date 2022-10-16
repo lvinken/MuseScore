@@ -80,6 +80,16 @@ int MxmlParser::parse(QIODevice* data, const QString &filename)
     return res;
 }
 
+Accidental MxmlParser::parseAccidental()
+{
+    Accidental accidental;
+    accidental.cautionary = m_e.attributes().value("cautionary") == "yes";
+    accidental.editorial = m_e.attributes().value("editorial") == "yes";
+    accidental.parentheses = m_e.attributes().value("parentheses") == "yes";
+    accidental.text = m_e.readElementText().toUtf8().data();
+    return accidental;
+}
+
 std::unique_ptr<Attributes> MxmlParser::parseAttributes()
 {
     std::unique_ptr<MusicXML::Attributes> attributes(new Attributes);
@@ -492,7 +502,8 @@ std::unique_ptr<Note> MxmlParser::parseNote()
     std::unique_ptr<Note> note(new Note);
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "accidental") {
-            m_e.skipCurrentElement();   // ignore
+            note->accidental = parseAccidental();
+            note->accidentalRead = true;
         }
         else if (m_e.name() == "beam") {
             if (m_e.attributes().value("number") == "1") {
