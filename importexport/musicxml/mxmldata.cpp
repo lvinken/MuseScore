@@ -324,10 +324,10 @@ std::string MidiInstrument::toString() const
         result += "\n    midi-unpitched \"" + std::to_string(midiUnpitched + 1) + "\"";
     }
     if (volumeRead) {
-        result += "\n    volume \"" + std::to_string(volume) + "\"";
+        result += "\n    volume \"" + std::to_string(static_cast<int>(volume + 0.5)) + "\"";
     }
     if (panRead) {
-        result += "\n    pan \"" + std::to_string(pan) + "\"";
+        result += "\n    pan \"" + std::to_string(static_cast<int>(pan + 0.5)) + "\"";
     }
     return result;
 }
