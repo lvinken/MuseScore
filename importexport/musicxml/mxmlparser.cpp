@@ -287,7 +287,13 @@ Encoding MxmlParser::parseEncoding()
 {
     Encoding encoding;
     while (m_e.readNextStartElement()) {
-        if (m_e.name() == "supports") {
+        if (m_e.name() == "encoding-date") {
+            encoding.encodingDate = m_e.readElementText().toUtf8().data();
+        }
+        else if (m_e.name() == "software") {
+            encoding.software = m_e.readElementText().toUtf8().data();
+        }
+        else if (m_e.name() == "supports") {
             encoding.supportses.push_back(parseSupports());
         }
         else {

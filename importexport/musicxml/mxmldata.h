@@ -199,6 +199,8 @@ struct Supports {
 };
 
 struct Encoding {
+    std::string encodingDate;
+    std::string software;
     std::vector<Supports> supportses;
     std::string toString() const;
 };

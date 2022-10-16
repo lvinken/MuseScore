@@ -207,8 +207,14 @@ std::string Encoding::toString() const
 {
     std::string result;
     result += "\n  encoding";
+    if (!encodingDate.empty()) {
+        result += "\n   encoding-date \"" + encodingDate + "\"";
+    }
+    if (!software.empty()) {
+        result += "\n   software \"" + software + "\"";
+    }
     for (const auto& supports : supportses) {
-         result += supports.toString();
+        result += supports.toString();
     }
     return result;
 }
