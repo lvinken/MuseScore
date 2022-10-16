@@ -370,6 +370,7 @@ struct ScorePartwise : public Element {
     Defaults defaults;
     bool defaultsRead { false };
     Identification identification;
+    bool identificationRead { false };
     bool isFound { false };
     std::string movementNumber;
     std::string movementTitle;

@@ -657,7 +657,9 @@ std::string ScorePartwise::toString() const
     if (!movementNumber.empty()) {
         result += "\n movement-title \"" + movementTitle + "\"";
     }
-    result += identification.toString();
+    if (identificationRead) {
+        result += identification.toString();
+    }
     if (defaultsRead) {
         result += defaults.toString();
     }

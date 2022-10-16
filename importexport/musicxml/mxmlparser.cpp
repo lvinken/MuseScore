@@ -828,6 +828,7 @@ void MxmlParser::parseScorePartwise()
         }
         else if (m_e.name() == "identification") {
             m_data.scorePartwise.identification = parseIdentification();
+            m_data.scorePartwise.identificationRead = true;
         }
         else if (m_e.name() == "movement-number") {
             m_data.scorePartwise.movementNumber = m_e.readElementText().toUtf8().data();
