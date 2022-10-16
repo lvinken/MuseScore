@@ -51,7 +51,9 @@ std::string Attributes::toString() const
             result += "\n     beat-type \"" + time.beatType + "\"";
         }
     }
-    result += "\n    staves \"" + std::to_string(staves) + "\"";
+    if (stavesRead) {
+        result += "\n    staves \"" + std::to_string(staves) + "\"";
+    }
     for (const auto& pair : clefs) {
         result += "\n    clef number=\"" + std::to_string(pair.first + 1) + "\"";
         if (!pair.second.sign.empty()) {
@@ -424,7 +426,9 @@ std::string Note::toString() const
             result += " \"" + noteheadText + "\"";
         }
     }
-    result += "\n    staff \"" + std::to_string(staff) + "\"";
+    if (staffRead) {
+        result += "\n    staff \"" + std::to_string(staff) + "\"";
+    }
     if (!beam.empty()) {
         result += "\n    beam number=\"1\" \"" + beam + "\"";
     }

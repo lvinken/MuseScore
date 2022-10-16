@@ -116,15 +116,16 @@ std::unique_ptr<Attributes> MxmlParser::parseAttributes()
               bool ok;
               staves = m_e.readElementText().toUInt(&ok);
               if (ok) {
-                    attributes->staves = staves;
+                  attributes->staves = staves;
+                  attributes->stavesRead = true;
               }
         }
         else if (m_e.name() == "time") {
             attributes->times.push_back(parseTime());
         }
         else if (m_e.name() == "transpose") {
-              attributes->transpose = parseTranspose();
-              attributes->transposeRead = true;
+            attributes->transpose = parseTranspose();
+            attributes->transposeRead = true;
         }
         else {
             unexpectedElement();
@@ -567,6 +568,7 @@ std::unique_ptr<Note> MxmlParser::parseNote()
             staff = m_e.readElementText().toUInt(&ok);
             if (ok) {
                 note->staff = staff;
+                note->staffRead = true;
             }
         }
         else if (m_e.name() == "stem") {

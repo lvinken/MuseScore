@@ -103,6 +103,7 @@ struct Attributes : public Element {
     unsigned int divisions { 0 }; // TODO make optional
     std::vector<Key> keys;
     unsigned int staves { 1 }; // TODO make optional
+    bool stavesRead { false };
     std::vector<Time> times;
     Transpose transpose; // TODO make optional
     bool transposeRead { false };
@@ -312,7 +313,8 @@ struct Note : public Element {
     std::string noteheadText;
     Pitch pitch;            // TODO: make optional ?
     bool rest { false };    // TODO: support display-step and display-octave
-    unsigned int staff { 1 };
+    unsigned int staff { 1 }; // TODO: make optional
+    bool staffRead { false };
     std::string stem; // TODO: make type-safe
     TimeModification timeModification;
     std::string toString() const;
