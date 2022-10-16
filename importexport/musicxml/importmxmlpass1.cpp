@@ -730,7 +730,6 @@ static VBox* addCreditWords(Score* const score, const CreditWordsList& crWords,
 
 static void createDefaultHeader(Score* const score)
       {
-#if 0
       QString strTitle;
       QString strSubTitle;
       QString strComposer;
@@ -761,7 +760,6 @@ static void createDefaultHeader(Score* const score)
       addText(vbox, score, strComposer.toHtmlEscaped(),   Tid::COMPOSER);
       addText(vbox, score, strPoet.toHtmlEscaped(),       Tid::POET);
       addText(vbox, score, strTranslator.toHtmlEscaped(), Tid::TRANSLATOR);
-#endif
       }
 
 //---------------------------------------------------------
