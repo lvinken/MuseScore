@@ -38,6 +38,7 @@ private:
     MidiDevice parseMidiDevice();
     MidiInstrument parseMidiInstrument();
     Lyric parseLyric();
+    Notations parseNotations();
     std::unique_ptr<Note> parseNote();
     PageLayout parsePageLayout(bool& read);
     Part parsePart();
@@ -56,6 +57,8 @@ private:
     Time parseTime();
     TimeModification parseTimeModification();
     Transpose parseTranspose();
+    std::unique_ptr<Tuplet> parseTuplet();
+    TupletPortion parseTupletPortion();
     Work parseWork();
     void unexpectedElement();
 

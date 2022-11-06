@@ -33,6 +33,7 @@ enum class ElementType {
     SOUND,
     TIME,
     TIMEMODIFICATION,
+    TUPLET
 };
 
 struct Note;
@@ -290,8 +291,35 @@ struct TimeModification : public Element {
     TimeModification();
     unsigned int actualNotes { 1 };
     bool isValid() const;
+    unsigned int normalDots { 0 };
     unsigned int normalNotes { 1 };
+    std::string normalType;
     std::string toString() const;
+};
+
+struct TupletPortion {
+    unsigned int tupletDots { 0 };
+    unsigned int tupletNumber { 1 }; // TODO: make optional
+    std::string tupletType;
+    std::string toString() const;
+};
+
+struct Tuplet : public Element {
+    Tuplet();
+    unsigned int number { 0 };
+    bool numberRead { false };
+    TupletPortion tupletActual;
+    bool tupletActualRead { false };
+    TupletPortion tupletNormal;
+    bool tupletNormalRead { false };
+    std::string type;
+    std::string toString() const;
+};
+
+struct Notations {
+    std::vector<std::unique_ptr<Element>> elements;
+    std::string toString() const;
+
 };
 
 struct Note : public Element {
@@ -307,6 +335,7 @@ struct Note : public Element {
     std::string instrument; // TODO: support multiple instrument
     std::vector<Lyric> lyrics;
     bool measureRest { false };
+    std::vector<Notations> notationses;
     std::string noteheadColor; // TODO: make type-safe
     std::string noteheadFilled; // TODO: this is an optional yes-no, when no longer a string, make optional
     std::string noteheadParentheses; // TODO: this is an optional yes-no, when no longer a string, make optional

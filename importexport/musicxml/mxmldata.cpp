@@ -351,6 +351,16 @@ std::string MidiInstrument::toString() const
     return result;
 }
 
+std::string Notations::toString() const
+{
+    std::string result;
+    result += "\n    notations";
+    for (const auto& element : elements) {
+        result += element->toString();
+    }
+    return result;
+}
+
 Note::Note()
     : Element(ElementType::NOTE)
 {
@@ -431,6 +441,9 @@ std::string Note::toString() const
     }
     if (!beam.empty()) {
         result += "\n    beam number=\"1\" \"" + beam + "\"";
+    }
+    for (const auto& notations : notationses) {
+        result += notations.toString();
     }
     for (const auto& lyric : lyrics) {
         result += lyric.toString();
@@ -716,6 +729,13 @@ std::string TimeModification::toString() const
     result += "\n    time-modification";
     result += "\n     actual-notes \"" + std::to_string(actualNotes) + "\"";
     result += "\n     normal-notes \"" + std::to_string(normalNotes) + "\"";
+    if (!normalType.empty()) {
+        result += "\n     normal-type";
+        result += " \"" + normalType + "\"";
+    }
+    for (unsigned int i = 0; i < normalDots; ++i) {
+        result += "\n     normal-dot";
+    }
     return result;
 }
 
@@ -726,6 +746,45 @@ std::string Transpose::toString() const
     result += "\n     diatonic \"" + std::to_string(diatonic) + "\"";
     result += "\n     chromatic \"" + std::to_string(chromatic) + "\"";
     result += "\n     octave-change \"" + std::to_string(octaveChange) + "\"";
+    return result;
+}
+
+Tuplet::Tuplet()
+    : Element(ElementType::TUPLET)
+{
+    // nothing
+}
+
+std::string Tuplet::toString() const
+{
+    std::string result;
+    result += "\n     tuplet";
+    if (numberRead) {
+        result += " number=\"" + std::to_string(number) + "\"";
+    }
+    if (!type.empty()) {
+        result += " type=\"" + type + "\"";
+    }
+    if (tupletActualRead) {
+        result += "\n      tuplet-actual" + tupletActual.toString();
+    }
+    if (tupletNormalRead) {
+        result += "\n      tuplet-normal" + tupletNormal.toString();
+    }
+    return result;
+}
+
+std::string TupletPortion::toString() const
+{
+    std::string result;
+    result += "\n       tuplet-number \"" + std::to_string(tupletNumber) + "\"";
+    if (!tupletType.empty()) {
+        result += "\n       tuplet-type";
+        result += " \"" + tupletType + "\"";
+    }
+    for (unsigned int i = 0; i < tupletDots; ++i) {
+        result += "\n       tuplet-dot";
+    }
     return result;
 }
 

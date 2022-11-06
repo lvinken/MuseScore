@@ -497,6 +497,20 @@ MidiInstrument MxmlParser::parseMidiInstrument()
     return midiInstrument;
 }
 
+Notations MxmlParser::parseNotations()
+{
+    Notations notations;
+    while (m_e.readNextStartElement()) {
+        if (m_e.name() == "tuplet") {
+            notations.elements.push_back(parseTuplet());
+        }
+        else {
+            unexpectedElement();
+        }
+    }
+    return notations;
+}
+
 std::unique_ptr<Note> MxmlParser::parseNote()
 {
     // TODO add error detection and handling
@@ -546,7 +560,7 @@ std::unique_ptr<Note> MxmlParser::parseNote()
             note->lyrics.push_back(parseLyric());
         }
         else if (m_e.name() == "notations") {
-            m_e.skipCurrentElement();   // ignore
+            note->notationses.push_back(parseNotations());
         }
         else if (m_e.name() == "notehead") {
             note->noteheadColor = m_e.attributes().value("color").toUtf8().data();
@@ -931,8 +945,15 @@ TimeModification MxmlParser::parseTimeModification()
         if (m_e.name() == "actual-notes") {
             timeModification.actualNotes = m_e.readElementText().toInt(&actualOk);
         }
+        else if (m_e.name() == "normal-dot") {
+            timeModification.normalDots++;
+            m_e.skipCurrentElement();
+        }
         else if (m_e.name() == "normal-notes") {
             timeModification.normalNotes = m_e.readElementText().toInt(&normalOk);
+        }
+        else if (m_e.name() == "normal-type") {
+            timeModification.normalType = m_e.readElementText().toUtf8().data();
         }
         else {
             unexpectedElement();
@@ -963,6 +984,49 @@ Transpose MxmlParser::parseTranspose()
         }
     }
     return transpose;
+}
+
+std::unique_ptr<Tuplet> MxmlParser::parseTuplet()
+{
+    std::unique_ptr<Tuplet> tuplet(new Tuplet);
+    tuplet->number = m_e.attributes().value("number").toUInt(&tuplet->numberRead);
+    tuplet->type = std::string { m_e.attributes().value("type").toUtf8().data() };
+    while (m_e.readNextStartElement()) {
+        if (m_e.name() == "tuplet-actual") {
+            tuplet->tupletActual = parseTupletPortion();
+            tuplet->tupletActualRead = true;
+        }
+        else if (m_e.name() == "tuplet-normal") {
+            tuplet->tupletNormal = parseTupletPortion();
+            tuplet->tupletNormalRead  =true;
+        }
+        else {
+            unexpectedElement();
+        }
+    }
+    return tuplet;
+}
+
+TupletPortion MxmlParser::parseTupletPortion()
+{
+    TupletPortion tupletPortion;
+    bool numberOk { false };
+    while (m_e.readNextStartElement()) {
+        if (m_e.name() == "tuplet-dot") {
+            tupletPortion.tupletDots++;
+            m_e.skipCurrentElement();
+        }
+        else if (m_e.name() == "tuplet-number") {
+            tupletPortion.tupletNumber = m_e.readElementText().toUInt(&numberOk);
+        }
+        else if (m_e.name() == "tuplet-type") {
+            tupletPortion.tupletType = m_e.readElementText().toUtf8().data();
+        }
+        else {
+            unexpectedElement();
+        }
+    }
+    return tupletPortion;
 }
 
 Work MxmlParser::parseWork()
