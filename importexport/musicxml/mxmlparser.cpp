@@ -294,6 +294,22 @@ unsigned int MxmlParser::parseDivisions()
     return 0;
 }
 
+std::unique_ptr<Dynamics> MxmlParser::parseDynamics()
+{
+    std::unique_ptr<Dynamics> dynamics(new Dynamics);
+    dynamics->placement = std::string { m_e.attributes().value("placement").toUtf8().data() };
+    while (m_e.readNextStartElement()) {
+        if (m_e.name() == "other-dynamics") {
+            dynamics->texts.push_back(m_e.readElementText().toUtf8().data());
+        }
+        else {
+            dynamics->texts.push_back(m_e.name().toString().toUtf8().data());
+            m_e.skipCurrentElement();
+        }
+    }
+    return dynamics;
+}
+
 Encoding MxmlParser::parseEncoding()
 {
     Encoding encoding;
@@ -501,7 +517,10 @@ Notations MxmlParser::parseNotations()
 {
     Notations notations;
     while (m_e.readNextStartElement()) {
-        if (m_e.name() == "tuplet") {
+        if (m_e.name() == "dynamics") {
+            notations.elements.push_back(parseDynamics());
+        }
+        else if (m_e.name() == "tuplet") {
             notations.elements.push_back(parseTuplet());
         }
         else {

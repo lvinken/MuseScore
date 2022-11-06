@@ -17,6 +17,7 @@ enum class ElementType {
     CREDIT,
     CREDITWORDS,
     DEFAULTS,
+    DYNAMICS,
     ELEMENT,
     FORWARD,
     KEY,
@@ -185,6 +186,13 @@ struct Defaults : public Element {
     SystemLayout systemLayout;    // TODO make optional ?
     Font wordFont;      // TODO make optional
     bool wordFontRead { false };
+    std::string toString() const;
+};
+
+struct Dynamics : public Element {
+    Dynamics();
+    std::string placement;
+    std::vector<std::string> texts;
     std::string toString() const;
 };
 

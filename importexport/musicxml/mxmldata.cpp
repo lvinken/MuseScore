@@ -217,6 +217,25 @@ Clef::Clef()
     // nothing
 }
 
+Dynamics::Dynamics()
+    : Element(ElementType::DYNAMICS)
+{
+    // nothing
+}
+
+std::string Dynamics::toString() const
+{
+    std::string result;
+    result += "\n     dynamics";
+    if (!placement.empty()) {
+        result += " placement=\"" + placement + "\"";
+    }
+    for (const auto& text : texts) {
+        result += "\n      " + text;
+    }
+    return result;
+}
+
 Element::Element(const ElementType& p_elementType)
 {
     elementType = p_elementType;

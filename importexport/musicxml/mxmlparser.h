@@ -29,6 +29,7 @@ private:
     Credit parseCredit();
     Defaults parseDefaults(bool& read);
     unsigned int parseDivisions();
+    std::unique_ptr<Dynamics> parseDynamics();
     Encoding parseEncoding();
     Font parseFont();
     std::unique_ptr<Forward> parseForward();
