@@ -221,8 +221,8 @@ private:
       Score* const _score;                      // the score
       MxmlLogger* _logger;                            // the error logger
       MusicXmlTupletDesc _tupletDesc;
-      QString _dynamicsPlacement;
-      QStringList _dynamicsList;
+      QString _dynamicsPlacement; // TODO: load from MusicXML::Dynamics
+      QStringList _dynamicsList; // TODO: load from MusicXML::Dynamics
       std::vector<Notation> _notations;
       SymId _breath { SymId::noSym };
       QString _tremoloType;
