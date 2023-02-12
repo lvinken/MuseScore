@@ -104,7 +104,7 @@
 #include "libmscore/palmmute.h"
 #include "libmscore/vibrato.h"
 
-#include "musicxml.h"
+#include "mxml.h"
 #include "musicxmlfonthandler.h"
 #include "musicxmlsupport.h"
 

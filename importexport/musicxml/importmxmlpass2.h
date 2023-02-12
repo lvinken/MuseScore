@@ -26,7 +26,7 @@
 #include "libmscore/tuplet.h"
 #include "importxmlfirstpass.h"
 #include "importmxmlpass1.h"
-#include "musicxml.h" // a.o. for Slur
+#include "mxml.h" // a.o. for Slur
 #include "musicxmlsupport.h"
 
 namespace Ms {

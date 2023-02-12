@@ -22,7 +22,7 @@
 
 #include "libmscore/score.h"
 #include "importxmlfirstpass.h"
-#include "musicxml.h" // for the creditwords definition
+#include "mxml.h" // for the creditwords definition
 #include "musicxmlsupport.h"
 
 namespace Ms {
