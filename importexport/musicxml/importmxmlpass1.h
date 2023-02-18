@@ -25,6 +25,12 @@
 #include "mxml.h" // for the creditwords and MusicXmlPartGroupList definitions
 #include "musicxmlsupport.h"
 
+namespace musicxml {
+
+class score_partwise;
+
+}
+
 namespace Ms {
 
 //---------------------------------------------------------
@@ -117,6 +123,7 @@ public:
       MusicXMLParserPass1(Score* score, MxmlLogger* logger);
       void initPartState(const QString& partId);
       Score::FileError parse(QIODevice* device);
+      Score::FileError parse(const musicxml::score_partwise& score_partwise);
       Score::FileError parse();
       void scorePartwise();
       void identification();

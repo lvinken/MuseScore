@@ -50,6 +50,9 @@ Score::FileError importMusicXMLfromBuffer(Score* score, const QString& name, QIO
       //logger.setLoggingLevel(MxmlLogger::Level::MXML_INFO);
       //logger.setLoggingLevel(MxmlLogger::Level::MXML_TRACE); // also include tracing
 
+      dev->seek(0);
+      MusicXMLParserPass1 pass1(score, &logger);
+
       // pass 0 :-)
       std::fstream fs(name.toStdString(), std::ios::in);
       if (!fs.is_open()) {
@@ -59,11 +62,14 @@ Score::FileError importMusicXMLfromBuffer(Score* score, const QString& name, QIO
       }
       qDebug("importMusicXMLfromBuffer() 3 successfully opened MusicXML file '%s'", qPrintable(name));
 
+      Score::FileError res { Score::FileError::FILE_NO_ERROR };
+
       try {
           const auto score_partwise = musicxml::score_partwise_(fs);
           qDebug("importMusicXMLfromBuffer(): 4 score_partwise created");
-          //dump_part_list(score_partwise->part_list());
-          //dump_parts(score_partwise->part());
+          res = pass1.parse(*score_partwise);
+          if (res != Score::FileError::FILE_NO_ERROR)
+                return res;
       } catch (const xml_schema::exception &e) {
           std::cerr << "importMusicXMLfromBuffer(): 5a xml_schema::exception " << e << std::endl;
           qDebug("importMusicXMLfromBuffer(): 5b xml_schema::exception");
@@ -75,8 +81,7 @@ Score::FileError importMusicXMLfromBuffer(Score* score, const QString& name, QIO
 
       // pass 1
       dev->seek(0);
-      MusicXMLParserPass1 pass1(score, &logger);
-      Score::FileError res = pass1.parse(dev);
+      res = pass1.parse(dev);
       if (res != Score::FileError::FILE_NO_ERROR)
             return res;
 
