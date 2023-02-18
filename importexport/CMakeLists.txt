@@ -41,6 +41,8 @@ include(${CMAKE_CURRENT_LIST_DIR}/bb/bb.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/capella/capella.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/bww/bww.cmake)
 
+find_package(XercesC REQUIRED) # for musicxml (xsd)
+
 add_library (
       ${MODULE} STATIC
       ${_all_h_file}
@@ -60,6 +62,7 @@ add_subdirectory(../thirdparty/rtf2html rtf2html) # for capella
 
 target_link_libraries(${MODULE}
     ${QT_LIBRARIES}
+    ${XercesC_LIBRARY} # for musicxml (xsd)
     audio       # for midiimport
     beatroot    # for midiimport
     rtf2html    # for capella

@@ -17,6 +17,8 @@
 //  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //=============================================================================
 
+#include <fstream>
+
 #include "libmscore/box.h"
 #include "libmscore/measure.h"
 #include "libmscore/page.h"
@@ -29,20 +31,47 @@
 #include "importmxmllogger.h"
 #include "importmxmlpass1.h"
 #include "importmxmlpass2.h"
+#include "musicxml.hxx"
 
 #include "mscore/preferences.h"
 
 namespace Ms {
 
-Score::FileError importMusicXMLfromBuffer(Score* score, const QString& /*name*/, QIODevice* dev)
+Score::FileError importMusicXMLfromBuffer(Score* score, const QString& name, QIODevice* dev)
+
       {
-      //qDebug("importMusicXMLfromBuffer(score %p, name '%s', dev %p)",
-      //       score, qPrintable(name), dev);
+      qDebug("importMusicXMLfromBuffer(score %p, name '%s', dev %p) 1a",
+             score, qPrintable(name), dev);
+      qDebug("importMusicXMLfromBuffer() 1b QDir::currentPath() '%s'",
+             qPrintable(QDir::currentPath()));
 
       MxmlLogger logger;
       logger.setLoggingLevel(MxmlLogger::Level::MXML_ERROR); // errors only
       //logger.setLoggingLevel(MxmlLogger::Level::MXML_INFO);
       //logger.setLoggingLevel(MxmlLogger::Level::MXML_TRACE); // also include tracing
+
+      // pass 0 :-)
+      std::fstream fs(name.toStdString(), std::ios::in);
+      if (!fs.is_open()) {
+          qDebug("importMusicXMLfromBuffer() 2 could not open MusicXML file '%s'", qPrintable(name));
+          MScore::lastError = QObject::tr("Could not open MusicXML file\n%1").arg(name);
+          return Score::FileError::FILE_OPEN_ERROR;
+      }
+      qDebug("importMusicXMLfromBuffer() 3 successfully opened MusicXML file '%s'", qPrintable(name));
+
+      try {
+          const auto score_partwise = musicxml::score_partwise_(fs);
+          qDebug("importMusicXMLfromBuffer(): 4 score_partwise created");
+          //dump_part_list(score_partwise->part_list());
+          //dump_parts(score_partwise->part());
+      } catch (const xml_schema::exception &e) {
+          std::cerr << "importMusicXMLfromBuffer(): 5a xml_schema::exception " << e << std::endl;
+          qDebug("importMusicXMLfromBuffer(): 5b xml_schema::exception");
+          return Score::FileError::FILE_BAD_FORMAT;
+      } catch (const std::ios_base::failure &) {
+          qDebug("importMusicXMLfromBuffer(): 6 unable to open or read failure");
+          return Score::FileError::FILE_OPEN_ERROR;
+      }
 
       // pass 1
       dev->seek(0);

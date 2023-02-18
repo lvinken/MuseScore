@@ -251,6 +251,8 @@ Score::FileError importMusicXml(MasterScore* score, QIODevice* dev, const QStrin
       {
       ScoreLoad sl;     // suppress warnings for undo push/pop
 
+      qDebug("importMusicXml(%p, %p, %s)", score, dev, qPrintable(name));
+
       if (!dev->open(QIODevice::ReadOnly)) {
             qDebug("importMusicXml() could not open MusicXML file '%s'", qPrintable(name));
             MScore::lastError = QObject::tr("Could not open MusicXML file\n%1").arg(name);
@@ -265,7 +267,7 @@ Score::FileError importMusicXml(MasterScore* score, const QString& name) {
 
     ScoreLoad sl;     // suppress warnings for undo push/pop
 
-    //qDebug("importMusicXml(%p, %s)", score, qPrintable(name));
+    qDebug("importMusicXml(%p, %s)", score, qPrintable(name));
 
     // open the MusicXML file
     QFile xmlFile(name);
@@ -292,7 +294,7 @@ Score::FileError importMusicXml(MasterScore* score, const QString& name) {
 
 Score::FileError importCompressedMusicXml(MasterScore* score, const QString& name)
       {
-      //qDebug("importCompressedMusicXml(%p, %s)", score, qPrintable(name));
+      qDebug("importCompressedMusicXml(%p, %s)", score, qPrintable(name));
 
       // open the compressed MusicXML file
       QFile mxlFile(name);
