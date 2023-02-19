@@ -22,14 +22,9 @@
 
 #include "libmscore/score.h"
 #include "importxmlfirstpass.h"
+#include "musicxml.hxx"
 #include "mxml.h" // for the creditwords and MusicXmlPartGroupList definitions
 #include "musicxmlsupport.h"
-
-namespace musicxml {
-
-class score_partwise;
-
-}
 
 namespace Ms {
 
@@ -176,7 +171,8 @@ public:
 
 private:
       // functions
-      // none
+      void newPartList(const musicxml::part_list& part_list /*TODO , MusicXmlPartGroupList& partGroupList */);
+      void newScorePart(const musicxml::score_part& score_part);
 
       // generic pass 1 data
       QXmlStreamReader _e;

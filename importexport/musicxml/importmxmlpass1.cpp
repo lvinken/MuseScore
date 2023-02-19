@@ -36,7 +36,6 @@
 #include "importmxmlnoteduration.h"
 #include "importmxmlpass1.h"
 #include "importmxmlpass2.h"
-#include "musicxml.hxx"
 
 #include "mscore/preferences.h"
 
@@ -909,7 +908,7 @@ static void fixupSigmap(MxmlLogger* logger, Score* score, const QVector<Fraction
 Score::FileError MusicXMLParserPass1::parse(QIODevice* device)
       {
       _logger->logDebugTrace("MusicXMLParserPass1::parse device");
-      _parts.clear();
+      //_parts.clear(); // not required, breaks pass 0 parsing
       _e.setDevice(device);
       auto res = parse();
       if (res != Score::FileError::FILE_NO_ERROR)
@@ -999,7 +998,7 @@ void MusicXMLParserPass1::scorePartwise()
             if (_e.name() == "part")
                   part();
             else if (_e.name() == "part-list")
-                  partList(partGroupList);
+                  skipLogCurrElem();// partList(partGroupList);
             else if (_e.name() == "work") {
                   while (_e.readNextStartElement()) {
                         if (_e.name() == "work-number")
@@ -1616,6 +1615,7 @@ void MusicXMLParserPass1::pageLayout(PageFormat& pf, const qreal conversion)
 
 void MusicXMLParserPass1::partList(MusicXmlPartGroupList& partGroupList)
       {
+#if 0
       Q_ASSERT(_e.isStartElement() && _e.name() == "part-list");
       _logger->logDebugTrace("MusicXMLParserPass1::partList", &_e);
 
@@ -1632,6 +1632,7 @@ void MusicXMLParserPass1::partList(MusicXmlPartGroupList& partGroupList)
             else
                   skipLogCurrElem();
             }
+#endif
       }
 
 //---------------------------------------------------------
@@ -1811,6 +1812,7 @@ static const InstrumentTemplate* findInstrument(const QString& instrSound)
 
 void MusicXMLParserPass1::scorePart()
       {
+#if 0
       Q_ASSERT(_e.isStartElement() && _e.name() == "score-part");
       _logger->logDebugTrace("MusicXMLParserPass1::scorePart", &_e);
       QString id = _e.attributes().value("id").toString().trimmed();
@@ -1876,7 +1878,7 @@ void MusicXMLParserPass1::scorePart()
             else
                   skipLogCurrElem();
             }
-
+#endif
       Q_ASSERT(_e.isEndElement() && _e.name() == "score-part");
       }
 
@@ -3453,50 +3455,6 @@ void MusicXMLParserPass1::rest()
 //---------------------------------------------------------
 
 //---------------------------------------------------------
-//   dump_part_list
-//---------------------------------------------------------
-
-void dump_part_list(const musicxml::part_list& part_list)
-{
-    const auto& content_orders = part_list.content_order();
-    for (auto & content_order : content_orders) {
-        switch (content_order.id) {
-        case musicxml::part_list::part_group_id:
-        {
-            const auto& part_group {part_list.part_group()[content_order.index]};
-            std::string number {part_group.number()};
-            std::string type;
-            if (part_group.type() == musicxml::start_stop::start) {
-                type = "start";
-            }
-            else if (part_group.type() == musicxml::start_stop::stop) {
-                type = "stop";
-            }
-            std::cout << "part-group"
-                      << " number \"" << number << "\""
-                      << " type " << type
-                      << std::endl;
-        }
-            break;
-        case musicxml::part_list::score_part_id:
-        {
-            const auto& score_part {part_list.score_part()[content_order.index]};
-            std::string id {score_part.id()};
-            std::string name {score_part.part_name()};
-            std::cout << "score-part"
-                      << " id \"" << id << "\""
-                      << " part-name \"" << name << "\""
-                      << std::endl;
-        }
-            break;
-        default:
-            assert(false); // throw ?
-            break;
-        }
-    }
-}
-
-//---------------------------------------------------------
 //   dump_measure
 //---------------------------------------------------------
 
@@ -3572,9 +3530,109 @@ void dump_parts(const xsd::cxx::tree::sequence<musicxml::part>& parts)
 
 Score::FileError MusicXMLParserPass1::parse(const musicxml::score_partwise& score_partwise)
 {
-    dump_part_list(score_partwise.part_list());
     dump_parts(score_partwise.part());
+    newPartList(score_partwise.part_list());
     return Score::FileError::FILE_NO_ERROR;
+}
+
+//---------------------------------------------------------
+//   newPartList
+//---------------------------------------------------------
+
+void MusicXMLParserPass1::newPartList(const musicxml::part_list& part_list /*TODO , MusicXmlPartGroupList& partGroupList */)
+{
+    const auto& content_orders = part_list.content_order();
+    for (auto & content_order : content_orders) {
+        switch (content_order.id) {
+        case musicxml::part_list::part_group_id:
+        {
+            /* TODO
+            const auto& part_group {part_list.part_group()[content_order.index]};
+            std::string number {part_group.number()};
+            std::string type;
+            if (part_group.type() == musicxml::start_stop::start) {
+                type = "start";
+            }
+            else if (part_group.type() == musicxml::start_stop::stop) {
+                type = "stop";
+            }
+            std::cout << "part-group"
+                      << " number \"" << number << "\""
+                      << " type " << type
+                      << std::endl;
+                      */
+        }
+            break;
+        case musicxml::part_list::score_part_id:
+        {
+            const auto& score_part {part_list.score_part()[content_order.index]};
+            newScorePart(score_part);
+        }
+            break;
+        default:
+            assert(false); // throw ?
+            break;
+        }
+    }
+}
+
+//---------------------------------------------------------
+//   newScorePart
+//---------------------------------------------------------
+
+void MusicXMLParserPass1::newScorePart(const musicxml::score_part& score_part)
+{
+    QString id { score_part.id().data() };
+
+    if (_parts.contains(id)) {
+          // TODO _logger->logError(QString("duplicate part id '%1'").arg(id), &_e);
+          return;
+          }
+    else {
+          _parts.insert(id, MusicXmlPart(id));
+          _instruments.insert(id, MusicXMLInstruments());
+          createPart(_score, id, _partMap);
+          }
+
+          // Element part-name contains the displayed (full) part name
+          // It is displayed by default, but can be suppressed (print-object=”no”)
+          // As of MusicXML 3.0, formatting is deprecated, with part-name in plain text
+          // and the formatted version in the part-name-display element
+          // TODO _parts[id].setPrintName(!(_e.attributes().value("print-object") == "no"));
+          QString name { score_part.part_name().data() };
+          _parts[id].setName(name);
+
+#if 0
+                // TODO else if (_e.name() == "part-abbreviation") {
+                      // Element part-name contains the displayed (abbreviated) part name
+                      // It is displayed by default, but can be suppressed (print-object=”no”)
+                      // As of MusicXML 3.0, formatting is deprecated, with part-name in plain text
+                      // and the formatted version in the part-abbreviation-display element
+                      _parts[id].setPrintAbbr(!(_e.attributes().value("print-object") == "no"));
+                      QString name = _e.readElementText();
+                      _parts[id].setAbbr(name);
+
+                      // TODO scoreInstrument(id);
+                // TODO else if (_e.name() == "midi-device") {
+                      if (!_e.attributes().hasAttribute("port")) {
+                            _e.readElementText(); // empty string
+                            continue;
+                      }
+                      QString instrId = _e.attributes().value("id").toString();
+                      QString port = _e.attributes().value("port").toString();
+                      // If instrId is missing, the device assignment affects all
+                      // score-instrument elements in the score-part
+                      if (instrId.isEmpty()) {
+                            for (auto it = _instruments[id].cbegin(); it != _instruments[id].cend(); ++it)
+                                  _instruments[id][it.key()].midiPort = port.toInt() - 1;
+                      }
+                      else if (_instruments[id].contains(instrId))
+                            _instruments[id][instrId].midiPort = port.toInt() - 1;
+
+                      _e.readElementText(); // empty string
+                }
+                      // TODO midiInstrument(id);
+#endif
 }
 
 } // namespace Ms
