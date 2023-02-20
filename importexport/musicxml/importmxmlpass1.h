@@ -171,6 +171,8 @@ public:
 
 private:
       // functions
+      void newMeasure(const musicxml::measure1& measure, const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr);
+      void newPart(const musicxml::part& part);
       void newPartList(const musicxml::part_list& part_list /*TODO , MusicXmlPartGroupList& partGroupList */);
       void newScorePart(const musicxml::score_part& score_part);
 

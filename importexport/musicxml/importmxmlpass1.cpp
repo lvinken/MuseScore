@@ -3524,6 +3524,11 @@ void dump_parts(const xsd::cxx::tree::sequence<musicxml::part>& parts)
     }
 }
 
+void MusicXMLParserPass1::newMeasure(const musicxml::measure1& measure, const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr)
+{
+    qDebug("part %s measure %d", qPrintable(partId), measureNr);
+}
+
 //---------------------------------------------------------
 //   parse
 //---------------------------------------------------------
@@ -3532,7 +3537,90 @@ Score::FileError MusicXMLParserPass1::parse(const musicxml::score_partwise& scor
 {
     dump_parts(score_partwise.part());
     newPartList(score_partwise.part_list());
+    for (const auto& part : score_partwise.part()) {
+        newPart(part);
+    }
     return Score::FileError::FILE_NO_ERROR;
+}
+
+//---------------------------------------------------------
+//   newPart
+//---------------------------------------------------------
+
+void MusicXMLParserPass1::newPart(const musicxml::part& part)
+{
+    QString id {part.id().data()};
+    qDebug("id '%s'", qPrintable(id));
+
+    if (!_parts.contains(id)) {
+          // TODO _logger->logError(QString("duplicate part id '%1'").arg(id), &_e);
+          }
+
+    initPartState(id);
+
+    VoiceOverlapDetector vod;
+    Fraction time;  // current time within part
+    Fraction mdur;  // measure duration
+
+    int measureNr = 0;
+    for (const auto& measure : part.measure()) {
+          newMeasure(measure, id, time, mdur, vod, measureNr);
+          time += mdur;
+          ++measureNr;
+          }
+
+    // Bug fix for Cubase 6.5.5..9.5.10 which generate <staff>2</staff> in a single staff part
+    setNumberOfStavesForPart(_partMap.value(id), _parts[id].maxStaff());
+    // allocate MuseScore staff to MusicXML voices
+    allocateStaves(_parts[id].voicelist);
+    // allocate MuseScore voice to MusicXML voices
+    allocateVoices(_parts[id].voicelist);
+    // calculate the octave shifts
+    _parts[id].calcOctaveShifts();
+    // determine the lyric numbers for this part
+    _parts[id].lyricNumberHandler().determineLyricNos();
+
+    // debug: print results
+#if 1
+    for (const auto& str : _parts[id].toString().split('\n')) {
+          qDebug("%s", qPrintable(str));
+          }
+    qDebug("lyric numbers: %s", qPrintable(_parts[id].lyricNumberHandler().toString()));
+    qDebug("instrument map:");
+    for (auto& instr : _parts[id]._instrList) {
+          qDebug("- %s '%s'", qPrintable(instr.first.print()), qPrintable(instr.second));
+          }
+    qDebug("transpose map:");
+    for (auto& it : _parts[id]._intervals) {
+          qDebug("- %s %d %d", qPrintable(it.first.print()), it.second.diatonic, it.second.chromatic);
+          }
+    qDebug("instrument transpositions:");
+    if (_parts[id]._instrList.empty()) {
+          const Fraction tick { 0, 1 };
+          const QString name { "none" };
+          const auto interval = _parts[id]._intervals.interval(tick);
+          qDebug("- %s '%s' -> %d %d",
+                 qPrintable(tick.print()), qPrintable(name), interval.diatonic, interval.chromatic);
+          }
+    else {
+          for (auto& instr : _parts[id]._instrList) {
+                const auto& tick = instr.first;
+                const auto& name = instr.second;
+                const auto interval = _parts[id].interval(tick);
+                qDebug("- %s '%s' -> %d %d",
+                       qPrintable(tick.print()), qPrintable(name), interval.diatonic, interval.chromatic);
+                }
+          }
+#endif
+
+    /*
+     qDebug("voiceMapperStats: new staff");
+     VoiceList& vl = _parts[id].voicelist;
+     for (auto i = vl.constBegin(); i != vl.constEnd(); ++i) {
+          qDebug("voiceMapperStats: voice %s staff data %s",
+          qPrintable(i.key()), qPrintable(i.value().toString()));
+          }
+     */
 }
 
 //---------------------------------------------------------
