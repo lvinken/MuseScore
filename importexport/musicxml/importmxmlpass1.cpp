@@ -3477,7 +3477,7 @@ void dump_measure(const musicxml::measure1& measure)
         case musicxml::measure1::backup_id:
         {
             std::cout << "    "
-                      << "bsckup"
+                      << "backup"
                       << std::endl;
         }
             break;
@@ -3555,16 +3555,12 @@ void MusicXMLParserPass1::newAttributes(const musicxml::attributes& attributes, 
     while (_e.readNextStartElement()) {
         if (_e.name() == "clef")
             clef(partId);
-        else if (_e.name() == "divisions")
-            divisions();
         else if (_e.name() == "key")
             _e.skipCurrentElement();  // skip but don't log
         else if (_e.name() == "instruments")
             _e.skipCurrentElement();  // skip but don't log
         else if (_e.name() == "staff-details")
             _e.skipCurrentElement();  // skip but don't log
-        else if (_e.name() == "staves")
-            staves(partId);
         else if (_e.name() == "time")
             time(cTime);
         else if (_e.name() == "transpose")
@@ -3575,6 +3571,9 @@ void MusicXMLParserPass1::newAttributes(const musicxml::attributes& attributes, 
 #endif
     if (attributes.divisions()) {
         _divs = *attributes.divisions();
+    }
+    if (attributes.staves()) {
+        setNumberOfStavesForPart(_partMap.value(partId), *attributes.staves());
     }
 }
 
