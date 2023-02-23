@@ -79,11 +79,13 @@ Score::FileError importMusicXMLfromBuffer(Score* score, const QString& name, QIO
           return Score::FileError::FILE_OPEN_ERROR;
       }
 
+#if 0
       // pass 1
       dev->seek(0);
       res = pass1.parse(dev);
       if (res != Score::FileError::FILE_NO_ERROR)
             return res;
+#endif
 
       // pass 2
       dev->seek(0);

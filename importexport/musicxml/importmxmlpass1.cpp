@@ -3671,6 +3671,7 @@ void MusicXMLParserPass1::newMeasure(const musicxml::measure1& measure, const QS
                         break;
                     }
                 }
+                qDebug("after loop");
 
                 // TODO direction(partId, cTime + mTime);
                 // TODO print(measureNr);
@@ -3743,10 +3744,10 @@ void MusicXMLParserPass1::newMeasure(const musicxml::measure1& measure, const QS
           mdur = mDura;
 
           // set measure number and duration
-          /*
+          /**/
            qDebug("part %s measure %s dura %s (%d)",
            qPrintable(partId), qPrintable(number), qPrintable(mdur.print()), mdur.ticks());
-           */
+           /**/
           _parts[partId].addMeasureNumberAndDuration(number, mdur);
 #endif
 }
@@ -3762,6 +3763,18 @@ Score::FileError MusicXMLParserPass1::parse(const musicxml::score_partwise& scor
     for (const auto& part : score_partwise.part()) {
         newPart(part);
     }
+
+    // Determine the start tick of each measure in the part
+    determineMeasureLength(_measureLength);
+    determineMeasureStart(_measureLength, _measureStart);
+    // Fixup timesig at tick = 0 if necessary
+    fixupSigmap(_logger, _score, _measureLength);
+    // Debug: dump gae size and credits read
+    dumpPageSize(_pageSize);
+    dumpCredits(_credits);
+    // Create the measures
+    createMeasuresAndVboxes(_score, _measureLength, _measureStart, _systemStartMeasureNrs, _pageStartMeasureNrs, _credits, _pageSize);
+
     return Score::FileError::FILE_NO_ERROR;
 }
 
