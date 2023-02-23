@@ -3671,7 +3671,6 @@ void MusicXMLParserPass1::newMeasure(const musicxml::measure1& measure, const QS
                         break;
                     }
                 }
-                qDebug("after loop");
 
                 // TODO direction(partId, cTime + mTime);
                 // TODO print(measureNr);
@@ -3744,10 +3743,10 @@ void MusicXMLParserPass1::newMeasure(const musicxml::measure1& measure, const QS
           mdur = mDura;
 
           // set measure number and duration
-          /**/
+          /*
            qDebug("part %s measure %s dura %s (%d)",
            qPrintable(partId), qPrintable(number), qPrintable(mdur.print()), mdur.ticks());
-           /**/
+           */
           _parts[partId].addMeasureNumberAndDuration(number, mdur);
 #endif
 }

@@ -217,6 +217,7 @@ bool mxmlNoteDuration::readProperties(QXmlStreamReader& e)
       return false;
       }
 
+
 //---------------------------------------------------------
 //   setProperties
 //---------------------------------------------------------
@@ -235,10 +236,6 @@ void mxmlNoteDuration::setProperties(const unsigned int duration, const int dots
       _timeMod = timeMod;
       // TODO _normalType
       }
-
-//---------------------------------------------------------
-//   timeModification
-//---------------------------------------------------------
 
 //---------------------------------------------------------
 //   timeModification
