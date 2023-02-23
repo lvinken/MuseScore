@@ -3767,7 +3767,6 @@ Score::FileError MusicXMLParserPass1::parse(const musicxml::score_partwise& scor
 
 void MusicXMLParserPass1::newNote(const musicxml::note& note, const QString& partId, const Fraction sTime, Fraction& missingPrev, Fraction& dura, Fraction& missingCurr, VoiceOverlapDetector& vod, MxmlTupletStates& tupletStates)
 {
-    qDebug("1");
     /* TODO
     if (_e.attributes().value("print-spacing") == "no") {
           notePrintSpacingNo(dura);
@@ -3780,7 +3779,10 @@ void MusicXMLParserPass1::newNote(const musicxml::note& note, const QString& par
     if (note.type()) {
         type = note_type_value_to_string(*note.type()).data();
     }
-    const QString voice; // TODO =? note.voice.data();
+    QString voice { "1" };
+    if (note.voice()) {
+        voice = (*note.voice()).data();
+    }
     QString instrId; // TODO
     MxmlStartStop tupletStartStop { MxmlStartStop::NONE };
 
