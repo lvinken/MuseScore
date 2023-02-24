@@ -172,6 +172,9 @@ public:
 private:
       // functions
       void newAttributes(const musicxml::attributes& attributes, const QString& partId, const Fraction cTime);
+      void newBackup(const unsigned int duration, Fraction& dura);
+      void newDuration(const unsigned int duration, Fraction& dura);
+      void newForward(const unsigned int duration, Fraction& dura);
       void newMeasure(const musicxml::measure1& measure, const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr);
       void newNote(const musicxml::note& note, const QString& partId, const Fraction sTime, Fraction& missingPrev, Fraction& dura, Fraction& missingCurr, VoiceOverlapDetector& vod, MxmlTupletStates& tupletStates);
       void newPart(const musicxml::part& part);

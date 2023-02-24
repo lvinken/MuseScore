@@ -3577,6 +3577,32 @@ void MusicXMLParserPass1::newAttributes(const musicxml::attributes& attributes, 
     }
 }
 
+void MusicXMLParserPass1::newBackup(const unsigned int duration, Fraction& dura)
+{
+    newDuration(duration, dura);
+}
+
+void MusicXMLParserPass1::newDuration(const unsigned int duration, Fraction& dura)
+{
+    dura.set(0, 0);  // invalid unless set correctly
+    if (duration > 0) {
+        if (_divs > 0) {
+            dura.set(duration, 4 * _divs);
+            dura.reduce(); // prevent overflow in later Fraction operations
+        }
+        else
+            _logger->logError("illegal or uninitialized divisions", &_e);
+    }
+    else
+        _logger->logError("illegal duration", &_e);
+    //qDebug("duration %s valid %d", qPrintable(dura.print()), dura.isValid());
+}
+
+void MusicXMLParserPass1::newForward(const unsigned int duration, Fraction& dura)
+{
+    newDuration(duration, dura);
+}
+
 void MusicXMLParserPass1::newMeasure(const musicxml::measure1& measure, const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr)
 {
     qDebug("part %s measure %d", qPrintable(partId), measureNr);
@@ -3586,31 +3612,6 @@ void MusicXMLParserPass1::newMeasure(const musicxml::measure1& measure, const QS
           Fraction mDura; // current total measure duration
           vod.newMeasure();
           MxmlTupletStates tupletStates;
-
-#if 0
-          // TODO
-                else if (_e.name() == "forward") {
-                      Fraction dura;
-                      forward(dura);
-                      if (dura.isValid()) {
-                            mTime += dura;
-                            if (mTime > mDura)
-                                  mDura = mTime;
-                      }
-                }
-                else if (_e.name() == "backup") {
-                      Fraction dura;
-                      backup(dura);
-                      if (dura.isValid()) {
-                            if (dura <= mTime)
-                                  mTime -= dura;
-                            else {
-                                  _logger->logError("backup beyond measure start", &_e);
-                                  mTime.set(0, 1);
-                            }
-                      }
-                }
-#endif
 
                 const auto& content_orders = measure.content_order();
                 for (auto & content_order : content_orders) {
@@ -3643,13 +3644,30 @@ void MusicXMLParserPass1::newMeasure(const musicxml::measure1& measure, const QS
                     case musicxml::measure1::backup_id:
                     {
                         qDebug("backup");
-                        // TODO parseBackup(backup);
+                        const auto& backup { measure.backup()[content_order.index] };
+                        Fraction dura;
+                        newBackup(backup.duration(), dura);
+                        if (dura.isValid()) {
+                              if (dura <= mTime)
+                                    mTime -= dura;
+                              else {
+                                    _logger->logError("backup beyond measure start", &_e);
+                                    mTime.set(0, 1);
+                              }
+                        }
                     }
                         break;
                     case musicxml::measure1::forward_id:
                     {
                         qDebug("forward");
-                        // TODO parseForward(forward);
+                        const auto& forward { measure.forward()[content_order.index] };
+                        Fraction dura;
+                        newForward(forward.duration(), dura);
+                        if (dura.isValid()) {
+                              mTime += dura;
+                              if (mTime > mDura)
+                                    mDura = mTime;
+                        }
                     }
                         break;
                     case musicxml::measure1::attributes_id:
