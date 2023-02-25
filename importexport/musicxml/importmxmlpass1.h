@@ -150,7 +150,7 @@ private:
       void newTime(const musicxml::time& time, const Fraction cTime);
 
       // generic pass 1 data
-      //QXmlStreamReader _e; // TODO remove
+      QXmlStreamReader _e; // TODO remove
       int _divs;                                ///< Current MusicXML divisions value
       QMap<QString, MusicXmlPart> _parts;       ///< Parts data, mapped on part id
       std::set<int> _systemStartMeasureNrs;     ///< Measure numbers of measures starting a page
