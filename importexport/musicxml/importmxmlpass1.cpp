@@ -3819,12 +3819,18 @@ void MusicXMLParserPass1::newNote(const musicxml::note& note, const QString& par
     MxmlStartStop tupletStartStop { MxmlStartStop::NONE };
 
     mxmlNoteDuration mnd(_divs, _logger);
-    { // limit duration scope
+    { // limit scope
         int duration { 0 };
         if (note.duration()) {
             duration = *note.duration();
         }
-        mnd.setProperties(duration, note.dot().size(), Fraction { 1, 1 } /* TODO note.timeModification */);
+        Fraction timeModification { 1, 1 };
+        if (note.time_modification()) {
+            int actual {(*note.time_modification()).actual_notes()};
+            int normal {(*note.time_modification()).normal_notes()};
+            timeModification.set(normal, actual);
+        }
+        mnd.setProperties(duration, note.dot().size(), timeModification);
     }
 
     /* TODO
