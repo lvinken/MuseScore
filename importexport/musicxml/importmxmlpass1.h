@@ -117,9 +117,9 @@ class MusicXMLParserPass1 {
 public:
       MusicXMLParserPass1(Score* score, MxmlLogger* logger);
       void initPartState(const QString& partId);
-      Score::FileError parse(QIODevice* device);
+      //Score::FileError parse(QIODevice* device);
       Score::FileError parse(const musicxml::score_partwise& score_partwise);
-      Score::FileError parse();
+      //Score::FileError parse();
       void scorePartwise();
       void identification();
       void credit(CreditWordsList& credits);
@@ -183,7 +183,7 @@ private:
       void newTime(const musicxml::time& time, const Fraction cTime);
 
       // generic pass 1 data
-      QXmlStreamReader _e;
+      QXmlStreamReader _e; // TODO remove
       int _divs;                                ///< Current MusicXML divisions value
       QMap<QString, MusicXmlPart> _parts;       ///< Parts data, mapped on part id
       std::set<int> _systemStartMeasureNrs;     ///< Measure numbers of measures starting a page

@@ -905,28 +905,6 @@ static void fixupSigmap(MxmlLogger* logger, Score* score, const QVector<Fraction
  Parse MusicXML in \a device and extract pass 1 data.
  */
 
-Score::FileError MusicXMLParserPass1::parse(QIODevice* device)
-      {
-      _logger->logDebugTrace("MusicXMLParserPass1::parse device");
-      //_parts.clear(); // not required, breaks pass 0 parsing
-      _e.setDevice(device);
-      auto res = parse();
-      if (res != Score::FileError::FILE_NO_ERROR)
-            return res;
-
-      // Determine the start tick of each measure in the part
-      determineMeasureLength(_measureLength);
-      determineMeasureStart(_measureLength, _measureStart);
-      // Fixup timesig at tick = 0 if necessary
-      fixupSigmap(_logger, _score, _measureLength);
-      // Debug: dump gae size and credits read
-      dumpPageSize(_pageSize);
-      dumpCredits(_credits);
-      // Create the measures
-      createMeasuresAndVboxes(_score, _measureLength, _measureStart, _systemStartMeasureNrs, _pageStartMeasureNrs, _credits, _pageSize);
-
-      return res;
-      }
 
 //---------------------------------------------------------
 //   parse
@@ -935,7 +913,7 @@ Score::FileError MusicXMLParserPass1::parse(QIODevice* device)
 /**
  Start the parsing process, after verifying the top-level node is score-partwise
  */
-
+#if 0
 Score::FileError MusicXMLParserPass1::parse()
       {
       _logger->logDebugTrace("MusicXMLParserPass1::parse");
@@ -961,7 +939,7 @@ Score::FileError MusicXMLParserPass1::parse()
 
       return Score::FileError::FILE_NO_ERROR;
       }
-
+#endif
 //---------------------------------------------------------
 //   allStaffGroupsIdentical
 //---------------------------------------------------------
