@@ -3575,6 +3575,10 @@ void MusicXMLParserPass1::newAttributes(const musicxml::attributes& attributes, 
     if (attributes.staves()) {
         setNumberOfStavesForPart(_partMap.value(partId), *attributes.staves());
     }
+    // following code handles only one time element
+    if (attributes.time().size() >= 1) {
+        newTime(attributes.time()[0], cTime);
+    }
 }
 
 void MusicXMLParserPass1::newBackup(const unsigned int duration, Fraction& dura)
@@ -3845,7 +3849,6 @@ void MusicXMLParserPass1::newNote(const musicxml::note& note, const QString& par
 
     int staff { 1 }; // default
     if (note.staff()) {
-        qDebug("staff %d", *note.staff());
         staff = *note.staff();
         _parts[partId].setMaxStaff(staff);
         Part* part = _partMap.value(partId);
@@ -4085,6 +4088,33 @@ void MusicXMLParserPass1::newScorePart(const musicxml::score_part& score_part)
                 }
                       // TODO midiInstrument(id);
 #endif
+}
+
+void MusicXMLParserPass1::newTime(const musicxml::time& time, const Fraction cTime)
+{
+    // following code handles only one beats and beat-type element
+    QString beats;
+    if (time.beats().size() >= 1) {
+        beats = time.beats()[0].data();
+    }
+    QString beatType;
+    if (time.beat_type().size() >= 1) {
+        beatType = time.beat_type()[0].data();
+    }
+    //qDebug("beats '%s' beatType '%s'", qPrintable(beats), qPrintable(beatType));
+    QString timeSymbol; // TODO = _e.attributes().value("symbol").toString();
+    const QXmlStreamReader dummy; // TODO
+
+    if (beats != "" && beatType != "") {
+          // determine if timesig is valid
+          TimeSigType st  = TimeSigType::NORMAL;
+          int bts = 0;       // total beats as integer (beats may contain multiple numbers, separated by "+")
+          int btp = 0;       // beat-type as integer
+          if (determineTimeSig(_logger, &dummy, beats, beatType, timeSymbol, st, bts, btp)) {
+                _timeSigDura = Fraction(bts, btp);
+                _score->sigmap()->add(cTime.ticks(), _timeSigDura);
+                }
+          }
 }
 
 } // namespace Ms

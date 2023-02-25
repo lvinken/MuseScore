@@ -180,6 +180,7 @@ private:
       void newPart(const musicxml::part& part);
       void newPartList(const musicxml::part_list& part_list /*TODO , MusicXmlPartGroupList& partGroupList */);
       void newScorePart(const musicxml::score_part& score_part);
+      void newTime(const musicxml::time& time, const Fraction cTime);
 
       // generic pass 1 data
       QXmlStreamReader _e;
