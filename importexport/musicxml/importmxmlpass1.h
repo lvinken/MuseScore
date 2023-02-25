@@ -117,41 +117,8 @@ class MusicXMLParserPass1 {
 public:
       MusicXMLParserPass1(Score* score, MxmlLogger* logger);
       void initPartState(const QString& partId);
-      //Score::FileError parse(QIODevice* device);
       Score::FileError parse(const musicxml::score_partwise& score_partwise);
-      //Score::FileError parse();
-      void scorePartwise();
-      void identification();
-      void credit(CreditWordsList& credits);
-      void defaults();
-      void pageLayout(PageFormat& pf, const qreal conversion);
-      void partList(MusicXmlPartGroupList& partGroupList);
-      void partGroup(const int scoreParts, MusicXmlPartGroupList& partGroupList, MusicXmlPartGroupMap& partGroups);
-      void scorePart();
-      void scoreInstrument(const QString& partId);
-      void midiInstrument(const QString& partId);
-      void part();
-      void measure(const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr);
-      void print(const int measureNr);
-      void attributes(const QString& partId, const Fraction cTime);
-      void clef(const QString& partId);
-      void time(const Fraction cTime);
-      void transpose(const QString& partId, const Fraction& tick);
-      void divisions();
-      void staves(const QString& partId);
-      void direction(const QString& partId, const Fraction cTime);
-      void directionType(const Fraction cTime, QList<MxmlOctaveShiftDesc>& starts, QList<MxmlOctaveShiftDesc>& stops);
       void handleOctaveShift(const Fraction cTime, const QString& type, short size, MxmlOctaveShiftDesc& desc);
-      void notations(MxmlStartStop& tupletStartStop);
-      void note(const QString& partId, const Fraction cTime, Fraction& missingPrev, Fraction& dura, Fraction& missingCurr, VoiceOverlapDetector& vod, MxmlTupletStates& tupletStates);
-      void notePrintSpacingNo(Fraction& dura);
-      void duration(Fraction& dura);
-      void forward(Fraction& dura);
-      void backup(Fraction& dura);
-      void timeModification(Fraction& timeMod);
-      void pitch(int& step, float& alter, int& oct);
-      void rest();
-      void skipLogCurrElem();
       bool determineMeasureLength(QVector<Fraction>& ml) const;
       VoiceList getVoiceList(const QString id) const;
       bool determineStaffMoveVoice(const QString& id, const int mxStaff, const QString& mxVoice,
@@ -183,7 +150,7 @@ private:
       void newTime(const musicxml::time& time, const Fraction cTime);
 
       // generic pass 1 data
-      QXmlStreamReader _e; // TODO remove
+      //QXmlStreamReader _e; // TODO remove
       int _divs;                                ///< Current MusicXML divisions value
       QMap<QString, MusicXmlPart> _parts;       ///< Parts data, mapped on part id
       std::set<int> _systemStartMeasureNrs;     ///< Measure numbers of measures starting a page
