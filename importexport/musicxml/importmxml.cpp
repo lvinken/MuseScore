@@ -49,11 +49,6 @@ Score::FileError importMusicXMLfromBuffer(Score* score, const QString& name, QIO
       logger.setLoggingLevel(MxmlLogger::Level::MXML_ERROR); // errors only
       //logger.setLoggingLevel(MxmlLogger::Level::MXML_INFO);
       //logger.setLoggingLevel(MxmlLogger::Level::MXML_TRACE); // also include tracing
-
-      dev->seek(0);
-      MusicXMLParserPass1 pass1(score, &logger);
-
-      // pass 0 :-)
       std::fstream fs(name.toStdString(), std::ios::in);
       if (!fs.is_open()) {
           qDebug("importMusicXMLfromBuffer() 2 could not open MusicXML file '%s'", qPrintable(name));
@@ -67,9 +62,17 @@ Score::FileError importMusicXMLfromBuffer(Score* score, const QString& name, QIO
       try {
           const auto score_partwise = musicxml::score_partwise_(fs);
           qDebug("importMusicXMLfromBuffer(): 4 score_partwise created");
+
+          // pass 1
+          MusicXMLParserPass1 pass1(score, &logger);
           res = pass1.parse(*score_partwise);
           if (res != Score::FileError::FILE_NO_ERROR)
                 return res;
+
+          // pass 2
+          dev->seek(0); // TODO remove ?
+          MusicXMLParserPass2 pass2(score, pass1, &logger);
+          return pass2.parse(dev /* TODO remove ? */, *score_partwise);
       } catch (const xml_schema::exception &e) {
           std::cerr << "importMusicXMLfromBuffer(): 5a xml_schema::exception " << e << std::endl;
           qDebug("importMusicXMLfromBuffer(): 5b xml_schema::exception");
@@ -78,19 +81,6 @@ Score::FileError importMusicXMLfromBuffer(Score* score, const QString& name, QIO
           qDebug("importMusicXMLfromBuffer(): 6 unable to open or read failure");
           return Score::FileError::FILE_OPEN_ERROR;
       }
-
-#if 0
-      // pass 1
-      dev->seek(0);
-      res = pass1.parse(dev);
-      if (res != Score::FileError::FILE_NO_ERROR)
-            return res;
-#endif
-
-      // pass 2
-      dev->seek(0);
-      MusicXMLParserPass2 pass2(score, pass1, &logger);
-      return pass2.parse(dev);
       }
 
 } // namespace Ms

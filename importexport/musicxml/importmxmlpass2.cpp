@@ -1514,45 +1514,28 @@ void MusicXMLParserPass2::skipLogCurrElem()
  Parse MusicXML in \a device and extract pass 2 data.
  */
 
-Score::FileError MusicXMLParserPass2::parse(QIODevice* device)
-      {
-      //qDebug("MusicXMLParserPass2::parse()");
-      _e.setDevice(device);
-      Score::FileError res = parse();
-      //qDebug("MusicXMLParserPass2::parse() res %d", int(res));
-      return res;
-      }
+Score::FileError MusicXMLParserPass2::parse(QIODevice* device, const musicxml::score_partwise& score_partwise)
+{
+    qDebug("MusicXMLParserPass2::parse()");
+    _e.setDevice(device);
+    Score::FileError res = parse(score_partwise);
+    qDebug("MusicXMLParserPass2::parse() res %d", int(res));
+    return res;
+}
 
 //---------------------------------------------------------
 //   parse
 //---------------------------------------------------------
 
 /**
- Start the parsing process, after verifying the top-level node is score-partwise
+ Start the parsing process, TODO (?): after verifying the top-level node is score-partwise
  */
 
-Score::FileError MusicXMLParserPass2::parse()
-      {
-      bool found = false;
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "score-partwise") {
-                  found = true;
-                  scorePartwise();
-                  }
-            else {
-                  _logger->logError("this is not a MusicXML score-partwise file", &_e);
-                  _e.skipCurrentElement();
-                  return Score::FileError::FILE_BAD_FORMAT;
-                  }
-            }
-
-      if (!found) {
-            _logger->logError("this is not a MusicXML score-partwise file", &_e);
-            return Score::FileError::FILE_BAD_FORMAT;
-            }
-
-      return Score::FileError::FILE_NO_ERROR;
-      }
+Score::FileError MusicXMLParserPass2::parse(const musicxml::score_partwise& score_partwise)
+{
+    scorePartwise(score_partwise);
+    return Score::FileError::FILE_NO_ERROR;
+}
 
 //---------------------------------------------------------
 //   scorePartwise
@@ -1562,24 +1545,18 @@ Score::FileError MusicXMLParserPass2::parse()
  Parse the MusicXML top-level (XPath /score-partwise) node.
  */
 
-void MusicXMLParserPass2::scorePartwise()
-      {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "score-partwise");
+void MusicXMLParserPass2::scorePartwise(const musicxml::score_partwise& score_partwise)
+{
+    // note: parsing score-part is currently not required for pass 2
+    for (const auto& part : score_partwise.part()) {
+        newPart(part);
+    }
 
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "part") {
-                  part();
-                  }
-            else if (_e.name() == "part-list")
-                  partList();
-            else
-                  skipLogCurrElem();
-            }
-      // set last measure barline to normal or MuseScore will generate light-heavy EndBarline
-      // TODO, handle other tracks?
-      if (_score->lastMeasure()->endBarLineType() == BarLineType::NORMAL)
-            _score->lastMeasure()->setEndBarLineType(BarLineType::NORMAL, 0);
-      }
+    // set last measure barline to normal or MuseScore will generate light-heavy EndBarline
+    // TODO, handle other tracks?
+    if (_score->lastMeasure()->endBarLineType() == BarLineType::NORMAL)
+        _score->lastMeasure()->setEndBarLineType(BarLineType::NORMAL, 0);
+}
 
 //---------------------------------------------------------
 //   partList
@@ -6430,4 +6407,116 @@ MusicXMLParserDirection::MusicXMLParserDirection(QXmlStreamReader& e,
       // nothing
       }
 
-}
+//---------------------------------------------------------
+//   part
+//---------------------------------------------------------
+
+/**
+ Parse the /score-partwise/part node.
+ */
+
+void MusicXMLParserPass2::newPart(const musicxml::part& part)
+      {
+    const QString id {part.id().data()};
+    qDebug("id '%s'", qPrintable(id));
+
+      if (!_pass1.hasPart(id)) {
+            _logger->logError(QString("MusicXMLParserPass2::part cannot find part '%1'").arg(id), &_e);
+            skipLogCurrElem();
+            }
+
+      initPartState(id);
+
+      const auto& instruments = _pass1.getInstruments(id);
+      _hasDrumset = hasDrumset(instruments);
+
+      // set the parts first instrument
+      setPartInstruments(_logger, &_e, _pass1.getPart(id), id, _score, _pass1.getInstrList(id), _pass1.getIntervals(id), instruments);
+
+      // set the part name
+      auto mxmlPart = _pass1.getMusicXmlPart(id);
+      _pass1.getPart(id)->setPartName(mxmlPart.getName());
+      if (mxmlPart.getPrintName())
+            _pass1.getPart(id)->setLongName(mxmlPart.getName());
+      if (mxmlPart.getPrintAbbr())
+            _pass1.getPart(id)->setPlainShortName(mxmlPart.getAbbr());
+      // try to prevent an empty track name
+      if (_pass1.getPart(id)->partName() == "") {
+            QString instrId = _pass1.getInstrList(id).instrument(Fraction(0, 1));
+            _pass1.getPart(id)->setPartName(instruments[instrId].name);
+            }
+
+#ifdef DEBUG_VOICE_MAPPER
+      VoiceList voicelist = _pass1.getVoiceList(id);
+      // debug: print voice mapper contents
+      qDebug("voiceMapperStats: part '%s'", qPrintable(id));
+      for (QMap<QString, Ms::VoiceDesc>::const_iterator i = voicelist.constBegin(); i != voicelist.constEnd(); ++i) {
+            qDebug("voiceMapperStats: voice %s staff data %s",
+                   qPrintable(i.key()), qPrintable(i.value().toString()));
+            }
+#endif
+
+      // read the measures
+      int nr = 0; // current measure sequence number
+#if 0
+      while (_e.readNextStartElement()) {
+            if (_e.name() == "measure") {
+                  Fraction t = _pass1.getMeasureStart(nr);
+                  if (t.isValid())
+                        measure(id, t);
+                  else {
+                        _logger->logError(QString("no valid start time for measure %1").arg(nr + 1), &_e);
+                        _e.skipCurrentElement();
+                        }
+                  ++nr;
+                  }
+            else
+                  skipLogCurrElem();
+            }
+#endif
+
+      // stop all remaining extends for this part
+      Measure* lm = _pass1.getPart(id)->score()->lastMeasure();
+      if (lm) {
+            int strack = _pass1.trackForPart(id);
+            int etrack = strack + _pass1.getPart(id)->nstaves() * VOICES;
+            Fraction lastTick = lm->endTick();
+            for (int trk = strack; trk < etrack; trk++)
+                  _extendedLyrics.setExtend(-1, trk, lastTick);
+            }
+
+      const auto incompleteSpanners =  findIncompleteSpannersAtPartEnd();
+      //qDebug("spanner list:");
+      auto i = _spanners.constBegin();
+      while (i != _spanners.constEnd()) {
+            auto sp = i.key();
+            Fraction tick1 = Fraction::fromTicks(i.value().first);
+            Fraction tick2 = Fraction::fromTicks(i.value().second);
+            //qDebug("spanner %p tp %d tick1 %s tick2 %s track1 %d track2 %d",
+            //       sp, sp->type(), qPrintable(tick1.print()), qPrintable(tick2.print()), sp->track(), sp->track2());
+            if (incompleteSpanners.find(sp) == incompleteSpanners.end()) {
+                  // complete spanner -> add to score
+                  sp->setTick(tick1);
+                  sp->setTick2(tick2);
+                  sp->score()->addElement(sp);
+                  }
+            else {
+                  // incomplete spanner -> cleanup
+                  delete sp;
+                  }
+            ++i;
+            }
+      _spanners.clear();
+
+      if (_hasDrumset) {
+            Drumset* drumset = new Drumset;
+            const auto& instrumentsAfterPass2 = _pass1.getInstruments(id);
+            initDrumset(drumset, instrumentsAfterPass2);
+            // set staff type to percussion if incorrectly imported as pitched staff
+            // Note: part has been read, staff type already set based on clef type and staff-details
+            // but may be incorrect for a percussion staff that does not use a percussion clef
+            setStaffTypePercussion(_pass1.getPart(id), drumset);
+            }
+      }
+
+} // namespace Ms
