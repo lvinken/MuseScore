@@ -254,8 +254,7 @@ private:
       void scorePartwise(const musicxml::score_partwise &score_partwise);
       void partList();
       void scorePart();
-      void part();
-      void newPart(const musicxml::part& part);
+      void part(const musicxml::part& part);
       void measChordNote( /*, const MxmlPhase2Note note, ChordRest& currChord */);
       void measChordFlush( /*, ChordRest& currChord */);
       void measure(const QString& partId, const Fraction time);
