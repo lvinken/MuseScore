@@ -216,8 +216,8 @@ static int MusicXMLStepAltOct2Pitch(int step, int alter, int octave)
 
 static void xmlSetPitch(Note* n, int step, int alter, int octave, const int octaveShift, const Instrument* const instr)
       {
-      //qDebug("xmlSetPitch(n=%p, step=%d, alter=%d, octave=%d, octaveShift=%d)",
-      //       n, step, alter, octave, octaveShift);
+      qDebug("xmlSetPitch(n=%p, step=%d, alter=%d, octave=%d, octaveShift=%d)",
+             n, step, alter, octave, octaveShift);
 
       //const Staff* staff = n->score()->staff(track / VOICES);
       //const Instrument* instr = staff->part()->instr();
@@ -236,7 +236,7 @@ static void xmlSetPitch(Note* n, int step, int alter, int octave, const int octa
       int tpc2 = step2tpc(step, AccidentalVal(alter));
       int tpc1 = Ms::transposeTpc(tpc2, intval, true);
       n->setPitch(pitch, tpc1, tpc2);
-      //qDebug("  pitch=%d tpc1=%d tpc2=%d", n->pitch(), n->tpc1(), n->tpc2());
+      qDebug("  pitch=%d tpc1=%d tpc2=%d", n->pitch(), n->tpc1(), n->tpc2());
       }
 
 //---------------------------------------------------------
@@ -1548,8 +1548,8 @@ Score::FileError MusicXMLParserPass2::parse(const musicxml::score_partwise& scor
 void MusicXMLParserPass2::scorePartwise(const musicxml::score_partwise& score_partwise)
 {
     // note: parsing score-part is currently not required for pass 2
-    for (const auto& p : score_partwise.part()) {
-        part(p);
+    for (const auto& part : score_partwise.part()) {
+        MusicXMLParserPass2::part(part);
     }
 
     // set last measure barline to normal or MuseScore will generate light-heavy EndBarline
@@ -1652,22 +1652,15 @@ void MusicXMLParserPass2::part(const musicxml::part& part)
 
       // read the measures
       int nr = 0; // current measure sequence number
-#if 0
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "measure") {
-                  Fraction t = _pass1.getMeasureStart(nr);
-                  if (t.isValid())
-                        measure(id, t);
-                  else {
-                        _logger->logError(QString("no valid start time for measure %1").arg(nr + 1), &_e);
-                        _e.skipCurrentElement();
-                        }
-                  ++nr;
+      for (const auto& measure : part.measure()) {
+            Fraction t = _pass1.getMeasureStart(nr);
+            if (t.isValid())
+                  MusicXMLParserPass2::measure(measure, id, t);
+            else {
+                  _logger->logError(QString("no valid start time for measure %1").arg(nr + 1), &_e);
                   }
-            else
-                  skipLogCurrElem();
+            ++nr;
             }
-#endif
 
       // stop all remaining extends for this part
       Measure* lm = _pass1.getPart(id)->score()->lastMeasure();
@@ -1945,8 +1938,8 @@ void MusicXMLParserPass2::measure(const musicxml::measure1& measure,
                                   const QString& partId,
                                   const Fraction time)
       {
-      //QString number = _e.attributes().value("number").toString();
-      //qDebug("measure %s start", qPrintable(number));
+      QString number { measure.number().data() };
+      qDebug("measure %s start", qPrintable(number));
 
       Measure* currentMeasure = findMeasure(_score, time);
       if (!currentMeasure) {
@@ -1977,6 +1970,8 @@ void MusicXMLParserPass2::measure(const musicxml::measure1& measure,
       // collect candidates for courtesy accidentals to work out at measure end
       QMap<Note*, int> alterMap;
 
+#if 0
+      // TODO: port remaining original code
       while (_e.readNextStartElement()) {
             if (_e.name() == "attributes")
                   attributes(partId, currentMeasure, time + mTime);
@@ -2072,12 +2067,101 @@ void MusicXMLParserPass2::measure(const musicxml::measure1& measure,
                   }
             else if (_e.name() == "barline")
                   barline(partId, currentMeasure, time + mTime);
-            else if (_e.name() == "print")
-                  _e.skipCurrentElement();
-            else
-                  skipLogCurrElem();
-
-            /*
+      }
+#endif
+#if 1
+      // copied and adapted from pass 1
+      const auto& content_orders = measure.content_order();
+      for (auto & content_order : content_orders) {
+          switch (content_order.id) {
+          case musicxml::measure1::note_id:
+          {
+              qDebug("note");
+              const auto& note { measure.note()[content_order.index] };
+              if (note.type()) {
+                  // TODO qDebug(" type '%s'", note_type_value_to_string(*note.type()).data());
+              }
+              Fraction missingPrev;
+              Fraction dura;
+              Fraction missingCurr;
+              int alt = -10;                    // any number outside range of xml-tag "alter"
+              // note: chord and grace note handling done in note()
+              // dura > 0 iff valid rest or first note of chord found
+              Note* n = nullptr; // TODO note(partId, currentMeasure, time + mTime, time + prevTime, missingPrev, dura, missingCurr, cv, gcl, gac, beam, fbl, alt, tupletStates, tuplets);
+              if (n && !n->chord()->isGrace())
+                    prevChord = n->chord();  // remember last non-grace chord
+              if (n && n->accidental() && n->accidental()->accidentalType() != AccidentalType::NONE)
+                    alterMap.insert(n, alt);
+              if (missingPrev.isValid()) {
+                    mTime += missingPrev;
+                    }
+              if (dura.isValid() && dura > Fraction(0, 1)) {
+                    prevTime = mTime; // save time stamp last chord created
+                    mTime += dura;
+                    if (mTime > mDura)
+                          mDura = mTime;
+                    }
+              if (missingCurr.isValid()) {
+                    mTime += missingCurr;
+                    }
+              //qDebug("added note %p chord %p gac %d", n, n ? n->chord() : 0, gac);
+          }
+              break;
+          case musicxml::measure1::backup_id:
+          {
+              qDebug("backup");
+              const auto& backup { measure.backup()[content_order.index] };
+              Fraction dura;
+              // TODO newBackup(backup.duration(), dura);
+              if (dura.isValid()) {
+                  if (dura <= mTime)
+                      mTime -= dura;
+                  else {
+                      _logger->logError("backup beyond measure start", &_e);
+                      mTime.set(0, 1);
+                  }
+                  // check if the tick position is smaller than the minimum division resolution
+                  // (possibly caused by rounding errors) and in that case set position to 0
+                  if (mTime.isNotZero() && (_divs > 0) && (mTime < Fraction(1, 4*_divs))) {
+                        _logger->logError("backup to a fractional tick smaller than the minimum division", &_e);
+                        mTime.set(0, 1);
+                  }
+              }
+          }
+              break;
+          case musicxml::measure1::forward_id:
+          {
+              qDebug("forward");
+              const auto& forward { measure.forward()[content_order.index] };
+              Fraction dura;
+              // TODO newForward(forward.duration(), dura);
+              if (dura.isValid()) {
+                  mTime += dura;
+                  if (mTime > mDura)
+                      mDura = mTime;
+              }
+          }
+              break;
+          case musicxml::measure1::attributes_id:
+          {
+              qDebug("attributes");
+              const auto& attributes { measure.attributes()[content_order.index] };
+              // TODO newAttributes(attributes, partId, cTime + mTime);
+          }
+              break;
+          case musicxml::measure1::barline_id:
+          {
+              qDebug("barline");
+          }
+              break;
+          default:
+              qDebug("default");
+              // ignore
+              break;
+          }
+      }
+      // end copied ...
+             /*
              qDebug("mTime %s (%s) mDura %s (%s)",
              qPrintable(mTime.print()),
              qPrintable(mTime.reduced().print()),
@@ -2086,7 +2170,7 @@ void MusicXMLParserPass2::measure(const musicxml::measure1& measure,
              */
             mDura.reduce();
             mTime.reduce();
-            }
+#endif
 
       // convert remaining grace chords to grace after
       gac = gcl.size();
