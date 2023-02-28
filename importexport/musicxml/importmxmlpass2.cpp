@@ -1941,26 +1941,26 @@ static bool hasTempoTextAtTick(const TempoMap* const tempoMap, const int tick)
  Parse the /score-partwise/part/measure node.
  */
 
-void MusicXMLParserPass2::measure(const QString& partId,
+void MusicXMLParserPass2::measure(const musicxml::measure1& measure,
+                                  const QString& partId,
                                   const Fraction time)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "measure");
       //QString number = _e.attributes().value("number").toString();
       //qDebug("measure %s start", qPrintable(number));
 
-      Measure* measure = findMeasure(_score, time);
-      if (!measure) {
+      Measure* currentMeasure = findMeasure(_score, time);
+      if (!currentMeasure) {
             _logger->logError(QString("measure at tick %1 not found!").arg(time.ticks()), &_e);
             skipLogCurrElem();
             }
 
       // handle implicit measure
       if (_e.attributes().value("implicit") == "yes")
-            measure->setIrregular(true);
+            currentMeasure->setIrregular(true);
 
       // set measure's RepeatFlag to none because musicXML is allowing single measure repeat and no ordering in repeat start and end barlines
-      measure->setRepeatStart(false);
-      measure->setRepeatEnd(false);
+      currentMeasure->setRepeatStart(false);
+      currentMeasure->setRepeatEnd(false);
 
       Fraction mTime; // current time stamp within measure
       Fraction prevTime; // time stamp within measure previous chord
@@ -1979,10 +1979,10 @@ void MusicXMLParserPass2::measure(const QString& partId,
 
       while (_e.readNextStartElement()) {
             if (_e.name() == "attributes")
-                  attributes(partId, measure, time + mTime);
+                  attributes(partId, currentMeasure, time + mTime);
             else if (_e.name() == "direction") {
                   MusicXMLParserDirection dir(_e, _score, _pass1, *this, _logger);
-                  dir.direction(partId, measure, time + mTime, _divs, _spanners);
+                  dir.direction(partId, currentMeasure, time + mTime, _divs, _spanners);
                   }
             else if (_e.name() == "figured-bass") {
                   FiguredBass* fb = figuredBass();
@@ -1990,7 +1990,7 @@ void MusicXMLParserPass2::measure(const QString& partId,
                         fbl.append(fb);
                   }
             else if (_e.name() == "harmony")
-                  harmony(partId, measure, time + mTime);
+                  harmony(partId, currentMeasure, time + mTime);
             else if (_e.name() == "note") {
                   Fraction missingPrev;
                   Fraction dura;
@@ -1998,7 +1998,7 @@ void MusicXMLParserPass2::measure(const QString& partId,
                   int alt = -10;                    // any number outside range of xml-tag "alter"
                   // note: chord and grace note handling done in note()
                   // dura > 0 iff valid rest or first note of chord found
-                  Note* n = note(partId, measure, time + mTime, time + prevTime, missingPrev, dura, missingCurr, cv, gcl, gac, beam, fbl, alt, tupletStates, tuplets);
+                  Note* n = note(partId, currentMeasure, time + mTime, time + prevTime, missingPrev, dura, missingCurr, cv, gcl, gac, beam, fbl, alt, tupletStates, tuplets);
                   if (n && !n->chord()->isGrace())
                         prevChord = n->chord();  // remember last non-grace chord
                   if (n && n->accidental() && n->accidental()->accidentalType() != AccidentalType::NONE)
@@ -2065,13 +2065,13 @@ void MusicXMLParserPass2::measure(const QString& partId,
 
                               _score->setTempo(tick, tpo);
 
-                              addElemOffset(t, _pass1.trackForPart(partId), "above", measure, tick);
+                              addElemOffset(t, _pass1.trackForPart(partId), "above", currentMeasure, tick);
                               }
                         }
                   _e.skipCurrentElement();
                   }
             else if (_e.name() == "barline")
-                  barline(partId, measure, time + mTime);
+                  barline(partId, currentMeasure, time + mTime);
             else if (_e.name() == "print")
                   _e.skipCurrentElement();
             else
@@ -2097,7 +2097,7 @@ void MusicXMLParserPass2::measure(const QString& partId,
 
       // fill possible gaps in voice 1
       Part* part = _pass1.getPart(partId); // should not fail, we only get here if the part exists
-      fillGapsInFirstVoices(measure, part);
+      fillGapsInFirstVoices(currentMeasure, part);
 
       // can't have beams extending into the next measure
       if (beam)
@@ -2107,20 +2107,18 @@ void MusicXMLParserPass2::measure(const QString& partId,
       // - how to handle _timeSigDura.isZero (shouldn't happen ?)
       // - how to handle unmetered music
       if (_timeSigDura.isValid() && !_timeSigDura.isZero())
-            measure->setTimesig(_timeSigDura);
+            currentMeasure->setTimesig(_timeSigDura);
 
       // mark superfluous accidentals as user accidentals
       const int scoreRelStaff = _score->staffIdx(part);
       const Key key = _score->staff(scoreRelStaff)->keySigEvent(time).key();
-      markUserAccidentals(scoreRelStaff, part->nstaves(), key, measure, alterMap);
+      markUserAccidentals(scoreRelStaff, part->nstaves(), key, currentMeasure, alterMap);
 
       // multi-measure rest handling
       if (getAndDecMultiMeasureRestCount() == 0) {
             // measure is first measure after a multi-measure rest
-            measure->setBreakMultiMeasureRest(true);
+            currentMeasure->setBreakMultiMeasureRest(true);
             }
-
-      Q_ASSERT(_e.isEndElement() && _e.name() == "measure");
       }
 
 //---------------------------------------------------------
