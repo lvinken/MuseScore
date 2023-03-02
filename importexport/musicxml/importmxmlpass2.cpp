@@ -4517,8 +4517,10 @@ Note* MusicXMLParserPass2::note(const musicxml::note& mxmlnote,
             else if (_e.name() == "voice")
                   voice = _e.readElementText();
 #endif
+      int staff = (mxmlnote.staff()) ? *mxmlnote.staff() : 1;
       // convert staff to zero-based (in case of error, staff will be -1)
-      int staff = (mxmlnote.staff()) ? *mxmlnote.staff() : 0;
+      --staff;
+      qDebug("staff %d", staff);
 
       // Bug fix for Sibelius 7.1.3 which does not write <voice> for notes with <chord>
       if (!mxmlnote.chord())
