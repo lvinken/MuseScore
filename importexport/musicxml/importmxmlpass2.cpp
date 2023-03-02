@@ -2145,8 +2145,8 @@ void MusicXMLParserPass2::measure(const musicxml::measure1& measure,
           case musicxml::measure1::attributes_id:
           {
               qDebug("attributes");
-              const auto& attributes { measure.attributes()[content_order.index] };
-              // TODO newAttributes(attributes, partId, cTime + mTime);
+              const auto& mxmlattributes { measure.attributes()[content_order.index] };
+              attributes(mxmlattributes, partId, currentMeasure, time + mTime);
           }
               break;
           case musicxml::measure1::barline_id:
@@ -2219,29 +2219,37 @@ void MusicXMLParserPass2::measure(const musicxml::measure1& measure,
  * -> check if it is necessary to insert them in order
  */
 
-void MusicXMLParserPass2::attributes(const QString& partId, Measure* measure, const Fraction& tick)
-      {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "attributes");
-
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "clef")
-                  clef(partId, measure, tick);
-            else if (_e.name() == "divisions")
-                  divisions();
-            else if (_e.name() == "key")
-                  key(partId, measure, tick);
-            else if (_e.name() == "measure-style")
-                  measureStyle(measure);
-            else if (_e.name() == "staff-details")
-                  staffDetails(partId);
-            else if (_e.name() == "time")
-                  time(partId, measure, tick);
-            else if (_e.name() == "transpose")
-                  _e.skipCurrentElement();  // skip but don't log
-            else
-                  skipLogCurrElem();
-            }
-      }
+void MusicXMLParserPass2::attributes(const musicxml::attributes& attributes, const QString& partId, Measure* measure, const Fraction& tick)
+{
+#if 0
+    while (_e.readNextStartElement()) {
+        if (_e.name() == "clef")
+            clef(partId, measure, tick);
+        else if (_e.name() == "divisions")
+            divisions();
+        else if (_e.name() == "key")
+            key(partId, measure, tick);
+        else if (_e.name() == "measure-style")
+            measureStyle(measure);
+        else if (_e.name() == "staff-details")
+            staffDetails(partId);
+        else if (_e.name() == "time")
+            time(partId, measure, tick);
+        else if (_e.name() == "transpose")
+            _e.skipCurrentElement();  // skip but don't log
+        else
+            skipLogCurrElem();
+    }
+#endif
+    if (attributes.divisions()) {
+        auto divs = *attributes.divisions();
+        if (divs > 0) {
+            _divs = divs;
+        } else {
+            _logger->logError("illegal divisions", &_e);
+        }
+    }
+}
 
 //---------------------------------------------------------
 //   setStaffLines
@@ -4793,7 +4801,7 @@ Note* MusicXMLParserPass2::note(const musicxml::note& mxmlnote,
       // don't count chord or grace note duration
       // note that this does not check the MusicXML requirement that notes in a chord
       // cannot have a duration longer than the first note in the chord
-      qDebug("9 dura %s mxmlnote.chord() %d", qPrintable(dura.toString()), mxmlnote.chord());
+      qDebug("9 dura %s mxmlnote.chord() %d", qPrintable(dura.toString()), mxmlnote.chord() ? 1 : 0);
       if (mxmlnote.chord() || mxmlnote.grace())
             dura.set(0, 1);
 
