@@ -1972,9 +1972,6 @@ void MusicXMLParserPass2::measure(const musicxml::measure1& measure,
 
 #if 0
       // TODO: port remaining original code
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "attributes")
-                  attributes(partId, currentMeasure, time + mTime);
             else if (_e.name() == "direction") {
                   MusicXMLParserDirection dir(_e, _score, _pass1, *this, _logger);
                   dir.direction(partId, currentMeasure, time + mTime, _divs, _spanners);
@@ -2110,9 +2107,9 @@ void MusicXMLParserPass2::measure(const musicxml::measure1& measure,
           case musicxml::measure1::backup_id:
           {
               qDebug("backup");
-              const auto& backup { measure.backup()[content_order.index] };
+              const auto& mxmlbackup { measure.backup()[content_order.index] };
               Fraction dura;
-              // TODO newBackup(backup.duration(), dura);
+              backup(mxmlbackup.duration(), dura);
               if (dura.isValid()) {
                   if (dura <= mTime)
                       mTime -= dura;
@@ -2132,9 +2129,9 @@ void MusicXMLParserPass2::measure(const musicxml::measure1& measure,
           case musicxml::measure1::forward_id:
           {
               qDebug("forward");
-              const auto& forward { measure.forward()[content_order.index] };
+              const auto& mxmlforward { measure.forward()[content_order.index] };
               Fraction dura;
-              // TODO newForward(forward.duration(), dura);
+              forward(mxmlforward.duration(), dura);
               if (dura.isValid()) {
                   mTime += dura;
                   if (mTime > mDura)
@@ -4819,6 +4816,7 @@ Note* MusicXMLParserPass2::note(const musicxml::note& mxmlnote,
 
 void MusicXMLParserPass2::notePrintSpacingNo(Fraction& dura)
       {
+#if 0
       Q_ASSERT(_e.isStartElement() && _e.name() == "note");
       //_logger->logDebugTrace("MusicXMLParserPass1::notePrintSpacingNo", &_e);
 
@@ -4847,6 +4845,7 @@ void MusicXMLParserPass2::notePrintSpacingNo(Fraction& dura)
             dura.set(0, 1);
 
       Q_ASSERT(_e.isEndElement() && _e.name() == "note");
+#endif
       }
 
 //---------------------------------------------------------
@@ -4857,18 +4856,23 @@ void MusicXMLParserPass2::notePrintSpacingNo(Fraction& dura)
  Parse the /score-partwise/part/measure/note/duration node.
  */
 
-void MusicXMLParserPass2::duration(Fraction& dura)
-      {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "duration");
-
-      dura.set(0, 0);        // invalid unless set correctly
-      const auto elementText = _e.readElementText();
-      if (elementText.toInt() > 0)
-            dura = calcTicks(elementText, _divs, _logger, &_e);
-      else
-            _logger->logError(QString("illegal duration %1").arg(dura.print()), &_e);
-      //qDebug("duration %s valid %d", qPrintable(dura.print()), dura.isValid());
-      }
+void MusicXMLParserPass2::duration(const musicxml::positive_divisions mxmlduration, Fraction& dura)
+{
+    dura.set(0, 0);        // invalid unless set correctly
+    if (mxmlduration > 0) {
+        if (_divs > 0) {
+            dura.set(mxmlduration, 4 * _divs);
+            dura.reduce(); // prevent overflow in later Fraction operations
+        }
+        else {
+            _logger->logError("illegal or uninitialized divisions", &_e);
+        }
+    }
+    else {
+        _logger->logError(QString("illegal duration %1").arg(mxmlduration), &_e);
+    }
+    qDebug("duration %s valid %d", qPrintable(dura.print()), dura.isValid());
+}
 
 //---------------------------------------------------------
 //   figure
@@ -4953,6 +4957,7 @@ FiguredBassItem* MusicXMLParserPass2::figure(const int idx, const bool paren)
 
 FiguredBass* MusicXMLParserPass2::figuredBass()
       {
+#if 0
       Q_ASSERT(_e.isStartElement() && _e.name() == "figured-bass");
 
       FiguredBass* fb = new FiguredBass(_score);
@@ -4991,7 +4996,8 @@ FiguredBass* MusicXMLParserPass2::figuredBass()
             return 0;
             }
 
-      return fb;
+#endif
+      return nullptr; // TODO fb;
       }
 
 //---------------------------------------------------------
@@ -5331,21 +5337,10 @@ void MusicXMLParserPass2::beam(Beam::Mode& beamMode)
  Parse the /score-partwise/part/measure/note/forward node.
  */
 
-void MusicXMLParserPass2::forward(Fraction& dura)
-      {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "forward");
-
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "duration")
-                  duration(dura);
-            else if (_e.name() == "staff")
-                  _e.skipCurrentElement();  // skip but don't log
-            else if (_e.name() == "voice")
-                  _e.skipCurrentElement();  // skip but don't log
-            else
-                  skipLogCurrElem();
-            }
-      }
+void MusicXMLParserPass2::forward(const musicxml::positive_divisions mxmlduration, Fraction& dura)
+{
+    duration(mxmlduration, dura);
+}
 
 //---------------------------------------------------------
 //   backup
@@ -5355,17 +5350,10 @@ void MusicXMLParserPass2::forward(Fraction& dura)
  Parse the /score-partwise/part/measure/note/backup node.
  */
 
-void MusicXMLParserPass2::backup(Fraction& dura)
-      {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "backup");
-
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "duration")
-                  duration(dura);
-            else
-                  skipLogCurrElem();
-            }
-      }
+void MusicXMLParserPass2::backup(const musicxml::positive_divisions mxmlduration, Fraction& dura)
+{
+    duration(mxmlduration, dura);
+}
 
 //---------------------------------------------------------
 //   MusicXMLParserLyric
