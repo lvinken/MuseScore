@@ -4423,13 +4423,14 @@ Note* MusicXMLParserPass2::note(const musicxml::note& mxmlnote,
                                 Tuplets& tuplets
                                 )
       {
-
 #if 0
       if (_e.attributes().value("print-spacing") == "no") {
             notePrintSpacingNo(dura);
             return 0;
             }
 #endif
+
+      qDebug("1 sTime %s prevSTime %s", qPrintable(sTime.toString()), qPrintable(prevSTime.toString()));
 
       bool cue = false;
       bool small = false;
@@ -4517,7 +4518,7 @@ Note* MusicXMLParserPass2::note(const musicxml::note& mxmlnote,
       int staff = (mxmlnote.staff()) ? *mxmlnote.staff() : 0;
 
       // Bug fix for Sibelius 7.1.3 which does not write <voice> for notes with <chord>
-      if (mxmlnote.chord())
+      if (!mxmlnote.chord())
             // remember voice
             currentVoice = voice;
       else if (voice == "")
@@ -4792,6 +4793,7 @@ Note* MusicXMLParserPass2::note(const musicxml::note& mxmlnote,
       // don't count chord or grace note duration
       // note that this does not check the MusicXML requirement that notes in a chord
       // cannot have a duration longer than the first note in the chord
+      qDebug("9 dura %s mxmlnote.chord() %d", qPrintable(dura.toString()), mxmlnote.chord());
       if (mxmlnote.chord() || mxmlnote.grace())
             dura.set(0, 1);
 
