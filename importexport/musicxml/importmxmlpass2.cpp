@@ -2221,7 +2221,6 @@ void MusicXMLParserPass2::attributes(const musicxml::attributes& attributes, con
 #if 0
     while (_e.readNextStartElement()) {
         if (_e.name() == "clef")
-            clef(partId, measure, tick);
         else if (_e.name() == "divisions")
             divisions();
         else if (_e.name() == "key")
@@ -2248,6 +2247,9 @@ void MusicXMLParserPass2::attributes(const musicxml::attributes& attributes, con
     }
     if (attributes.time().size() > 0) {
         time(attributes.time()[0], partId, measure, tick);
+    }
+    for (auto& c : attributes.clef()) {
+        clef(c, partId, measure, tick);
     }
 }
 
@@ -3708,6 +3710,23 @@ void MusicXMLParserPass2::key(const QString& partId, Measure* measure, const Fra
       }
 
 //---------------------------------------------------------
+//   clef_sign_to_string
+//---------------------------------------------------------
+
+QString clef_sign_to_string(::musicxml::clef_sign v)
+{
+    if (v == ::musicxml::clef_sign::G) {
+        return "G";
+    }
+    else if (v == ::musicxml::clef_sign::F) {
+        return "F";
+    }
+    else {
+        return "clef_sign_unknown";
+    }
+}
+
+//---------------------------------------------------------
 //   clef
 //---------------------------------------------------------
 
@@ -3715,26 +3734,24 @@ void MusicXMLParserPass2::key(const QString& partId, Measure* measure, const Fra
  Parse the /score-partwise/part/measure/attributes/clef node.
  */
 
-void MusicXMLParserPass2::clef(const QString& partId, Measure* measure, const Fraction& tick)
+void MusicXMLParserPass2::clef(const musicxml::clef& mxmlclef, const QString& partId, Measure* measure, const Fraction& tick)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "clef");
-
       Part* part = _pass1.getPart(partId);
       Q_ASSERT(part);
 
       // TODO: check error handling for
       // - single staff
       // - multi-staff with same clef
-      QString strClefno = _e.attributes().value("number").toString();
       const bool afterBarline = _e.attributes().value("after-barline") == "yes";
       int clefno = 1; // default
-      if (strClefno != "")
-            clefno = strClefno.toInt();
+      if (mxmlclef.number()) {
+          clefno = *mxmlclef.number();
+      }
       if (clefno <= 0 || clefno > part->nstaves()) {
             // conversion error (0) or other issue, assume staff 1
             // Also for Cubase 6.5.5 which generates clef number="2" in a single staff part
             // Same fix is required in pass 1 and pass 2
-            _logger->logError(QString("invalid clef number '%1'").arg(strClefno), &_e);
+            _logger->logError(QString("invalid clef number '%1'").arg(clefno), &_e);
             clefno = 1;
             }
       // convert to 0-based
@@ -3743,23 +3760,20 @@ void MusicXMLParserPass2::clef(const QString& partId, Measure* measure, const Fr
       ClefType clef   = ClefType::G;
       StaffTypes st = StaffTypes::STANDARD;
 
-      QString c;
-      int i = 0;
+      QString c { clef_sign_to_string(mxmlclef.sign()) };
+      int i = 0; // TODO
       int line = -1;
+      if (mxmlclef.line()) {
+          line = *mxmlclef.line();
+      }
 
-      while (_e.readNextStartElement()) {
-            if (_e.name() == "sign")
-                  c = _e.readElementText();
-            else if (_e.name() == "line")
-                  line = _e.readElementText().toInt();
+#if 0
             else if (_e.name() == "clef-octave-change") {
                   i = _e.readElementText().toInt();
                   if (i && !(c == "F" || c == "G"))
                         qDebug("clef-octave-change only implemented for F and G key");  // TODO
                   }
-            else
-                  skipLogCurrElem();
-            }
+#endif
 
       //some software (Primus) don't include line and assume some default
       // it's permitted by MusicXML 2.0 XSD
