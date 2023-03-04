@@ -4477,7 +4477,12 @@ Note* MusicXMLParserPass2::note(const musicxml::note& mxmlnote,
 
       mxmlNotePitch mnp { _logger };
       if (mxmlnote.pitch()) {
-          mnp.setProperties(step_value_to_char((*mxmlnote.pitch()).step()), /* TODO mxmlnote.pitch.alter */ 0, (*mxmlnote.pitch()).octave());
+          int alter { 0 };
+          if ((*mxmlnote.pitch()).alter()) {
+              float f {*((*mxmlnote.pitch()).alter())};
+              alter = static_cast<int>(lround(f));
+          }
+          mnp.setProperties(step_value_to_char((*mxmlnote.pitch()).step()), alter, (*mxmlnote.pitch()).octave());
       }
 
 #if 0
