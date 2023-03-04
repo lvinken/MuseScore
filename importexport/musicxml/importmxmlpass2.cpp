@@ -2220,11 +2220,6 @@ void MusicXMLParserPass2::attributes(const musicxml::attributes& attributes, con
 {
 #if 0
     while (_e.readNextStartElement()) {
-        if (_e.name() == "clef")
-        else if (_e.name() == "divisions")
-            divisions();
-        else if (_e.name() == "key")
-            key(partId, measure, tick);
         else if (_e.name() == "measure-style")
             measureStyle(measure);
         else if (_e.name() == "staff-details")
@@ -2250,6 +2245,9 @@ void MusicXMLParserPass2::attributes(const musicxml::attributes& attributes, con
     }
     for (auto& c : attributes.clef()) {
         clef(c, partId, measure, tick);
+    }
+    for (auto& k : attributes.key()) {
+        key(k, partId, measure, tick);
     }
 }
 
@@ -3625,24 +3623,11 @@ static void flushAlteredTone(KeySigEvent& kse, QString& step, QString& alt, QStr
 
 // TODO: check currKeySig handling
 
-void MusicXMLParserPass2::key(const QString& partId, Measure* measure, const Fraction& tick)
+void MusicXMLParserPass2::key(const musicxml::key& mxmlkey, const QString& partId, Measure* measure, const Fraction& tick)
       {
-      Q_ASSERT(_e.isStartElement() && _e.name() == "key");
+      bool printObject = true; // TODO _e.attributes().value("print-object") != "no";
 
-      QString strKeyno = _e.attributes().value("number").toString();
-      int keyno = -1; // assume no number (see below)
-      if (strKeyno != "") {
-            keyno = strKeyno.toInt();
-            if (keyno == 0) {
-                  // conversion error (0), assume staff 1
-                  _logger->logError(QString("invalid key number '%1'").arg(strKeyno), &_e);
-                  keyno = 1;
-                  }
-            // convert to 0-based
-            keyno--;
-            }
-      bool printObject = _e.attributes().value("print-object") != "no";
-
+#if 0
       // for custom keys, a single altered tone is described by
       // key-step (required),  key-alter (required) and key-accidental (optional)
       // none, one or more altered tone may be present
@@ -3696,17 +3681,26 @@ void MusicXMLParserPass2::key(const QString& partId, Measure* measure, const Fra
                   skipLogCurrElem();
             }
       flushAlteredTone(key, keyStep, keyAlter, keyAccidental);
+#endif
+      KeySigEvent key;
+      if (mxmlkey.fifths()) {
+          int f { *mxmlkey.fifths() };
+          key.setKey(Key(f));
+      }
 
       int nstaves = _pass1.getPart(partId)->nstaves();
       int staffIdx = _pass1.trackForPart(partId) / VOICES;
-      if (keyno == -1) {
+      if (!mxmlkey.number()) {
             // apply key to all staves in the part
             for (int i = 0; i < nstaves; ++i) {
                   addKey(key, printObject, _score, measure, staffIdx + i, tick);
                   }
             }
-      else if (keyno < nstaves)
+      else {
+          int keyno = *mxmlkey.number();
+          if (keyno < nstaves)
             addKey(key, printObject, _score, measure, staffIdx + keyno, tick);
+      }
       }
 
 //---------------------------------------------------------

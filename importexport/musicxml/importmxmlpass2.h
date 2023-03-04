@@ -261,7 +261,7 @@ private:
       void attributes(const musicxml::attributes &attributes, const QString& partId, Measure* measure, const Fraction& tick);
       void measureStyle(Measure* measure);
       void barline(const QString& partId, Measure* measure, const Fraction& tick);
-      void key(const QString& partId, Measure* measure, const Fraction& tick);
+      void key(const musicxml::key& mxmlkey, const QString& partId, Measure* measure, const Fraction& tick);
       void clef(const musicxml::clef& mxmlclef, const QString& partId, Measure* measure, const Fraction& tick);
       void time(const musicxml::time& mxmltime, const QString& partId, Measure* measure, const Fraction& tick);
       void divisions();
