@@ -674,7 +674,7 @@ static VBox* addCreditWords(Score* const score, const CreditWordsList& crWords,
             }
 
       std::vector<const CreditWords*> words;
-      if (pageNr == 1) {
+      if (pageNr == 0) {
             // if there are more credit words in the footer than in header,
             // swap heaer and footer, assuming this will result in a vertical
             // frame with the title on top of the page.
@@ -699,7 +699,7 @@ static VBox* addCreditWords(Score* const score, const CreditWordsList& crWords,
       for (const auto w : words) {
             if (mustAddWordToVbox(w->type)) {
                   const auto align = alignForCreditWords(w, pageSize.width());
-                  const auto tid = (pageNr == 1 && top) ? tidForCreditWords(w, words, pageSize.width()) : Tid::DEFAULT;
+                  const auto tid = (pageNr == 0 && top) ? tidForCreditWords(w, words, pageSize.width()) : Tid::DEFAULT;
                   double yoffs = (maxy - w->defaultY) * score->spatium() / 10;
                   if (!vbox)
                         vbox = createAndAddVBoxForCreditWords(score, miny, maxy);
@@ -773,8 +773,8 @@ static void createMeasuresAndVboxes(Score* const score,
 
             // add a header vbox if the this measure is the first in the score or the first on a new page
             if (pageStartMeasureNrs.count(i) || i == 0) {
-                  ++pageNr;
                   vbox = addCreditWords(score, crWords, pageNr, pageSize, true);
+                  ++pageNr;
                   }
 
             // create and add the measure
@@ -969,6 +969,9 @@ void dump_parts(const xsd::cxx::tree::sequence<musicxml::part>& parts)
 Score::FileError MusicXMLParserPass1::parse(const musicxml::score_partwise& score_partwise)
 {
     dump_parts(score_partwise.part());
+    for (const auto& credit : score_partwise.credit()) {
+        newCredit(credit, _credits);
+    }
     newPartList(score_partwise.part_list());
     for (const auto& part : score_partwise.part()) {
         newPart(part);
@@ -1201,6 +1204,60 @@ static QString nextPartOfFormattedString(QXmlStreamReader& e)
  read the credits for later handling by doCredits().
  */
 
+void MusicXMLParserPass1::newCredit(const musicxml::credit& mxmlCredit, CreditWordsList& credits)
+{
+    qDebug("credit page %d", mxmlCredit.page() ? *mxmlCredit.page() : 0);
+    const int page = mxmlCredit.page() ? (*mxmlCredit.page() - 1) : 0; // defaults to 0 (the first page)
+    // multiple credit-words elements may be present,
+    // which are appended
+    // use the position info from the first one
+    // font information is ignored, credits will be styled
+    bool creditWordsRead = false;
+    double defaultx = 0;
+    double defaulty = 0;
+    double fontSize = 0;
+    QString justify;
+    QString halign;
+    QString valign;
+    QStringList crtypes;
+    QString crwords;
+#if 0
+    while (_e.readNextStartElement()) {
+          if (_e.name() == "credit-words") {
+                // IMPORT_LAYOUT
+                if (!creditWordsRead) {
+                      defaultx = _e.attributes().value("default-x").toString().toDouble();
+                      defaulty = _e.attributes().value("default-y").toString().toDouble();
+                      fontSize = _e.attributes().value("font-size").toString().toDouble();
+                      justify  = _e.attributes().value("justify").toString();
+                      halign   = _e.attributes().value("halign").toString();
+                      valign   = _e.attributes().value("valign").toString();
+                      creditWordsRead = true;
+                      }
+                crwords += nextPartOfFormattedString(_e);
+                }
+          else if (_e.name() == "credit-type") {
+                // multiple credit-type elements may be present, supported by
+                // e.g. Finale v26.3 for Mac.
+                crtypes += _e.readElementText();
+                }
+          else
+                skipLogCurrElem();
+          }
+#endif
+    // TODO: check ordering depencies credit-words, -type and -symbol
+    for (const auto& words : mxmlCredit.credit_words()) {
+        qDebug("credit page %d words '%s'", page, words.data());
+        crwords += words.data();
+    }
+    if (crwords != "") {
+          // as the meaning of multiple credit-types is undocumented,
+          // use credit-type only if exactly one was found
+          QString crtype = (crtypes.size() == 1) ? crtypes.at(0) : "";
+          CreditWords* cw = new CreditWords(page, crtype, defaultx, defaulty, fontSize, justify, halign, valign, crwords);
+          credits.append(cw);
+          }
+}
 
 //---------------------------------------------------------
 //   isTitleFrameStyle
