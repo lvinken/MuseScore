@@ -842,7 +842,7 @@ static void dumpPageSize(const QSize& pageSize)
 
 static void dumpCredits(const CreditWordsList& credits)
       {
-#if 0
+#if 1
       for (const auto w : credits) {
             qDebug("credit-words pg=%d tp='%s' defx=%g defy=%g just=%s hal=%s val=%s words='%s'",
                    w->page,
@@ -1251,7 +1251,27 @@ void MusicXMLParserPass1::newCredit(const musicxml::credit& mxmlCredit, CreditWo
     // TODO: check ordering depencies credit-words, -type and -symbol
     for (const auto& words : mxmlCredit.credit_words()) {
         qDebug("credit page %d words '%s'", page, words.data());
-        crwords += words.data();
+        // IMPORT_LAYOUT
+        if (!creditWordsRead) {
+              if (words.default_x()) {
+                  defaultx = *words.default_x();
+              }
+              // does not compile: defaulty = words.default_x() ? *words.default_x() : 0.0;
+              if (words.default_y()) {
+                  defaulty = *words.default_y();
+              }
+              /* TODO
+              // does not compile:
+              if (words.font_size()) {
+                  fontSize = *words.font_size();
+              }
+              justify  = _e.attributes().value("justify").toString();
+              halign   = _e.attributes().value("halign").toString();
+              valign   = _e.attributes().value("valign").toString();
+              */
+              creditWordsRead = true;
+              }
+        crwords += words.data(); // TODO: formatting ? (nextPartOfFormattedString()-like)
     }
     if (crwords != "") {
           // as the meaning of multiple credit-types is undocumented,
