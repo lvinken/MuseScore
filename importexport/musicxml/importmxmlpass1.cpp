@@ -969,6 +969,9 @@ void dump_parts(const xsd::cxx::tree::sequence<musicxml::part>& parts)
 Score::FileError MusicXMLParserPass1::parse(const musicxml::score_partwise& score_partwise)
 {
     dump_parts(score_partwise.part());
+    if (score_partwise.defaults()) {
+        newDefaults(*score_partwise.defaults());
+    }
     for (const auto& credit : score_partwise.credit()) {
         newCredit(credit, _credits);
     }
@@ -1206,7 +1209,7 @@ static QString nextPartOfFormattedString(QXmlStreamReader& e)
 
 void MusicXMLParserPass1::newCredit(const musicxml::credit& mxmlCredit, CreditWordsList& credits)
 {
-    qDebug("credit page %d", mxmlCredit.page() ? *mxmlCredit.page() : 0);
+    qDebug("credit page %lld", mxmlCredit.page() ? *mxmlCredit.page() : 0);
     const int page = mxmlCredit.page() ? (*mxmlCredit.page() - 1) : 0; // defaults to 0 (the first page)
     // multiple credit-words elements may be present,
     // which are appended
@@ -1356,6 +1359,93 @@ static void setPageFormat(Score* score, const PageFormat& pf)
  read the general score layout settings.
  */
 
+void MusicXMLParserPass1::newDefaults(const musicxml::defaults& mxmlDefaults)
+{
+    double millimeters = _score->spatium()/10.0;
+    double tenths = 1.0;
+    QString lyricFontFamily;
+    QString lyricFontSize;
+    QString wordFontFamily;
+    QString wordFontSize;
+
+#if 0
+    // TODO
+    while (_e.readNextStartElement()) {
+          else if (_e.name() == "system-layout") {
+                while (_e.readNextStartElement()) {
+                      if (_e.name() == "system-dividers")
+                            _e.skipCurrentElement();  // skip but don't log
+                      else if (_e.name() == "system-margins")
+                            _e.skipCurrentElement();  // skip but don't log
+                      else if (_e.name() == "system-distance") {
+                            Spatium val(_e.readElementText().toDouble() / 10.0);
+                            if (preferences.getBool(PREF_IMPORT_MUSICXML_IMPORTLAYOUT)) {
+                                  _score->style().set(Sid::minSystemDistance, val);
+                                  //qDebug("system distance %f", val.val());
+                                  }
+                            }
+                      else if (_e.name() == "top-system-distance")
+                            _e.skipCurrentElement();  // skip but don't log
+                      else
+                            skipLogCurrElem();
+                      }
+                }
+          else if (_e.name() == "staff-layout") {
+                while (_e.readNextStartElement()) {
+                      if (_e.name() == "staff-distance") {
+                            Spatium val(_e.readElementText().toDouble() / 10.0);
+                            if (preferences.getBool(PREF_IMPORT_MUSICXML_IMPORTLAYOUT))
+                                  _score->style().set(Sid::staffDistance, val);
+                            }
+                      else
+                            skipLogCurrElem();
+                      }
+                }
+          else if (_e.name() == "music-font")
+                _e.skipCurrentElement();  // skip but don't log
+          else if (_e.name() == "word-font") {
+                wordFontFamily = _e.attributes().value("font-family").toString();
+                wordFontSize = _e.attributes().value("font-size").toString();
+                _e.skipCurrentElement();
+                }
+          else if (_e.name() == "lyric-font") {
+                lyricFontFamily = _e.attributes().value("font-family").toString();
+                lyricFontSize = _e.attributes().value("font-size").toString();
+                _e.skipCurrentElement();
+                }
+          else if (_e.name() == "lyric-language")
+                _e.skipCurrentElement();  // skip but don't log
+          else
+                skipLogCurrElem();
+          }
+#endif
+
+    if (mxmlDefaults.scaling()) {
+        millimeters = (*mxmlDefaults.scaling()).millimeters();
+        tenths = (*mxmlDefaults.scaling()).tenths();
+        double _spatium = DPMM * (millimeters * 10.0 / tenths);
+        if (preferences.getBool(PREF_IMPORT_MUSICXML_IMPORTLAYOUT)) {
+            _score->setSpatium(_spatium);
+        }
+    }
+    qDebug("millimeters %g tenths %g", millimeters, tenths);
+    if (mxmlDefaults.page_layout()) {
+        PageFormat pf;
+        newPageLayout(*mxmlDefaults.page_layout(), pf, millimeters / (tenths * INCH));
+        if (preferences.getBool(PREF_IMPORT_MUSICXML_IMPORTLAYOUT)) {
+            setPageFormat(_score, pf);
+        }
+    }
+
+    /*
+    qDebug("word font family '%s' size '%s' lyric font family '%s' size '%s'",
+           qPrintable(wordFontFamily), qPrintable(wordFontSize),
+           qPrintable(lyricFontFamily), qPrintable(lyricFontSize));
+    */
+    updateStyles(_score, wordFontFamily, wordFontSize, lyricFontFamily, lyricFontSize);
+
+    _score->setDefaultsRead(true); // TODO only if actually succeeded ?
+}
 
 //---------------------------------------------------------
 //   pageLayout
@@ -1369,6 +1459,59 @@ static void setPageFormat(Score* score, const PageFormat& pf)
  MusicXML file.
  */
 
+void MusicXMLParserPass1::newPageLayout(const musicxml::page_layout& mxmlPageLayout, PageFormat& pf, const qreal conversion)
+{
+    qreal _oddRightMargin  = 0.0;
+    qreal _evenRightMargin = 0.0;
+    QSizeF size;
+
+    if (mxmlPageLayout.page_height() && mxmlPageLayout.page_width()) {
+        double ph { *mxmlPageLayout.page_height() };
+        double pw { *mxmlPageLayout.page_width() };
+        qDebug("page height %g width %g", ph, pw);
+        size.rheight() = ph * conversion;
+        size.rwidth() = pw * conversion;
+        // set pageHeight and pageWidth for use by doCredits()
+        _pageSize.setHeight(static_cast<int>(ph + 0.5));
+        _pageSize.setWidth(static_cast<int>(pw + 0.5));
+    }
+    for (const auto& pm : mxmlPageLayout.page_margins()) {
+        musicxml::margin_type::value tp = musicxml::margin_type::both;
+        if (pm.type()) {
+            tp = *pm.type();
+        }
+        double lm { pm.left_margin() };
+        double rm { pm.right_margin() };
+        double tm { pm.top_margin() };
+        double bm { pm.bottom_margin() };
+        qDebug("tp %d lm %g rm %g tm %g bm %g", tp, lm, rm, tm, bm);
+        lm *= conversion;
+        rm *= conversion;
+        tm *= conversion;
+        bm *= conversion;
+        pf.twosided = tp == musicxml::margin_type::odd || tp == musicxml::margin_type::even;
+        if (tp == musicxml::margin_type::odd || tp == musicxml::margin_type::both) {
+            qDebug("odd");
+            pf.oddLeftMargin = lm;
+            _oddRightMargin = rm;
+            pf.oddTopMargin = tm;
+            pf.oddBottomMargin = bm;
+            qDebug("oddLeftMargin %g", pf.oddLeftMargin);
+        }
+        if (tp == musicxml::margin_type::even || tp == musicxml::margin_type::both) {
+            qDebug("even");
+            pf.evenLeftMargin = lm;
+            _evenRightMargin = rm;
+            pf.evenTopMargin = tm;
+            pf.evenBottomMargin = bm;
+            qDebug("evenLeftMargin %g", pf.evenLeftMargin);
+        }
+    }
+    pf.size = size;
+    qreal w1 = size.width() - pf.oddLeftMargin - _oddRightMargin;
+    qreal w2 = size.width() - pf.evenLeftMargin - _evenRightMargin;
+    pf.printableWidth = qMax(w1, w2);   // silently adjust right margins
+}
 
 //---------------------------------------------------------
 //   partList

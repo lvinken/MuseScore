@@ -141,10 +141,12 @@ private:
       void newAttributes(const musicxml::attributes& attributes, const QString& partId, const Fraction cTime);
       void newBackup(const unsigned int duration, Fraction& dura);
       void newCredit(const musicxml::credit& mxmlCredit, CreditWordsList& credits);
+      void newDefaults(const musicxml::defaults& mxmlDefaults);
       void newDuration(const unsigned int duration, Fraction& dura);
       void newForward(const unsigned int duration, Fraction& dura);
       void newMeasure(const musicxml::measure1& measure, const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr);
       void newNote(const musicxml::note& note, const QString& partId, const Fraction sTime, Fraction& missingPrev, Fraction& dura, Fraction& missingCurr, VoiceOverlapDetector& vod, MxmlTupletStates& tupletStates);
+      void newPageLayout(const musicxml::page_layout& mxmlPageLayout, PageFormat& pf, const qreal conversion);
       void newPart(const musicxml::part& part);
       void newPartList(const musicxml::part_list& part_list /*TODO , MusicXmlPartGroupList& partGroupList */);
       void newScorePart(const musicxml::score_part& score_part);
