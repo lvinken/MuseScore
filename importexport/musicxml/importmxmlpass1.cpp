@@ -966,9 +966,12 @@ void dump_parts(const xsd::cxx::tree::sequence<musicxml::part>& parts)
 //   parse
 //---------------------------------------------------------
 
+static void movementWork(const musicxml::score_partwise& mxmlScorePartwise, Score* const score);
+
 Score::FileError MusicXMLParserPass1::parse(const musicxml::score_partwise& score_partwise)
 {
     dump_parts(score_partwise.part());
+    movementWork(score_partwise, _score);
     if (score_partwise.defaults()) {
         newDefaults(*score_partwise.defaults());
     }
@@ -1019,6 +1022,40 @@ static bool allStaffGroupsIdentical(Part const* const p)
             }
       return true;
       }
+
+//---------------------------------------------------------
+//   setNonEmptyMetaTag
+//---------------------------------------------------------
+
+static void setNonEmptyMetaTag(Score* const score, const char* const tagName, const std::string tagValue)
+{
+    if (!tagValue.empty()) {
+        score->setMetaTag(tagName, tagValue.data());
+    }
+}
+
+//---------------------------------------------------------
+//   movementWork
+//---------------------------------------------------------
+
+static void movementWork(const musicxml::score_partwise& mxmlScorePartwise, Score* const score)
+{
+    if (mxmlScorePartwise.work()) {
+        const auto& work = *mxmlScorePartwise.work();
+        if (work.work_number()) {
+            setNonEmptyMetaTag(score, "workNumber", (*work.work_number()).data());
+        }
+        if (work.work_title()) {
+            setNonEmptyMetaTag(score, "workTitle", (*work.work_title()).data());
+        }
+    }
+    if (mxmlScorePartwise.movement_number()) {
+        setNonEmptyMetaTag(score, "movementNumber", (*mxmlScorePartwise.movement_number()).data());
+    }
+    if (mxmlScorePartwise.movement_title()) {
+        setNonEmptyMetaTag(score, "movementTitle", (*mxmlScorePartwise.movement_title()).data());
+    }
+}
 
 //---------------------------------------------------------
 //   scorePartwise
