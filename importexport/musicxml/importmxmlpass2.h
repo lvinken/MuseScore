@@ -258,7 +258,8 @@ private:
       void measChordNote( /*, const MxmlPhase2Note note, ChordRest& currChord */);
       void measChordFlush( /*, ChordRest& currChord */);
       void measure(const musicxml::measure1& measure, const QString& partId, const Fraction time);
-      void attributes(const musicxml::attributes &attributes, const QString& partId, Measure* measure, const Fraction& tick);
+      void attributes(const musicxml::attributes& attributes, const QString& partId, Measure* measure, const Fraction& tick);
+      void direction(const musicxml::direction& direction, const QString& partId, Measure* measure, const Fraction& tick);
       void measureStyle(Measure* measure);
       void barline(const QString& partId, Measure* measure, const Fraction& tick);
       void key(const musicxml::key& mxmlkey, const QString& partId, Measure* measure, const Fraction& tick);

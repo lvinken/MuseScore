@@ -2152,6 +2152,13 @@ void MusicXMLParserPass2::measure(const musicxml::measure1& measure,
           }
               break;
           default:
+          case musicxml::measure1::direction_id:
+          {
+              qDebug("direction");
+              const auto& mxmldirection { measure.direction()[content_order.index] };
+              direction(mxmldirection, partId, currentMeasure, time + mTime);
+          }
+              break;
               qDebug("default");
               // ignore
               break;
@@ -2441,6 +2448,23 @@ static Fraction calcTicks(const QString& text, int divs, MxmlLogger* logger, con
 
       return dura;
       }
+
+//---------------------------------------------------------
+//   direction
+//---------------------------------------------------------
+
+void MusicXMLParserPass2::direction(const musicxml::direction& direction, const QString& partId, Measure* measure, const Fraction& tick)
+{
+    for (const auto& directionType : direction.direction_type()) {
+        for (const auto& words : directionType.words()) {
+            qDebug("words '%s'", words.data());
+            TextBase* t = 0;
+            t = new StaffText(_score);
+            t->setXmlText(words.data());
+            addElemOffset(t, 0 /* TODO track */, "above" /* TODO placement*/, measure, tick /* TODO + _offset */);
+        }
+    }
+}
 
 //---------------------------------------------------------
 //   direction
