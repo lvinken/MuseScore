@@ -2151,7 +2151,6 @@ void MusicXMLParserPass2::measure(const musicxml::measure1& measure,
               qDebug("barline");
           }
               break;
-          default:
           case musicxml::measure1::direction_id:
           {
               qDebug("direction");
@@ -2159,6 +2158,7 @@ void MusicXMLParserPass2::measure(const musicxml::measure1& measure,
               direction(mxmldirection, partId, currentMeasure, time + mTime);
           }
               break;
+          default:
               qDebug("default");
               // ignore
               break;
