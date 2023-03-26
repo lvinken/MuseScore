@@ -157,6 +157,7 @@ QString mxmlNoteDuration::checkTiming(const QString& type, const bool rest, cons
             _dura = Fraction(4, 4);
             }
 
+      //qDebug("errorStr '%s'", qPrintable(errorStr));
       return errorStr;
       }
 

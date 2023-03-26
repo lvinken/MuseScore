@@ -1961,9 +1961,30 @@ static Fraction measureDurationAsFraction(const Fraction length, const int tsigt
 //   note_type_value_to_string
 //---------------------------------------------------------
 
-std::string note_type_value_to_string(::musicxml::note_type_value v)
+// TODO: make strongly typed and improve compatibility with mxml-bdg-exp-3.6.2 design
+// TODO: remove duplication of code between pass 1 and 2
+
+static std::string note_type_value_to_string(::musicxml::note_type_value v)
 {
-    if (v == ::musicxml::note_type_value::cxx_16th) {
+    if (v == ::musicxml::note_type_value::cxx_1024th) {
+        return "1024th";
+    }
+    else if (v == ::musicxml::note_type_value::cxx_512th) {
+        return "512th";
+    }
+    else if (v == ::musicxml::note_type_value::cxx_256th) {
+        return "256th";
+    }
+    else if (v == ::musicxml::note_type_value::cxx_128th) {
+        return "128th";
+    }
+    else if (v == ::musicxml::note_type_value::cxx_64th) {
+        return "64th";
+    }
+    else if (v == ::musicxml::note_type_value::cxx_32nd) {
+        return "32nd";
+    }
+    else if (v == ::musicxml::note_type_value::cxx_16th) {
         return "16th";
     }
     else if (v == ::musicxml::note_type_value::eighth) {
@@ -1977,6 +1998,15 @@ std::string note_type_value_to_string(::musicxml::note_type_value v)
     }
     else if (v == ::musicxml::note_type_value::whole) {
         return "whole";
+    }
+    else if (v == ::musicxml::note_type_value::breve) {
+        return "breve";
+    }
+    else if (v == ::musicxml::note_type_value::long_) {
+        return "long";
+    }
+    else if (v == ::musicxml::note_type_value::maxima) {
+        return "maxima";
     }
     else {
         return "note_type_value_unknown";

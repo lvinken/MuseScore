@@ -4375,10 +4375,29 @@ static void setDrumset(Chord* c, MusicXMLParserPass1& pass1, const QString& part
 //---------------------------------------------------------
 
 // TODO: make strongly typed and improve compatibility with mxml-bdg-exp-3.6.2 design
+// TODO: remove duplication of code between pass 1 and 2
 
-char* note_type_value_to_string(::musicxml::note_type_value v)
+static std::string note_type_value_to_string(::musicxml::note_type_value v)
 {
-    if (v == ::musicxml::note_type_value::cxx_16th) {
+    if (v == ::musicxml::note_type_value::cxx_1024th) {
+        return "1024th";
+    }
+    else if (v == ::musicxml::note_type_value::cxx_512th) {
+        return "512th";
+    }
+    else if (v == ::musicxml::note_type_value::cxx_256th) {
+        return "256th";
+    }
+    else if (v == ::musicxml::note_type_value::cxx_128th) {
+        return "128th";
+    }
+    else if (v == ::musicxml::note_type_value::cxx_64th) {
+        return "64th";
+    }
+    else if (v == ::musicxml::note_type_value::cxx_32nd) {
+        return "32nd";
+    }
+    else if (v == ::musicxml::note_type_value::cxx_16th) {
         return "16th";
     }
     else if (v == ::musicxml::note_type_value::eighth) {
@@ -4392,6 +4411,15 @@ char* note_type_value_to_string(::musicxml::note_type_value v)
     }
     else if (v == ::musicxml::note_type_value::whole) {
         return "whole";
+    }
+    else if (v == ::musicxml::note_type_value::breve) {
+        return "breve";
+    }
+    else if (v == ::musicxml::note_type_value::long_) {
+        return "long";
+    }
+    else if (v == ::musicxml::note_type_value::maxima) {
+        return "maxima";
     }
     else {
         return "note_type_value_unknown";
@@ -4469,7 +4497,15 @@ Note* MusicXMLParserPass2::note(const musicxml::note& mxmlnote,
 
       bool cue = false;
       bool small = false;
-      QString type { mxmlnote.type() ? note_type_value_to_string(*mxmlnote.type()) : "" };// TODO change to enum
+#if 1
+      QString type { mxmlnote.type() ? note_type_value_to_string(*mxmlnote.type()).data() : "" }; // TODO change to enum
+#else
+      QString type;
+      if (mxmlnote.type()) {
+          type = note_type_value_to_string(*mxmlnote.type()).data();
+      }
+#endif
+      qDebug("1 type '%s'", qPrintable(type));
       QString voice = mxmlnote.voice() ? (*mxmlnote.voice()).data() : "";
       Direction stemDir = Direction::AUTO;
       bool noStem = false;
