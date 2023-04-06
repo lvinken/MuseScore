@@ -19,6 +19,20 @@
 
 /**
  MusicXML import.
+
+ Design note:
+ When importing a regular MusicXML file:
+ Importxml.cpp importMusicXml(0x558b5b271bd0, BeetAnGeSample.xml)
+ - Opens the file as a QFile
+ - Calls doValidateAndImport() on the file
+ importxml.cpp: doValidateAndImport(0x558b5b271bd0, BeetAnGeSample.xml, 0x7ffdcdc8ef00)
+ - Calls tupletAssert()
+ - Calls doValidate()
+ - Calls importMusicXMLfromBuffer()
+ importxml.cpp: doValidate()
+ - Fixes up and loads the schema
+ - Reads the MusicXML file and validates it
+ - Reports elapsed time for these tasks
  */
 
 #include "thirdparty/qzip/qzipreader_p.h"
@@ -184,8 +198,8 @@ static bool extractRootfile(QFile* qf, QByteArray& data)
 
 static Score::FileError doValidate(const QString& name, QIODevice* dev)
       {
-      //QElapsedTimer t;
-      //t.start();
+      QElapsedTimer t;
+      t.start();
 
       // initialize the schema
       ValidatorMessageHandler messageHandler;
@@ -197,7 +211,7 @@ static Score::FileError doValidate(const QString& name, QIODevice* dev)
       // validate the data
       QXmlSchemaValidator validator(schema);
       bool valid = validator.validate(dev, QUrl::fromLocalFile(name));
-      //qDebug("Validation time elapsed: %d ms", t.elapsed());
+      qDebug("Validation time elapsed: %d ms", t.elapsed());
 
       if (!valid) {
             qDebug("importMusicXml() file '%s' is not a valid MusicXML file", qPrintable(name));
@@ -222,6 +236,8 @@ static Score::FileError doValidate(const QString& name, QIODevice* dev)
 
 static Score::FileError doValidateAndImport(Score* score, const QString& name, QIODevice* dev)
       {
+      qDebug("doValidateAndImport(%p, %s, %p)", score, qPrintable(name), dev);
+
       // verify tuplet TDuration::DurationType dependencies
       tupletAssert();
 
@@ -232,7 +248,10 @@ static Score::FileError doValidateAndImport(Score* score, const QString& name, Q
             return res;
 
       // actually do the import
+      QElapsedTimer t;
+      t.start();
       importMusicXMLfromBuffer(score, name, dev);
+      qDebug("Import time elapsed: %d ms", t.elapsed());
       //qDebug("importMusicXml() return %d", int(res));
       return res;
       }
@@ -251,6 +270,8 @@ Score::FileError importMusicXml(MasterScore* score, QIODevice* dev, const QStrin
       {
       ScoreLoad sl;     // suppress warnings for undo push/pop
 
+      qDebug("importMusicXml(%p, %p, %s)", score, dev, qPrintable(name));
+
       if (!dev->open(QIODevice::ReadOnly)) {
             qDebug("importMusicXml() could not open MusicXML file '%s'", qPrintable(name));
             MScore::lastError = QObject::tr("Could not open MusicXML file\n%1").arg(name);
@@ -265,7 +286,7 @@ Score::FileError importMusicXml(MasterScore* score, const QString& name) {
 
     ScoreLoad sl;     // suppress warnings for undo push/pop
 
-    //qDebug("importMusicXml(%p, %s)", score, qPrintable(name));
+    qDebug("importMusicXml(%p, %s)", score, qPrintable(name));
 
     // open the MusicXML file
     QFile xmlFile(name);
@@ -292,7 +313,7 @@ Score::FileError importMusicXml(MasterScore* score, const QString& name) {
 
 Score::FileError importCompressedMusicXml(MasterScore* score, const QString& name)
       {
-      //qDebug("importCompressedMusicXml(%p, %s)", score, qPrintable(name));
+      qDebug("importCompressedMusicXml(%p, %s)", score, qPrintable(name));
 
       // open the compressed MusicXML file
       QFile mxlFile(name);
