@@ -970,7 +970,7 @@ static void movementWork(const musicxml::score_partwise& mxmlScorePartwise, Scor
 
 Score::FileError MusicXMLParserPass1::parse(const musicxml::score_partwise& score_partwise)
 {
-    dump_parts(score_partwise.part());
+    //dump_parts(score_partwise.part());
     movementWork(score_partwise, _score);
     if (score_partwise.defaults()) {
         newDefaults(*score_partwise.defaults());
@@ -1893,7 +1893,7 @@ void MusicXMLParserPass1::newPart(const musicxml::part& part)
     // debug: print results
 #if 1
     for (const auto& str : _parts[id].toString().split('\n')) {
-        qDebug("%s", qPrintable(str));
+        //qDebug("%s", qPrintable(str));
     }
     qDebug("lyric numbers: %s", qPrintable(_parts[id].lyricNumberHandler().toString()));
     qDebug("instrument map:");
@@ -2025,7 +2025,7 @@ static std::string note_type_value_to_string(::musicxml::note_type_value v)
 
 void MusicXMLParserPass1::newMeasure(const musicxml::measure1& measure, const QString& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr)
 {
-    qDebug("part %s measure %d", qPrintable(partId), measureNr);
+    //qDebug("part %s measure %d", qPrintable(partId), measureNr);
     const QString number { measure.number().data() };
 
     Fraction mTime; // current time stamp within measure
@@ -2038,10 +2038,10 @@ void MusicXMLParserPass1::newMeasure(const musicxml::measure1& measure, const QS
         switch (content_order.id) {
         case musicxml::measure1::note_id:
         {
-            qDebug("note");
+            //qDebug("note");
             const auto& note { measure.note()[content_order.index] };
             if (note.type()) {
-                qDebug(" type '%s'", note_type_value_to_string(*note.type()).data());
+                //qDebug(" type '%s'", note_type_value_to_string(*note.type()).data());
             }
             Fraction missingPrev;
             Fraction dura;
@@ -2103,7 +2103,7 @@ void MusicXMLParserPass1::newMeasure(const musicxml::measure1& measure, const QS
         }
             break;
         default:
-            qDebug("default");
+            //qDebug("default");
             // ignore
             break;
         }
@@ -2898,7 +2898,7 @@ void MusicXMLParserPass1::newNote(const musicxml::note& note, const QString& par
     }
 
     // store result
-    qDebug("dura isValid %d", dura.isValid());
+    //qDebug("dura isValid %d", dura.isValid());
     if (dura.isValid() && dura > Fraction(0, 1)) {
         // count the chords
         if (!_parts.value(partId).voicelist.contains(voice)) {

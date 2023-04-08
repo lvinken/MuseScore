@@ -216,8 +216,8 @@ static int MusicXMLStepAltOct2Pitch(int step, int alter, int octave)
 
 static void xmlSetPitch(Note* n, int step, int alter, int octave, const int octaveShift, const Instrument* const instr)
       {
-      qDebug("xmlSetPitch(n=%p, step=%d, alter=%d, octave=%d, octaveShift=%d)",
-             n, step, alter, octave, octaveShift);
+      //qDebug("xmlSetPitch(n=%p, step=%d, alter=%d, octave=%d, octaveShift=%d)",
+      //       n, step, alter, octave, octaveShift);
 
       //const Staff* staff = n->score()->staff(track / VOICES);
       //const Instrument* instr = staff->part()->instr();
@@ -236,7 +236,7 @@ static void xmlSetPitch(Note* n, int step, int alter, int octave, const int octa
       int tpc2 = step2tpc(step, AccidentalVal(alter));
       int tpc1 = Ms::transposeTpc(tpc2, intval, true);
       n->setPitch(pitch, tpc1, tpc2);
-      qDebug("  pitch=%d tpc1=%d tpc2=%d", n->pitch(), n->tpc1(), n->tpc2());
+      //qDebug("  pitch=%d tpc1=%d tpc2=%d", n->pitch(), n->tpc1(), n->tpc2());
       }
 
 //---------------------------------------------------------
@@ -1939,7 +1939,7 @@ void MusicXMLParserPass2::measure(const musicxml::measure1& measure,
                                   const Fraction time)
       {
       QString number { measure.number().data() };
-      qDebug("measure %s start", qPrintable(number));
+      //qDebug("measure %s start", qPrintable(number));
 
       Measure* currentMeasure = findMeasure(_score, time);
       if (!currentMeasure) {
@@ -2073,7 +2073,7 @@ void MusicXMLParserPass2::measure(const musicxml::measure1& measure,
           switch (content_order.id) {
           case musicxml::measure1::note_id:
           {
-              qDebug("note");
+              //qDebug("note");
               const auto& mxmlnote { measure.note()[content_order.index] };
               if (mxmlnote.type()) {
                   // TODO qDebug(" type '%s'", note_type_value_to_string(*note.type()).data());
@@ -2159,7 +2159,7 @@ void MusicXMLParserPass2::measure(const musicxml::measure1& measure,
           }
               break;
           default:
-              qDebug("default");
+              //qDebug("default");
               // ignore
               break;
           }
@@ -4493,7 +4493,7 @@ Note* MusicXMLParserPass2::note(const musicxml::note& mxmlnote,
             }
 #endif
 
-      qDebug("1 sTime %s prevSTime %s", qPrintable(sTime.toString()), qPrintable(prevSTime.toString()));
+      //qDebug("1 sTime %s prevSTime %s", qPrintable(sTime.toString()), qPrintable(prevSTime.toString()));
 
       bool cue = false;
       bool small = false;
@@ -4505,7 +4505,7 @@ Note* MusicXMLParserPass2::note(const musicxml::note& mxmlnote,
           type = note_type_value_to_string(*mxmlnote.type()).data();
       }
 #endif
-      qDebug("1 type '%s'", qPrintable(type));
+      //qDebug("1 type '%s'", qPrintable(type));
       QString voice = mxmlnote.voice() ? (*mxmlnote.voice()).data() : "";
       Direction stemDir = Direction::AUTO;
       bool noStem = false;
@@ -4595,7 +4595,7 @@ Note* MusicXMLParserPass2::note(const musicxml::note& mxmlnote,
       int staff = (mxmlnote.staff()) ? *mxmlnote.staff() : 1;
       // convert staff to zero-based (in case of error, staff will be -1)
       --staff;
-      qDebug("staff %d", staff);
+      //qDebug("staff %d", staff);
 
       // Bug fix for Sibelius 7.1.3 which does not write <voice> for notes with <chord>
       if (!mxmlnote.chord())
@@ -4873,7 +4873,7 @@ Note* MusicXMLParserPass2::note(const musicxml::note& mxmlnote,
       // don't count chord or grace note duration
       // note that this does not check the MusicXML requirement that notes in a chord
       // cannot have a duration longer than the first note in the chord
-      qDebug("9 dura %s mxmlnote.chord() %d", qPrintable(dura.toString()), mxmlnote.chord() ? 1 : 0);
+      //qDebug("9 dura %s mxmlnote.chord() %d", qPrintable(dura.toString()), mxmlnote.chord() ? 1 : 0);
       if (mxmlnote.chord() || mxmlnote.grace())
             dura.set(0, 1);
 
