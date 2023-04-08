@@ -226,10 +226,12 @@ static Score::FileError doValidateAndImport(Score* score, const QString& name, Q
       tupletAssert();
 
       // validate the file
-      Score::FileError res;
+      Score::FileError res { Score::FileError::FILE_NO_ERROR };
+      /* validation now done by Xerces
       res = doValidate(name, dev);
       if (res != Score::FileError::FILE_NO_ERROR)
             return res;
+            */
 
       // actually do the import
       importMusicXMLfromBuffer(score, name, dev);

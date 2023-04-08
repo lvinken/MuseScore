@@ -60,10 +60,14 @@ Score::FileError importMusicXMLfromBuffer(Score* score, const QString& name, QIO
       Score::FileError res { Score::FileError::FILE_NO_ERROR };
 
       try {
+          QElapsedTimer t;
+          t.start();
           const auto score_partwise = musicxml::score_partwise_(fs);
+          qDebug("Validation time elapsed: %d ms", t.elapsed());
           qDebug("importMusicXMLfromBuffer(): 4 score_partwise created");
 
           // pass 1
+          t.start();
           MusicXMLParserPass1 pass1(score, &logger);
           res = pass1.parse(*score_partwise);
           if (res != Score::FileError::FILE_NO_ERROR)
@@ -72,7 +76,9 @@ Score::FileError importMusicXMLfromBuffer(Score* score, const QString& name, QIO
           // pass 2
           dev->seek(0); // TODO remove ?
           MusicXMLParserPass2 pass2(score, pass1, &logger);
-          return pass2.parse(dev /* TODO remove ? */, *score_partwise);
+          const auto res = pass2.parse(dev /* TODO remove ? */, *score_partwise);
+          qDebug("Import time elapsed: %d ms", t.elapsed());
+          return res;
       } catch (const xml_schema::exception &e) {
           std::cerr << "importMusicXMLfromBuffer(): 5a xml_schema::exception " << e << std::endl;
           qDebug("importMusicXMLfromBuffer(): 5b xml_schema::exception");
