@@ -37,6 +37,8 @@
 #include <math.h>
 #include "config.h"
 
+#include<set>
+
 #include "thirdparty/qzip/qzipwriter_p.h"
 
 #include "mscore/preferences.h"
@@ -6256,6 +6258,67 @@ static std::vector<TBox*> findTextFramesToWriteAsWordsBelow(const Measure* const
       }
 
 //---------------------------------------------------------
+//  dumpTuplet
+//---------------------------------------------------------
+
+static void dumpTuplet(const Tuplet* const tup)
+{
+    if (tup) {
+        std::cout
+                << "tuplet 0x" << std::hex << tup
+                << " ratio " << qPrintable(tup->ratio().print())
+                << " elems";
+        for (auto durElem : tup->elements()) {
+            std::cout
+                    << " " << std::hex << durElem;
+        }
+        std::cout
+                << " tuplet 0x" << tup->tuplet()
+                << "\n";
+    }
+}
+
+//---------------------------------------------------------
+//  dumpChordRestsAndTuplets
+//---------------------------------------------------------
+
+static void dumpChordRestsAndTuplets(const Measure* const m, int st)
+{
+    for (auto seg = m->first(); seg; seg = seg->next()) {
+        const auto el = seg->element(st);
+        if (!el) {
+            continue;
+        }
+        if (el->isChordRest()) {
+            ChordRest* cr = toChordRest(el);
+            std::cout
+                    << "cr 0x" << std::hex << cr
+                    << " track " << std::dec << cr->track()
+                    << " tick " << qPrintable(cr->tick().print())
+                    << " parent 0x" << std::hex << cr->parent()
+                    << " tuplet 0x" << cr->tuplet()
+                    << "\n";
+        }
+    }
+
+    std::set<Tuplet*> tupletsHandled;
+    for (auto seg = m->first(); seg; seg = seg->next()) {
+        const auto el = seg->element(st);
+        if (!el) {
+            continue;
+        }
+        if (el->isChordRest()) {
+            ChordRest* cr = toChordRest(el);
+            Tuplet* tup = cr->tuplet();
+            if (!tupletsHandled.count(tup)) {
+                dumpTuplet(tup);
+                tupletsHandled.insert(tup);
+            }
+        }
+    }
+}
+
+//---------------------------------------------------------
 //  writeMeasureTracks
 //---------------------------------------------------------
 
@@ -6279,6 +6342,7 @@ void ExportMusicXml::writeMeasureTracks(const Measure* const m,
       const int etrack = strack + VOICES * staves;
 
       for (int st = strack; st < etrack; ++st) {
+            dumpChordRestsAndTuplets(m, st);
             // sstaff - xml staff number, counting from 1 for this
             // instrument
             // special number 0 -> don’t show staff number in
