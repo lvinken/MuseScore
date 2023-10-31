@@ -2179,6 +2179,12 @@ void MusicXMLParserPass1::measure(const QString& partId,
                   Fraction missingCurr;
                   // note: chord and grace note handling done in note()
                   note(partId, cTime + mTime, missingPrev, dura, missingCurr, vod, tupletStates);
+                  std::cout
+                          << " cTime " << qPrintable(cTime.print())
+                          << " mTime " << qPrintable(mTime.print())
+                          << " missingPrev " << qPrintable(missingPrev.print())
+                          << " missingCurr " << qPrintable(missingCurr.print())
+                          << "\n";
                   if (missingPrev.isValid()) {
                         mTime += missingPrev;
                         }
