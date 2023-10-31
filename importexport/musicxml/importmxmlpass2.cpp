@@ -4456,6 +4456,11 @@ Note* MusicXMLParserPass2::note(const QString& partId,
             if (tupletAction & MxmlTupletFlag::STOP_PREVIOUS) {
                   // tuplet start while already in tuplet
                   if (missingPrev.isValid() && missingPrev > Fraction(0, 1)) {
+                      std::cout
+                              << "add missing "
+                              << qPrintable(missingPrev.print())
+                              << " to previous tuplet"
+                              << "\n";
                         const auto track = msTrack + msVoice;
                         const auto extraRest = addRest(_score, measure, noteStartTime, track, msMove,
                                                        TDuration { missingPrev* tuplet->ratio() }, missingPrev);
@@ -4642,6 +4647,11 @@ Note* MusicXMLParserPass2::note(const QString& partId,
                         if (tupletAction & MxmlTupletFlag::STOP_CURRENT) {
                               if (missingCurr.isValid() && missingCurr > Fraction(0, 1)) {
                                     qDebug("add missing %s to current tuplet", qPrintable(missingCurr.print()));
+                                    std::cout
+                                            << "add missing "
+                                            << qPrintable(missingCurr.print())
+                                            << " to current tuplet"
+                                            << "\n";
                                     const auto track = msTrack + msVoice;
                                     const auto extraRest = addRest(_score, measure, noteStartTime + dura, track, msMove,
                                                                    TDuration { missingCurr* tuplet->ratio() }, missingCurr);
