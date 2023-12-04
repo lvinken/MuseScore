@@ -1921,7 +1921,14 @@ void ExportMusicXml::moveToTick(const Fraction& t)
 
 void ExportMusicXml::timesig(TimeSig* tsig)
       {
-      TimeSigType st = tsig->timeSigType();
+    std::cerr
+            << "timeSig()"
+            << " numerator" << tsig->numerator()
+            << " denominator" << tsig->denominator()
+            << " sig " << qPrintable(tsig->sig().print())
+            << " stretch " << qPrintable(tsig->stretch().print())
+            << "\n";
+    TimeSigType st = tsig->timeSigType();
       Fraction ts = tsig->sig();
       int z = ts.numerator();
       int n = ts.denominator();
@@ -3283,6 +3290,12 @@ void ExportMusicXml::chord(Chord* chord, int staff, const std::vector<Lyrics*>* 
       for (Element* e : chord->el())
             qDebug("chord %p el %p", chord, e);
        */
+      std::cerr
+              << "chord()"
+              << " tick " << qPrintable(chord->tick().print())
+              << " ticks " << qPrintable(chord->ticks().print())
+              << " actualTicks " << qPrintable(chord->actualTicks().print())
+              << "\n";
       std::vector<Note*> nl = chord->notes();
       bool grace = chord->isGrace();
       if (!grace) _tick += chord->actualTicks();
