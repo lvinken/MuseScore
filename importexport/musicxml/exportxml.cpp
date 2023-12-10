@@ -339,7 +339,7 @@ class ExportMusicXml {
       void chord(Chord* chord, int staff, const std::vector<Lyrics*>* ll, bool useDrumset);
       void rest(Rest* chord, int staff);
       void clef(int staff, const ClefType ct, const QString& extraAttributes = "");
-      void timesig(TimeSig* tsig);
+      void timesig(TimeSig* tsig, int staff = 0);
       void keysig(const KeySig* ks, ClefType ct, int staff = 0, bool visible = true);
       void barlineLeft(const Measure* const m);
       void barlineMiddle(const BarLine* bl);
@@ -1919,10 +1919,11 @@ void ExportMusicXml::moveToTick(const Fraction& t)
 //   timesig
 //---------------------------------------------------------
 
-void ExportMusicXml::timesig(TimeSig* tsig)
+void ExportMusicXml::timesig(TimeSig* tsig, int staff)
       {
     std::cerr
             << "timeSig()"
+            << " staff " << staff
             << " numerator" << tsig->numerator()
             << " denominator" << tsig->denominator()
             << " sig " << qPrintable(tsig->sig().print())
@@ -1936,6 +1937,8 @@ void ExportMusicXml::timesig(TimeSig* tsig)
 
       _attr.doAttr(_xml, true);
       QString tagName = "time";
+      if (staff)
+            tagName += QString(" number=\"%1\"").arg(staff);
       if (st == TimeSigType::FOUR_FOUR)
             tagName += " symbol=\"common\"";
       else if (st == TimeSigType::ALLA_BREVE)
@@ -5337,6 +5340,10 @@ void ExportMusicXml::keysigTimesig(const Measure* m, const Part* p)
                   }
             }
 
+      // TODO search all staves for non-generated (?) time signatures
+
+      // old
+/*
       TimeSig* tsig = 0;
       for (Segment* seg = m->first(); seg; seg = seg->next()) {
             if (seg->tick() > m->tick())
@@ -5347,6 +5354,66 @@ void ExportMusicXml::keysigTimesig(const Measure* m, const Part* p)
             }
       if (tsig)
             timesig(tsig);
+            */
+
+      // new
+
+      // search all staves for non-generated time signatures
+      QMap<int, TimeSig*> timesigs; // map staff to time signature
+      for (Segment* seg = m->first(); seg; seg = seg->next()) {
+            if (seg->tick() > m->tick())
+                  break;
+            for (int t = strack; t < etrack; t += VOICES) {
+                  Element* el = seg->element(t);
+                  if (!el)
+                        continue;
+                  if (el->type() == ElementType::TIMESIG) {
+                        std::cout
+                                << "keysigTimesig()"
+                                << " found timesig " << std::hex << el
+                                << " tick " << qPrintable(el->tick().print())
+                                << " track " << std::dec << el->track()
+                                << "\n";
+                        int st = (t - strack) / VOICES;
+                        if (!el->generated())
+                              timesigs[st] = static_cast<TimeSig*>(el);
+                        }
+                  }
+            }
+
+
+      // write the time signatues
+      if (!timesigs.isEmpty()) {
+            // determine if all staves have a timesig and all timesigs are identical
+            // in that case a single <time> is written, without number=... attribute
+            int nstaves = p->nstaves();
+            bool singleTime = true;
+            // check if all staves have a timesig
+            for (int i = 0; i < nstaves; i++)
+                  if (!timesigs.contains(i))
+                        singleTime = false;
+            // check if all timesigs are identical
+            if (singleTime)
+                  for (int i = 1; i < nstaves; i++)
+                        if (*timesigs.value(i) != *timesigs.value(0))
+                              singleTime = false;
+
+            // write the keysigs
+            //qDebug(" singleKey %d", singleKey);
+            std::cout
+                    << "keysigTimesig()"
+                    << " singleTime " << singleTime
+                    << "\n";
+            if (singleTime) {
+                  // keysig applies to all staves
+                  timesig(timesigs.value(0), 0);
+                  }
+            else {
+                  // staff-specific keysigs
+                  for (int st : timesigs.keys())
+                        timesig(timesigs.value(st), st + 1);
+                  }
+            }
       }
 
 //---------------------------------------------------------
