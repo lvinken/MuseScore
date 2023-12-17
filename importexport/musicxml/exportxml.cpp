@@ -1031,6 +1031,11 @@ static void addInteger(int len)
 
 void ExportMusicXml::calcDivMoveToTick(const Fraction& t)
       {
+    std::cerr
+            << "calcDivMoveToTick()"
+            << " _tick " << qPrintable(_tick.print())
+            << " t " << qPrintable(t.print())
+            << "\n";
       if (t < _tick) {
 #ifdef DEBUG_TICK
             qDebug("backup %d", (tick - t).ticks());
@@ -1894,6 +1899,11 @@ static int calculateTimeDeltaInDivisions(const Fraction& t1, const Fraction& t2,
 void ExportMusicXml::moveToTick(const Fraction& t)
       {
       //qDebug("ExportMusicXml::moveToTick(t=%s) _tick=%s", qPrintable(t.print()), qPrintable(_tick.print()));
+    std::cerr
+            << "moveToTick()"
+            << " _tick " << qPrintable(_tick.print())
+            << " t " << qPrintable(t.print())
+            << "\n";
       if (t < _tick) {
 #ifdef DEBUG_TICK
             qDebug(" -> backup");
@@ -5368,7 +5378,7 @@ void ExportMusicXml::keysigTimesig(const Measure* m, const Part* p)
                   if (!el)
                         continue;
                   if (el->type() == ElementType::TIMESIG) {
-                        std::cout
+                        std::cerr
                                 << "keysigTimesig()"
                                 << " found timesig " << std::hex << el
                                 << " tick " << qPrintable(el->tick().print())
@@ -5400,7 +5410,7 @@ void ExportMusicXml::keysigTimesig(const Measure* m, const Part* p)
 
             // write the keysigs
             //qDebug(" singleKey %d", singleKey);
-            std::cout
+            std::cerr
                     << "keysigTimesig()"
                     << " singleTime " << singleTime
                     << "\n";
@@ -6619,6 +6629,19 @@ void ExportMusicXml::writeParts()
 //  write
 //---------------------------------------------------------
 
+void dumpTimeSigMap(Score* score)
+{
+    std::cerr << "TimeSigMap:\n";
+    const auto tsm = score->sigmap();
+    for (auto i = tsm->begin(); i != tsm->end(); ++i) {
+        std::cerr
+                << "tick " << i->first
+                << " timesig " << qPrintable(i->second.timesig().print())
+                << " nominal " << qPrintable(i->second.nominal().print())
+                << "\n";
+    }
+}
+
 /**
  Write the score to \a dev in MusicXML format.
  */
@@ -6636,6 +6659,7 @@ void ExportMusicXml::write(QIODevice* dev)
             score()->doLayout();    // this is only allowed in a cmd context to not corrupt the undo/redo stack
             }
 
+      dumpTimeSigMap(score());
       calcDivisions();
 
       for (int i = 0; i < MAX_NUMBER_LEVEL; ++i) {
