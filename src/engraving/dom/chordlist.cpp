@@ -1569,10 +1569,12 @@ void ChordDescription::complete(ParsedChord* pc, const ChordList* cl)
         renderList = pc->renderList(cl);
         renderListGenerated = true;
     }
+    //std::cout << "ChordDescription::complete() 1" << " xmlKind '" << xmlKind.toStdString() << "'\n";
     if (xmlKind == "") {
         xmlKind = pc->xmlKind();
         xmlDegrees = pc->xmlDegrees();
     }
+    //std::cout << "ChordDescription::complete() 2" << " xmlKind '" << xmlKind.toStdString() << "'\n";
     // these fields are not read from chord description files
     // so get them from the parsed representation in all cases
     xmlText = pc->xmlText();
@@ -1600,6 +1602,7 @@ void ChordDescription::read(XmlReader& e)
             names.insert(ni++, n);
         } else if (tag == "xml") {
             xmlKind = e.readText();
+            //std::cout << "ChordDescription::read()" << " xmlKind '" << xmlKind.toStdString() << "'\n";
         } else if (tag == "degree") {
             xmlDegrees.push_back(e.readText());
         } else if (tag == "voicing") {
@@ -1665,6 +1668,7 @@ void ChordList::read(XmlReader& e)
 {
     int fontIdx = static_cast<int>(fonts.size());
     m_autoAdjust = false;
+    int chordsRead { 0 };
     while (e.readNextStartElement()) {
         const AsciiStringView tag(e.name());
         if (tag == "font") {
@@ -1746,6 +1750,7 @@ void ChordList::read(XmlReader& e)
             // throw away previously parsed chords
             cd.parsedChords.clear();
             // generate any missing info (including new parsed chords)
+            ++chordsRead;
             cd.complete(0, this);
             // add to list
             insert({ id, cd });
@@ -1759,6 +1764,7 @@ void ChordList::read(XmlReader& e)
             e.unknown();
         }
     }
+    std::cout << "ChordList::read() chordsRead " << chordsRead << "\n";
 }
 
 //---------------------------------------------------------

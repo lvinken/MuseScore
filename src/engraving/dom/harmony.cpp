@@ -266,11 +266,13 @@ void Harmony::afterRead()
         if (m_id > 0) {
             // positive id will happen only for scores that were created with explicit chord lists
             // lookup id in chord list and generate new description if necessary
+            //std::cout << "Harmony::afterRead() 1\n";
             getDescription();
         } else {
             // default case: look up by name
             // description will be found for any chord already read in this score
             // and we will generate a new one if necessary
+            //std::cout << "Harmony::afterRead 2 m_textName '" << m_textName.toStdString() << "'\n";
             getDescription(m_textName);
         }
     } else if (m_textName == "") {
@@ -281,6 +283,7 @@ void Harmony::afterRead()
         // with any luck, the resulting text will be parseable now, so give it a shot
         createBlocks();
         String s = plainText();
+        //std::cout << "Harmony::afterRead 3 s '" << s.toStdString() << "'\n";
         if (!s.isEmpty()) {
             setHarmony(s);
             return;
@@ -772,6 +775,7 @@ void Harmony::endEdit(EditData& ed)
     score()->setPlayChord(true);
     m_realizedHarmony.setDirty(true);
 
+    //std::cout << "Harmony::endEdit s '" << s.toStdString() << "'\n";
     setHarmony(s);
     setPlainText(harmonyName());
 
@@ -803,6 +807,7 @@ void Harmony::endEdit(EditData& ed)
                     h->setRootTpc(rootTpc);
                     h->setBaseTpc(baseTpc);
                     h->setPlainText(h->harmonyName());
+                    //std::cout << "Harmony::endEdit h->plainText() '" << h->plainText().toStdString() << "'\n";
                     h->setHarmony(h->plainText());
                     h->triggerLayout();
                 }
@@ -819,6 +824,7 @@ void Harmony::endEdit(EditData& ed)
 
 void Harmony::setHarmony(const String& s)
 {
+    //std::cout << "Harmony::setHarmony('" << s.toStdString() << "')\n";
     int r, b;
     const ChordDescription* cd = parseHarmony(s, &r, &b);
     if (!cd && m_parsedForm && m_parsedForm->parseable()) {
@@ -1154,9 +1160,12 @@ const ChordDescription* Harmony::descr(const String& name, const ParsedChord* pc
 const ChordDescription* Harmony::getDescription()
 {
     const ChordDescription* cd = descr();
+    //std::cout << "Harmony::getDescription() 1\n";
     if (cd && !cd->names.empty()) {
         m_textName = cd->names.front();
+        //std::cout << "Harmony::getDescription() 2 m_textName '" << m_textName.toStdString() << "'\n";
     } else if (m_textName != "") {
+        //std::cout << "Harmony::getDescription() 3\n";
         cd = generateDescription();
         m_id = cd->id;
     }
@@ -1170,6 +1179,7 @@ const ChordDescription* Harmony::getDescription()
 
 const ChordDescription* Harmony::getDescription(const String& name, const ParsedChord* pc)
 {
+    //std::cout << "Harmony::getDescription(...) 1\n";
     const ChordDescription* cd = descr(name, pc);
     if (cd) {
         m_id = cd->id;
@@ -1249,6 +1259,7 @@ RealizedHarmony& Harmony::realizedHarmony()
 
 const ChordDescription* Harmony::generateDescription()
 {
+    //std::cout << "ChordDescription::generateDescription()\n";
     ChordList* cl = score()->chordList();
     ChordDescription cd(m_textName);
     cd.complete(m_parsedForm, cl);
@@ -1938,6 +1949,7 @@ bool Harmony::setProperty(Pid pid, const PropertyValue& v)
     default:
         if (TextBase::setProperty(pid, v)) {
             if (pid == Pid::TEXT) {
+                //std::cout << "Harmony::setProperty v '" << v.value<String>().toStdString() << "'\n";
                 setHarmony(v.value<String>());
             }
             render();

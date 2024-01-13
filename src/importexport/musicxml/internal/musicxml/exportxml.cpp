@@ -7904,6 +7904,18 @@ static std::vector<const Jump*> findJumpElements(const Score* score)
 //  write
 //---------------------------------------------------------
 
+static void dumpChordList(ChordList* chordList)
+{
+    std::cout << "dumpChordList size " << chordList->size() << "\n";
+    for (const auto& [i, chordDesc] : *chordList) {
+        if (i < 0) {
+            std::cout << "dumpChordList i " << i
+                      << " xmlKind " << chordDesc.xmlKind.toStdString()
+                      << "\n";
+        }
+    }
+}
+
 /**
  Write the score to \a dev in MusicXML format.
  */
@@ -7920,6 +7932,8 @@ void ExportMusicXml::write(mu::io::IODevice* dev)
         score()->undo(new ChangeStyleVal(score(), Sid::concertPitch, false));
         score()->doLayout();        // this is only allowed in a cmd context to not corrupt the undo/redo stack
     }
+
+    dumpChordList(score()->chordList());
 
     calcDivisions();
 
@@ -8181,7 +8195,17 @@ void ExportMusicXml::harmony(Harmony const* const h, FretDiagram const* const fd
         }
         _xml.endElement();
 
+        std::cout
+                << "harmony"
+                << " root-step " << tpc2stepName(rootTpc).toAscii()
+                << " root-alter " << alter
+                << " id " << h->id()
+                << " xmlKind '" << h->xmlKind().toStdString() << "'"
+                << " extensionName '" << h->extensionName().toStdString() << "'"
+                << "\n";
+
         if (!h->xmlKind().isEmpty()) {
+            //std::cout << "1\n";
             QString s = "kind";
             QString kindText = h->musicXmlText();
             if (h->musicXmlText() != "") {
@@ -8250,8 +8274,11 @@ void ExportMusicXml::harmony(Harmony const* const h, FretDiagram const* const fd
             }
         } else {
             if (h->extensionName().empty()) {
+                //std::cout << "2a\n";
+                // an empty or missing kind is invalid MusicXML
                 _xml.tag("kind", "");
             } else {
+                //std::cout << "2b\n";
                 _xml.tag("kind", { { "text", h->extensionName() } }, "");
             }
 
