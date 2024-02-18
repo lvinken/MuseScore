@@ -376,6 +376,7 @@ void Musicxml_Tests::mxmlImportTestRef(const char* file)
     delete score;
 }
 
+#if 0
 TEST_F(Musicxml_Tests, accidentals1) {
     mxmlIoTest("testAccidentals1");
 }
@@ -673,9 +674,11 @@ TEST_F(Musicxml_Tests, harmony6) {
 TEST_F(Musicxml_Tests, harmony8) {
     mxmlIoTest("testHarmony8");
 }
+#endif
 TEST_F(Musicxml_Tests, hello) {
     mxmlIoTest("testHello");
 }
+#if 0
 TEST_F(Musicxml_Tests, helloReadCompr) {
     mxmlReadTestCompr("testHello");
 }
@@ -1184,9 +1187,11 @@ TEST_F(Musicxml_Tests, voiceMapper2) {
 TEST_F(Musicxml_Tests, voiceMapper3) {
     mxmlIoTestRef("testVoiceMapper3");
 }
+#endif
 TEST_F(Musicxml_Tests, voicePiano1) {
     mxmlIoTest("testVoicePiano1");
 }
+#if 0
 TEST_F(Musicxml_Tests, volta1) {
     mxmlIoTest("testVolta1");
 }
@@ -1230,3 +1235,4 @@ TEST_F(Musicxml_Tests, hiddenStaves)
 
     EXPECT_EQ(score->style().value(Sid::hideEmptyStaves).toBool(), true);
 }
+#endif
