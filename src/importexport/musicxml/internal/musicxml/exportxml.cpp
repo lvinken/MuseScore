@@ -6779,7 +6779,7 @@ void ExportMusicXml::keysigTimesig(const Measure* m, const Part* p)
 {
     track_idx_t strack = p->startTrack();
     track_idx_t etrack = p->endTrack();
-    //LOGD("keysigTimesig m %p strack %d etrack %d", m, strack, etrack);
+    LOGD("keysigTimesig m %p strack %zu etrack %zu", m, strack, etrack);
 
     // search all staves for non-generated key signatures
     std::map<staff_idx_t, KeySig*> keysigs;   // map staff to key signature
@@ -6860,6 +6860,31 @@ void ExportMusicXml::keysigTimesig(const Measure* m, const Part* p)
     }
     if (tsig) {
         timesig(tsig);
+    }
+    // new:
+    // search all staves for non-generated time signatures
+    std::map<staff_idx_t, TimeSig*> timesigs;   // map staff to time signature
+    for (Segment* seg = m->first(); seg; seg = seg->next()) {
+        if (seg->tick() > m->tick()) {
+            break;
+        }
+        for (track_idx_t t = strack; t < etrack; t += VOICES) {
+            EngravingItem* el = seg->element(t);
+            if (!el) {
+                continue;
+            }
+            if (el->type() == ElementType::TIMESIG) {
+                LOGD(" found timesig %p tick %d track %zu", el, el->tick().ticks(), el->track());
+                staff_idx_t st = (t - strack) / VOICES;
+                if (!el->generated()) {
+                    auto timesig { toTimeSig(el) };
+                    timesigs[st] = static_cast<TimeSig*>(el);
+                    LOGD(" sig %s stretch %s",
+                         timesig->sig().toString().toStdString().c_str(),
+                         timesig->stretch().toString().toStdString().c_str());
+                }
+            }
+        }
     }
 }
 
