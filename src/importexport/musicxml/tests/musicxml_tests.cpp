@@ -788,6 +788,14 @@ TEST_F(Musicxml_Tests, lines3) {
 TEST_F(Musicxml_Tests, lines4) {
     mxmlMscxExportTestRef("testLines4");
 }
+#endif
+TEST_F(Musicxml_Tests, localTimesig1) {
+    mxmlMscxExportTestRef("testLocalTimesig1");
+}
+TEST_F(Musicxml_Tests, localTimesig2) {
+    mxmlMscxExportTestRef("testLocalTimesig2");
+}
+#if 0
 TEST_F(Musicxml_Tests, lyricBracket) {
     mxmlImportTestRef("testLyricBracket");
 }
