@@ -408,7 +408,7 @@ private:
     void chord(Chord* chord, staff_idx_t staff, const std::vector<Lyrics*>& ll, bool useDrumset);
     void rest(Rest* chord, staff_idx_t staff, const std::vector<Lyrics*>& ll);
     void clef(staff_idx_t staff, const ClefType ct, const String& extraAttributes = u"");
-    void timesig(TimeSig* tsig);
+    void timesig(TimeSig* tsig, staff_idx_t staff);
     void keysig(const KeySig* ks, ClefType ct, staff_idx_t staff = 0, bool visible = true);
     void barlineLeft(const Measure* const m, const track_idx_t track);
     void barlineMiddle(const BarLine* bl);
@@ -2159,7 +2159,7 @@ void ExportMusicXml::moveToTick(const Fraction& t)
 //   timesig
 //---------------------------------------------------------
 
-void ExportMusicXml::timesig(TimeSig* tsig)
+void ExportMusicXml::timesig(TimeSig* tsig, staff_idx_t staff)
 {
     TimeSigType st = tsig->timeSigType();
     Fraction ts = tsig->sig();
@@ -2173,6 +2173,9 @@ void ExportMusicXml::timesig(TimeSig* tsig)
         attrs = { { "symbol", "common" } };
     } else if (st == TimeSigType::ALLA_BREVE) {
         attrs = { { "symbol", "cut" } };
+    }
+    if (staff) {
+        attrs.push_back({ "number", staff });
     }
     if (!tsig->visible()) {
         attrs.push_back({ "print-object", "no" });
@@ -6848,20 +6851,6 @@ void ExportMusicXml::keysigTimesig(const Measure* m, const Part* p)
         }
     }
 
-    TimeSig* tsig = 0;
-    for (Segment* seg = m->first(); seg; seg = seg->next()) {
-        if (seg->tick() > m->tick()) {
-            break;
-        }
-        EngravingItem* el = seg->element(strack);
-        if (el && el->type() == ElementType::TIMESIG) {
-            tsig = (TimeSig*)el;
-        }
-    }
-    if (tsig) {
-        timesig(tsig);
-    }
-    // new:
     // search all staves for non-generated time signatures
     std::map<staff_idx_t, TimeSig*> timesigs;   // map staff to time signature
     for (Segment* seg = m->first(); seg; seg = seg->next()) {
@@ -6883,6 +6872,40 @@ void ExportMusicXml::keysigTimesig(const Measure* m, const Part* p)
                          timesig->sig().toString().toStdString().c_str(),
                          timesig->stretch().toString().toStdString().c_str());
                 }
+            }
+        }
+    }
+
+    // write the time signatues
+    if (!timesigs.empty()) {
+        // determine if all staves have a timesig and all timesigs are identical
+        // in that case a single <time> is written, without number=... attribute
+        size_t nstaves = p->nstaves();
+        bool singleTime = true;
+        // check if all staves have a keysig
+        for (staff_idx_t i = 0; i < nstaves; i++) {
+            if (!mu::contains(keysigs, i)) {
+                singleTime = false;
+            }
+        }
+        // check if all timesigs are identical
+        if (singleTime) {
+            for (staff_idx_t i = 1; i < nstaves; i++) {
+                if (!(timesigs.at(i)->sig() == timesigs.at(0)->sig())) {
+                    singleTime = false;
+                }
+            }
+        }
+
+        // write the timesigs
+        LOGD(" singleTime %d", singleTime);
+        if (singleTime) {
+            // timesig applies to all staves
+            timesig(timesigs.at(0), 0);
+        } else {
+            // staff-specific timesig
+            for (staff_idx_t st : mu::keys(keysigs)) {
+                timesig(timesigs.at(st), st + 1);
             }
         }
     }
