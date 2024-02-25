@@ -795,6 +795,15 @@ TEST_F(Musicxml_Tests, localTimesig1) {
 TEST_F(Musicxml_Tests, localTimesig2) {
     mxmlMscxExportTestRef("testLocalTimesig2");
 }
+TEST_F(Musicxml_Tests, localTimesig3) {
+    mxmlMscxExportTestRef("testLocalTimesig3");
+}
+TEST_F(Musicxml_Tests, localTimesig4) {
+    mxmlMscxExportTestRef("testLocalTimesig4");
+}
+TEST_F(Musicxml_Tests, localTimesig5) {
+    mxmlMscxExportTestRef("testLocalTimesig5");
+}
 #if 0
 TEST_F(Musicxml_Tests, lyricBracket) {
     mxmlImportTestRef("testLyricBracket");
