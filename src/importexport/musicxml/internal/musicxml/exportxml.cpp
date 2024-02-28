@@ -2142,6 +2142,10 @@ void ExportMusicXml::moveToTick(const Fraction& t)
         m_attr.doAttr(m_xml, false);
         m_xml.startElement("backup");
         m_xml.tag("duration", calculateTimeDeltaInDivisions(m_tick, t, m_div));
+        {
+            const auto tickLen { calculateTimeDeltaInDivisions(m_tick, t, 1) };
+            LOGD() << "tickLen backup " << tickLen;
+        }
         m_xml.endElement();
     } else if (t > m_tick) {
 #ifdef DEBUG_TICK
@@ -2150,6 +2154,10 @@ void ExportMusicXml::moveToTick(const Fraction& t)
         m_attr.doAttr(m_xml, false);
         m_xml.startElement("forward");
         m_xml.tag("duration", calculateTimeDeltaInDivisions(t, m_tick, m_div));
+        {
+            const auto tickLen { calculateTimeDeltaInDivisions(t, m_tick, 1) };
+            LOGD() << "tickLen forward " << tickLen;
+        }
         m_xml.endElement();
     }
     m_tick = t;
@@ -4259,6 +4267,10 @@ void ExportMusicXml::chord(Chord* chord, staff_idx_t staff, const std::vector<Ly
         if (!grace) {
             m_xml.tag("duration", stretchCorrActFraction(note).ticks() / m_div);
         }
+        {
+            const auto tickLen { stretchCorrActFraction(note) };
+            LOGD() << "tickLen " << tickLen.toString().toStdString() << " (" << tickLen.ticks() << ")";
+        }
 
         if (!isCueNote(note)) {
             if (note->tieBack()) {
@@ -4480,10 +4492,14 @@ void ExportMusicXml::rest(Rest* rest, staff_idx_t staff, const std::vector<Lyric
         m_xml.endElement();
     }
 
+    // TODO: correct for stretch (check: shouldn't actualTicks() correct for stretch ?)
     Fraction tickLen = rest->actualTicks();
+    LOGD() << "tickLen default " << tickLen.toString().toStdString() << " (" << tickLen.ticks() << ")";
     if (d.type() == DurationType::V_MEASURE) {
         // to avoid forward since rest->ticklen=0 in this case.
+        // TODO: correct for stretch
         tickLen = rest->measure()->ticks();
+        LOGD() << "tickLen measure " << tickLen.toString().toStdString() << " (" << tickLen.ticks() << ")";
     }
     m_tick += tickLen;
 #ifdef DEBUG_TICK
@@ -4491,6 +4507,7 @@ void ExportMusicXml::rest(Rest* rest, staff_idx_t staff, const std::vector<Lyric
 #endif
 
     m_xml.tag("duration", tickLen.ticks() / m_div);
+    LOGD() << "duration " << (tickLen.ticks() / m_div);
 
     // for a single-staff part, staff is 0, which needs to be corrected
     // to calculate the correct voice number
