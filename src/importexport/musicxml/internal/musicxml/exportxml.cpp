@@ -464,6 +464,36 @@ private:
 };
 
 //---------------------------------------------------------
+//   fractionToStdString
+//---------------------------------------------------------
+
+static std::string fractionToStdString(const Fraction& f)
+{
+    if (!f.isValid()) {
+        return "<invalid>";
+    }
+    String res { f.toString() };
+    res += String(u" (%1)").arg(String::number(f.ticks()));
+    return res.toStdString();
+}
+
+//---------------------------------------------------------
+//   fractionToStdString
+//---------------------------------------------------------
+
+static std::string durElemTicksToStdString(const DurationElement& d)
+{
+    String res;
+    res += String(u" ticks %1").arg(d.ticks().toString());
+    res += String(u" (%1)").arg(String::number(d.ticks().ticks()));
+    res += String(u" globalTicks %1").arg(d.globalTicks().toString());
+    res += String(u" (%1)").arg(String::number(d.globalTicks().ticks()));
+    res += String(u" actualTicks %1").arg(d.actualTicks().toString());
+    res += String(u" (%1)").arg(String::number(d.actualTicks().ticks()));
+    return res.toStdString();
+}
+
+//---------------------------------------------------------
 //   positionToString
 //---------------------------------------------------------
 
@@ -4266,10 +4296,7 @@ void ExportMusicXml::chord(Chord* chord, staff_idx_t staff, const std::vector<Ly
         // duration
         if (!grace) {
             m_xml.tag("duration", stretchCorrActFraction(note).ticks() / m_div);
-        }
-        {
-            const auto tickLen { stretchCorrActFraction(note) };
-            LOGD() << "tickLen " << tickLen.toString().toStdString() << " (" << tickLen.ticks() << ")";
+            LOGD() << "tickLen" << durElemTicksToStdString(*chord);
         }
 
         if (!isCueNote(note)) {
@@ -4494,12 +4521,12 @@ void ExportMusicXml::rest(Rest* rest, staff_idx_t staff, const std::vector<Lyric
 
     // TODO: correct for stretch (check: shouldn't actualTicks() correct for stretch ?)
     Fraction tickLen = rest->actualTicks();
-    LOGD() << "tickLen default " << tickLen.toString().toStdString() << " (" << tickLen.ticks() << ")";
+    LOGD() << "tickLen" << durElemTicksToStdString(*rest);
     if (d.type() == DurationType::V_MEASURE) {
         // to avoid forward since rest->ticklen=0 in this case.
         // TODO: correct for stretch
         tickLen = rest->measure()->ticks();
-        LOGD() << "tickLen measure " << tickLen.toString().toStdString() << " (" << tickLen.ticks() << ")";
+        LOGD() << "tickLen (measure)" << durElemTicksToStdString(*rest);
     }
     m_tick += tickLen;
 #ifdef DEBUG_TICK
