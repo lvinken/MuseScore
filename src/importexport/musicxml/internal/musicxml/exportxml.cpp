@@ -4296,7 +4296,8 @@ void ExportMusicXml::chord(Chord* chord, staff_idx_t staff, const std::vector<Ly
         // duration
         if (!grace) {
             m_xml.tag("duration", stretchCorrActFraction(note).ticks() / m_div);
-            LOGD() << "tickLen" << durElemTicksToStdString(*chord);
+            LOGD() << "tick " << fractionToStdString(chord->tick())
+                   << " tickLen" << durElemTicksToStdString(*chord);
         }
 
         if (!isCueNote(note)) {
@@ -4521,7 +4522,8 @@ void ExportMusicXml::rest(Rest* rest, staff_idx_t staff, const std::vector<Lyric
 
     // TODO: correct for stretch (check: shouldn't actualTicks() correct for stretch ?)
     Fraction tickLen = rest->actualTicks();
-    LOGD() << "tickLen" << durElemTicksToStdString(*rest);
+    LOGD() << "tick " << fractionToStdString(rest->tick())
+           << " tickLen" << durElemTicksToStdString(*rest);
     if (d.type() == DurationType::V_MEASURE) {
         // to avoid forward since rest->ticklen=0 in this case.
         // TODO: correct for stretch
@@ -8163,6 +8165,10 @@ void ExportMusicXml::writeMeasure(const Measure* const m,
     mnsh.updateForMeasure(m);
     measureTag += mnsh.measureNumber();
     const bool isFirstActualMeasure = mnsh.isFirstActualMeasure();
+
+    LOGD() << mnsh.measureNumber().toStdString()
+           << " tick " << fractionToStdString(m->tick())
+           << " ticks " << fractionToStdString(m->ticks());
 
     if (configuration()->musicxmlExportLayout()) {
         measureTag += String(u" width=\"%1\"").arg(String::number(m->ldata()->bbox().width() / DPMM / m_millimeters * m_tenths, 2));
