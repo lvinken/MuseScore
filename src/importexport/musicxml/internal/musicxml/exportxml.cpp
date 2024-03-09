@@ -4520,17 +4520,12 @@ void ExportMusicXml::rest(Rest* rest, staff_idx_t staff, const std::vector<Lyric
         m_xml.endElement();
     }
 
-    // TODO: correct for stretch (check: shouldn't actualTicks() correct for stretch ?)
-    Fraction tickLen = rest->actualTicks();
+    Fraction tickLen;
+    // regular rest
+    tickLen = rest->globalTicks(); // MusicXML requires unstretched duration
     LOGD() << "tick " << fractionToStdString(rest->tick())
            << " tickLen" << durElemTicksToStdString(*rest);
-    if (d.type() == DurationType::V_MEASURE) {
-        // to avoid forward since rest->ticklen=0 in this case.
-        // TODO: correct for stretch
-        tickLen = rest->measure()->ticks();
-        LOGD() << "tickLen (measure)" << durElemTicksToStdString(*rest);
-    }
-    m_tick += tickLen;
+    m_tick += rest->actualTicks(); // prevent <backward> or <forward> by moving to next note's tick
 #ifdef DEBUG_TICK
     LOGD(" tickLen=%d newtick=%d", tickLen, tick);
 #endif
