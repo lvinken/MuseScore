@@ -2165,6 +2165,7 @@ static int calculateTimeDeltaInDivisions(const Fraction& t1, const Fraction& t2,
 void ExportMusicXml::moveToTick(const Fraction& t)
 {
     //LOGD("ExportMusicXml::moveToTick(t=%s) _tick=%s", muPrintable(t.print()), muPrintable(_tick.print()));
+    LOGD() << "t (target) " << fractionToStdString(t) << " m_tick (current) " << fractionToStdString(m_tick);
     if (t < m_tick) {
 #ifdef DEBUG_TICK
         LOGD(" -> backup");
@@ -8008,6 +8009,7 @@ void ExportMusicXml::writeMeasureTracks(const Measure* const m,
             // generate backup or forward to the start time of the element
             if (m_tick != seg->tick()) {
                 m_attr.doAttr(m_xml, false);
+                LOGD() << "move to the start time of the element, track " << track;
                 moveToTick(seg->tick());
             }
 
@@ -8099,7 +8101,8 @@ void ExportMusicXml::writeMeasureStaves(const Measure* m,
         IF_ASSERT_FAILED(m == origM) {
             return;
         }
-        moveToTick(m->tick());
+        LOGD() << "staffIdx " << staffIdx;
+        moveToTick(m->tick());  // move tick to start of measure, generates backup for second staff but needs first staff's stretch
 
         staff_idx_t partRelStaffNo = (nstaves > 1 ? staffIdx - startStaff + 1 : 0); // xml staff number, counting from 1 for this instrument
         // special number 0 -> don’t show staff number in xml output
@@ -8231,6 +8234,7 @@ void ExportMusicXml::writeMeasure(const Measure* const m,
        #ifdef DEBUG_TICK
     LOGD("end of measure");
        #endif
+    LOGD() << "end of measure";
     moveToTick(m->endTick());
     if (partIndex == 0) {
         repeatAtMeasureStop(m, strack, etrack, strack);
