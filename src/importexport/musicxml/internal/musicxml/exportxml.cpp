@@ -373,7 +373,7 @@ public:
 
     void write(muse::io::IODevice* dev);
     void credits(XmlWriter& xml);
-    void moveToTick(const Fraction& t);
+    void moveToTick(const Fraction& t, const Fraction& stretch = {1, 1});
     void words(TextBase const* const text, staff_idx_t staff);
     void tboxTextAsWords(TextBase const* const text, const staff_idx_t staff, PointF position);
     void rehearsal(RehearsalMark const* const rmk, staff_idx_t staff);
@@ -2162,19 +2162,21 @@ static int calculateTimeDeltaInDivisions(const Fraction& t1, const Fraction& t2,
 //   moveToTick
 //---------------------------------------------------------
 
-void ExportMusicXml::moveToTick(const Fraction& t)
+void ExportMusicXml::moveToTick(const Fraction& t, const Fraction& stretch)
 {
     //LOGD("ExportMusicXml::moveToTick(t=%s) _tick=%s", muPrintable(t.print()), muPrintable(_tick.print()));
-    LOGD() << "t (target) " << fractionToStdString(t) << " m_tick (current) " << fractionToStdString(m_tick);
+    Fraction stretchedM_tick { t + stretch * (m_tick - t) };
+    LOGD() << "t (target) " << fractionToStdString(t) << " stretch " << fractionToStdString(stretch)
+           << " m_tick (current) " << fractionToStdString(m_tick) << " stretchedM_tick " << fractionToStdString(stretchedM_tick);
     if (t < m_tick) {
 #ifdef DEBUG_TICK
         LOGD(" -> backup");
 #endif
         m_attr.doAttr(m_xml, false);
         m_xml.startElement("backup");
-        m_xml.tag("duration", calculateTimeDeltaInDivisions(m_tick, t, m_div));
+        m_xml.tag("duration", calculateTimeDeltaInDivisions(stretchedM_tick, t, m_div));
         {
-            const auto tickLen { calculateTimeDeltaInDivisions(m_tick, t, 1) };
+            const auto tickLen { calculateTimeDeltaInDivisions(stretchedM_tick, t, 1) };
             LOGD() << "tickLen backup " << tickLen;
         }
         m_xml.endElement();
@@ -2184,9 +2186,9 @@ void ExportMusicXml::moveToTick(const Fraction& t)
 #endif
         m_attr.doAttr(m_xml, false);
         m_xml.startElement("forward");
-        m_xml.tag("duration", calculateTimeDeltaInDivisions(t, m_tick, m_div));
+        m_xml.tag("duration", calculateTimeDeltaInDivisions(t, stretchedM_tick, m_div));
         {
-            const auto tickLen { calculateTimeDeltaInDivisions(t, m_tick, 1) };
+            const auto tickLen { calculateTimeDeltaInDivisions(t, stretchedM_tick, 1) };
             LOGD() << "tickLen forward " << tickLen;
         }
         m_xml.endElement();
@@ -8140,7 +8142,7 @@ void ExportMusicXml::writeMeasureStaves(const Measure* m,
             Staff* staff { m->score()->staff(staffIdx) };
             Fraction stretch { staff->timeStretch(m->tick()) };
             LOGD("staff %p stretch %s", staff, stretch.toString().toStdString().c_str());
-            moveToTick(m->tick());  // move tick to start of measure, generates backup to next staff, needs this staff's stretch
+            moveToTick(m->tick(), stretch);  // move tick to start of measure, generates backup to next staff, needs this staff's stretch
         }
     }
 }
