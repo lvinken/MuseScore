@@ -8101,8 +8101,8 @@ void ExportMusicXml::writeMeasureStaves(const Measure* m,
         IF_ASSERT_FAILED(m == origM) {
             return;
         }
-        LOGD() << "staffIdx " << staffIdx;
-        moveToTick(m->tick());  // move tick to start of measure, generates backup for second staff but needs first staff's stretch
+        LOGD() << "begin staffIdx " << staffIdx;
+        moveToTick(m->tick());  // move tick to start of measure
 
         staff_idx_t partRelStaffNo = (nstaves > 1 ? staffIdx - startStaff + 1 : 0); // xml staff number, counting from 1 for this instrument
         // special number 0 -> don’t show staff number in xml output
@@ -8134,6 +8134,14 @@ void ExportMusicXml::writeMeasureStaves(const Measure* m,
         // restore m and _tick before advancing to next staff in part
         m = origM;
         m_tick += tickDelta;
+        LOGD() << "end staffIdx " << staffIdx << " !isLastStaffOfPart " << !isLastStaffOfPart;
+        if (!isLastStaffOfPart) {
+            // TODO: add stretch
+            Staff* staff { m->score()->staff(staffIdx) };
+            Fraction stretch { staff->timeStretch(m->tick()) };
+            LOGD("staff %p stretch %s", staff, stretch.toString().toStdString().c_str());
+            moveToTick(m->tick());  // move tick to start of measure, generates backup to next staff, needs this staff's stretch
+        }
     }
 }
 
