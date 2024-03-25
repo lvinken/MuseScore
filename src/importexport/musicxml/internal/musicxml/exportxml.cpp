@@ -8012,7 +8012,12 @@ void ExportMusicXml::writeMeasureTracks(const Measure* const m,
             if (m_tick != seg->tick()) {
                 m_attr.doAttr(m_xml, false);
                 LOGD() << "move to the start time of the element, track " << track;
-                moveToTick(seg->tick());
+                // old: moveToTick(seg->tick());
+                // new:
+                Staff* staff { m->score()->staff(track2staff(track)) };
+                Fraction stretch { staff->timeStretch(m->tick()) };
+                LOGD("staff %p stretch %s", staff, stretch.toString().toStdString().c_str());
+                moveToTick(m->tick(), stretch);  // move tick to start of measure, generates backup to next staff, needs this staff's stretch
             }
 
             // handle annotations and spanners (directions attached to this note or rest)
@@ -8138,7 +8143,6 @@ void ExportMusicXml::writeMeasureStaves(const Measure* m,
         m_tick += tickDelta;
         LOGD() << "end staffIdx " << staffIdx << " !isLastStaffOfPart " << !isLastStaffOfPart;
         if (!isLastStaffOfPart) {
-            // TODO: add stretch
             Staff* staff { m->score()->staff(staffIdx) };
             Fraction stretch { staff->timeStretch(m->tick()) };
             LOGD("staff %p stretch %s", staff, stretch.toString().toStdString().c_str());
