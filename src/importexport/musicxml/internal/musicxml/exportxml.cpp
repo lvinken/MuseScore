@@ -6928,7 +6928,7 @@ void ExportMusicXml::keysigTimesig(const Measure* m, const Part* p)
         bool singleTime = true;
         // check if all staves have a keysig
         for (staff_idx_t i = 0; i < nstaves; i++) {
-            if (!mu::contains(keysigs, i)) {
+            if (!mu::contains(timesigs, i)) {
                 singleTime = false;
             }
         }
@@ -6948,7 +6948,7 @@ void ExportMusicXml::keysigTimesig(const Measure* m, const Part* p)
             timesig(timesigs.at(0), 0);
         } else {
             // staff-specific timesig
-            for (staff_idx_t st : mu::keys(keysigs)) {
+            for (staff_idx_t st : mu::keys(timesigs)) {
                 timesig(timesigs.at(st), st + 1);
             }
         }
