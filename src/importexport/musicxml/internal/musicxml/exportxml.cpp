@@ -415,7 +415,7 @@ private:
     void barlineRight(const Measure* const m, const track_idx_t strack, const track_idx_t etrack);
     void lyrics(const std::vector<Lyrics*>& ll, const track_idx_t trk);
     void work(const MeasureBase* measure);
-    void calcDivMoveToTick(const Fraction& t);
+    void calcDivMoveToTick(const Fraction& t, const Fraction& stretch = {1, 1});
     void calcDivisions();
     void keysigTimesig(const Measure* m, const Part* p);
     void chordAttributes(Chord* chord, Notations& notations, Technical& technical, TrillHash& trillStart, TrillHash& trillStop);
@@ -1193,6 +1193,7 @@ static void divideBy(int d)
 
 static void addInteger(int len)
 {
+    LOGD() << "addInteger(" << len << ")";
     if (len > 0 && !muse::contains(integers, len)) {
         integers.push_back(len);
     }
@@ -1202,18 +1203,26 @@ static void addInteger(int len)
 //   calcDivMoveToTick
 //---------------------------------------------------------
 
-void ExportMusicXml::calcDivMoveToTick(const Fraction& t)
+void ExportMusicXml::calcDivMoveToTick(const Fraction& t, const Fraction& stretch)
 {
+    /*
++    Fraction stretchedM_tick { t + stretch * (m_tick - t) };
++    LOGD() << "t (target) " << fractionToStdString(t) << " stretch " << fractionToStdString(stretch)
++           << " m_tick (current) " << fractionToStdString(m_tick) << " stretchedM_tick " << fractionToStdString(stretchedM_tick);
+     */
+    Fraction stretchedM_tick { t + stretch * (m_tick - t) };
+    LOGD() << "t (target) " << fractionToStdString(t) << " stretch " << fractionToStdString(stretch)
+           << " m_tick (current) " << fractionToStdString(m_tick) << " stretchedM_tick " << fractionToStdString(stretchedM_tick);
     if (t < m_tick) {
 #ifdef DEBUG_TICK
         LOGD("backup %d", (tick - t).ticks());
 #endif
-        addInteger((m_tick - t).ticks());
+        addInteger((stretchedM_tick - t).ticks());
     } else if (t > m_tick) {
 #ifdef DEBUG_TICK
         LOGD("forward %d", (t - tick).ticks());
 #endif
-        addInteger((t - m_tick).ticks());
+        addInteger((t - stretchedM_tick).ticks());
     }
     m_tick = t;
 }
@@ -1257,6 +1266,7 @@ void ExportMusicXml::calcDivisions()
     const std::vector<Part*>& il = m_score->parts();
 
     for (size_t idx = 0; idx < il.size(); ++idx) {
+        LOGD() << "part " << idx;
         Part* part = il.at(idx);
         m_tick = { 0, 1 };
 
@@ -1278,6 +1288,8 @@ void ExportMusicXml::calcDivisions()
 #ifdef DEBUG_TICK
                             LOGD("figuredbass tick %d duration %d", fb->tick().ticks(), fb->ticks().ticks());
 #endif
+                            LOGD() << "figuredbass tick " << fractionToStdString(fb->tick())
+                                   << " tickLen" << fractionToStdString(fb->ticks());
                             addInteger(fb->ticks().ticks());
                         }
                     }
@@ -1293,7 +1305,11 @@ void ExportMusicXml::calcDivisions()
                     }
 
                     if (m_tick != seg->tick()) {
-                        calcDivMoveToTick(seg->tick());
+                        Staff* staff { m->score()->staff(track2staff(st)) };
+                        Fraction stretch { staff->timeStretch(m->tick()) };
+                        LOGD("staff %p stretch %s", staff, stretch.toString().toStdString().c_str());
+                        calcDivMoveToTick(seg->tick(), stretch);  // move tick to start of measure, generates backup to next staff, needs this staff's stretch
+
                     }
 
                     if (el->isChordRest()) {
@@ -1306,12 +1322,18 @@ void ExportMusicXml::calcDivisions()
 #ifdef DEBUG_TICK
                         LOGD("chordrest tick %d duration %d", _tick.ticks(), l.ticks());
 #endif
-                        addInteger(l.ticks());
+                        LOGD() << "chordrest tick " << fractionToStdString(el->tick())
+                               << " tickLen" << durElemTicksToStdString(*toChordRest(el));
+                        Staff* staff { m->score()->staff(track2staff(st)) };
+                        Fraction stretch { staff->timeStretch(m->tick()) };
+                        LOGD("staff %p stretch %s", staff, stretch.toString().toStdString().c_str());
+                        addInteger(stretch.numerator() * l.ticks() / stretch.denominator());
                         m_tick += l;
                     }
                 }
             }
             // move to end of measure (in case of incomplete last voice)
+            // required? stretch ?
             calcDivMoveToTick(m->endTick());
         }
     }
@@ -1327,6 +1349,7 @@ void ExportMusicXml::calcDivisions()
 #ifdef DEBUG_TICK
     LOGD("divisions=%d div=%d", integers[0], div);
 #endif
+    LOGD("divisions=%d div=%d", integers[0], m_div);
 }
 
 //---------------------------------------------------------
