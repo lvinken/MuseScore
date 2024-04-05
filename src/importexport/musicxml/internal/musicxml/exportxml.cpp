@@ -1334,8 +1334,10 @@ void ExportMusicXml::calcDivisions()
                 }
             }
             // move to end of measure (in case of incomplete last voice)
-            // required? stretch ?
-            calcDivMoveToTick(m->endTick());
+            Staff* staff { m->score()->staff(track2staff(etrack-1)) };
+            Fraction stretch { staff->timeStretch(m->tick()) };
+            LOGD("move to end of measure etrack %zu staff %p stretch %s", etrack, staff, stretch.toString().toStdString().c_str());
+            calcDivMoveToTick(m->endTick(), stretch);
         }
     }
 
