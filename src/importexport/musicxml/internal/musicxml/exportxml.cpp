@@ -8273,7 +8273,10 @@ void ExportMusicXml::writeMeasure(const Measure* const m,
     LOGD("end of measure");
        #endif
     LOGD() << "end of measure";
-    moveToTick(m->endTick());
+    Staff* staff { m->score()->staff(track2staff(etrack-1)) };
+    Fraction stretch { staff->timeStretch(m->tick()) };
+    LOGD("move to end of measure etrack %zu staff %p stretch %s", etrack, staff, stretch.toString().toStdString().c_str());
+    moveToTick(m->endTick(), stretch);
     if (partIndex == 0) {
         repeatAtMeasureStop(m, strack, etrack, strack);
     }
