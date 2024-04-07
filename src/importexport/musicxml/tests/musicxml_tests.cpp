@@ -816,6 +816,9 @@ TEST_F(Musicxml_Tests, localTimesig9) {
 TEST_F(Musicxml_Tests, localTimesig10) {
     mxmlMscxExportTestRef("testLocalTimesig10");
 }
+TEST_F(Musicxml_Tests, localTimesig11) {
+    mxmlMscxExportTestRef("testLocalTimesig11");
+}
 TEST_F(Musicxml_Tests, localTimesig98) {
     mxmlMscxExportTestRef("testLocalTimesig98");
 }
