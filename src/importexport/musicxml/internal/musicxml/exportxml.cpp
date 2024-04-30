@@ -452,6 +452,36 @@ private:
 };
 
 //---------------------------------------------------------
+//   fractionToStdString
+//---------------------------------------------------------
+
+static std::string fractionToStdString(const Fraction& f)
+{
+    if (!f.isValid()) {
+        return "<invalid>";
+    }
+    String res { f.toString() };
+    res += String(u" (%1)").arg(String::number(f.ticks()));
+    return res.toStdString();
+}
+
+//---------------------------------------------------------
+//   fractionToStdString
+//---------------------------------------------------------
+
+static std::string durElemTicksToStdString(const DurationElement& d)
+{
+    String res;
+    res += String(u" ticks %1").arg(d.ticks().toString());
+    res += String(u" (%1)").arg(String::number(d.ticks().ticks()));
+    res += String(u" globalTicks %1").arg(d.globalTicks().toString());
+    res += String(u" (%1)").arg(String::number(d.globalTicks().ticks()));
+    res += String(u" actualTicks %1").arg(d.actualTicks().toString());
+    res += String(u" (%1)").arg(String::number(d.actualTicks().ticks()));
+    return res.toStdString();
+}
+
+//---------------------------------------------------------
 //   positionToString
 //---------------------------------------------------------
 
@@ -1124,8 +1154,10 @@ static void findTrills(const Measure* const measure, track_idx_t strack, track_i
 //---------------------------------------------------------
 
 typedef std::vector<int> IntVector;
+typedef std::set<Fraction> FractionSet;
 static IntVector integers;
 static IntVector primes;
+static FractionSet fractions;
 
 // check if all integers can be divided by d
 
@@ -1154,6 +1186,11 @@ static void addInteger(int len)
     if (len > 0 && !mu::contains(integers, len)) {
         integers.push_back(len);
     }
+}
+
+static void addFraction(const Fraction& len)
+{
+    fractions.insert(len);
 }
 
 //---------------------------------------------------------
@@ -1207,6 +1244,7 @@ void ExportMusicXml::calcDivisions()
     // init
     integers.clear();
     primes.clear();
+    fractions.clear();
     integers.push_back(Constants::DIVISION);
     primes.push_back(2);
     primes.push_back(3);
@@ -1264,7 +1302,10 @@ void ExportMusicXml::calcDivisions()
 #ifdef DEBUG_TICK
                         LOGD("chordrest tick %d duration %d", _tick.ticks(), l.ticks());
 #endif
+                        LOGD() << "chordrest tick " << fractionToStdString(el->tick())
+                               << " tickLen" << durElemTicksToStdString(*toChordRest(el));
                         addInteger(l.ticks());
+                        addFraction(l);
                         m_tick += l;
                     }
                 }
@@ -1279,6 +1320,10 @@ void ExportMusicXml::calcDivisions()
         while (canDivideBy(primes[u])) {
             divideBy(primes[u]);
         }
+    }
+    // debug: dump fractions
+    for (auto f : fractions) {
+        LOGD() << "f " << fractionToStdString(f);
     }
 
     m_div = Constants::DIVISION / integers[0];
