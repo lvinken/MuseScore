@@ -1190,6 +1190,7 @@ static void addInteger(int len)
 
 static void addFraction(const Fraction& len)
 {
+    LOGD() << "add len " << fractionToStdString(len);
     fractions.insert(len);
 }
 
@@ -1204,11 +1205,13 @@ void ExportMusicXml::calcDivMoveToTick(const Fraction& t)
         LOGD("backup %d", (tick - t).ticks());
 #endif
         addInteger((m_tick - t).ticks());
+        addFraction(m_tick - t);
     } else if (t > m_tick) {
 #ifdef DEBUG_TICK
         LOGD("forward %d", (t - tick).ticks());
 #endif
         addInteger((t - m_tick).ticks());
+        addFraction(t - m_tick);
     }
     m_tick = t;
 }
@@ -1275,6 +1278,7 @@ void ExportMusicXml::calcDivisions()
                             LOGD("figuredbass tick %d duration %d", fb->tick().ticks(), fb->ticks().ticks());
 #endif
                             addInteger(fb->ticks().ticks());
+                            addFraction(fb->ticks());
                         }
                     }
 
@@ -1321,15 +1325,23 @@ void ExportMusicXml::calcDivisions()
             divideBy(primes[u]);
         }
     }
+
     // debug: dump fractions
     for (auto f : fractions) {
         LOGD() << "f " << fractionToStdString(f);
+    }
+    // do it: TBD
+    int res { 1 };
+    for (auto f : fractions) {
+        res = std::lcm(res, f.denominator());
+        LOGD() << "res " << res;
     }
 
     m_div = Constants::DIVISION / integers[0];
 #ifdef DEBUG_TICK
     LOGD("divisions=%d div=%d", integers[0], div);
 #endif
+    LOGD("divisions (old) %d -> m_div %d", integers[0], m_div);
 }
 
 //---------------------------------------------------------
