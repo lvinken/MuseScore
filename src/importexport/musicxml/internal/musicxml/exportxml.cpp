@@ -1336,12 +1336,14 @@ void ExportMusicXml::calcDivisions()
         res = std::lcm(res, f.denominator());
         LOGD() << "res " << res;
     }
+    res /= 4; // TODO check/fix whole and half notes
 
     m_div = Constants::DIVISION / integers[0];
 #ifdef DEBUG_TICK
     LOGD("divisions=%d div=%d", integers[0], div);
 #endif
-    LOGD("divisions (old) %d -> m_div %d", integers[0], m_div);
+    m_div = res;
+    LOGD("res (new) %d -> m_div %d", res, m_div);
 }
 
 //---------------------------------------------------------
@@ -2170,7 +2172,10 @@ void ExportMusicXml::barlineRight(const Measure* const m, const track_idx_t stra
 
 static int calculateTimeDeltaInDivisions(const Fraction& t1, const Fraction& t2, const int divisions)
 {
-    return (t1 - t2).ticks() / divisions;
+    //return (t1 - t2).ticks() / divisions;
+    const Fraction resAsFraction { (4 * divisions * (t1 - t2)) };
+    LOGD() << "" << fractionToStdString(resAsFraction) << " reduced " << fractionToStdString(resAsFraction.reduced());
+    return resAsFraction.reduced().numerator();
 }
 
 //---------------------------------------------------------
@@ -7869,7 +7874,8 @@ void ExportMusicXml::writeMeasure(const Measure* const m,
     // output attributes with the first actual measure (pickup or regular)
     if (isFirstActualMeasure) {
         m_attr.doAttr(m_xml, true);
-        m_xml.tag("divisions", Constants::DIVISION / m_div);
+        //m_xml.tag("divisions", Constants::DIVISION / m_div);
+        m_xml.tag("divisions", m_div);
     }
 
     // output attributes at start of measure: key, time
