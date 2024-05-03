@@ -4183,7 +4183,10 @@ void ExportMusicXml::chord(Chord* chord, staff_idx_t staff, const std::vector<Ly
 
         // duration
         if (!grace) {
-            m_xml.tag("duration", stretchCorrActFraction(note).ticks() / m_div);
+            //m_xml.tag("duration", stretchCorrActFraction(note).ticks() / m_div);
+            const Fraction duration { 4 * m_div * stretchCorrActFraction(note) };
+            LOGD() << "" << fractionToStdString(duration) << " reduced " << fractionToStdString(duration.reduced());
+            m_xml.tag("duration", duration.reduced().numerator());
         }
 
         if (!isCueNote(note)) {
