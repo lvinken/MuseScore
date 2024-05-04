@@ -1331,12 +1331,12 @@ void ExportMusicXml::calcDivisions()
         LOGD() << "f " << fractionToStdString(f);
     }
     // do it: TBD
-    int res { 1 };
+    int res { 4 };  // ensure divisions > 0 for half and whole note
     for (auto f : fractions) {
         res = std::lcm(res, f.denominator());
         LOGD() << "res " << res;
     }
-    res /= 4; // TODO check/fix whole and half notes
+    res /= 4;
 
     m_div = Constants::DIVISION / integers[0];
 #ifdef DEBUG_TICK
