@@ -2174,7 +2174,7 @@ static int calculateTimeDeltaInDivisions(const Fraction& t1, const Fraction& t2,
 {
     //return (t1 - t2).ticks() / divisions;
     const Fraction resAsFraction { (4 * divisions * (t1 - t2)) };
-    LOGD() << "" << fractionToStdString(resAsFraction) << " reduced " << fractionToStdString(resAsFraction.reduced());
+    LOGD() << "duration " << fractionToStdString(resAsFraction) << " reduced " << fractionToStdString(resAsFraction.reduced());
     return resAsFraction.reduced().numerator();
 }
 
@@ -4185,7 +4185,7 @@ void ExportMusicXml::chord(Chord* chord, staff_idx_t staff, const std::vector<Ly
         if (!grace) {
             //m_xml.tag("duration", stretchCorrActFraction(note).ticks() / m_div);
             const Fraction duration { 4 * m_div * stretchCorrActFraction(note) };
-            LOGD() << "" << fractionToStdString(duration) << " reduced " << fractionToStdString(duration.reduced());
+            LOGD() << "duration " << fractionToStdString(duration) << " reduced " << fractionToStdString(duration.reduced());
             m_xml.tag("duration", duration.reduced().numerator());
         }
 
@@ -6354,7 +6354,10 @@ static void writeMusicXML(const FiguredBass* item, XmlWriter& xml, bool isOrigin
         writeMusicXML(fbItem, xml, isOriginalFigure, crEndTick, fbEndTick);
     }
     if (writeDuration) {
-        xml.tag("duration", item->ticks().ticks() / divisions);
+        //xml.tag("duration", item->ticks().ticks() / divisions);
+        const Fraction duration { 4 * divisions * item->ticks() };
+        LOGD() << "duration " << fractionToStdString(duration) << " reduced " << fractionToStdString(duration.reduced());
+        xml.tag("duration", duration.reduced().numerator());
     }
     xml.endElement();
 }
