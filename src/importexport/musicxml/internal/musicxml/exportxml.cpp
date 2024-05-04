@@ -375,7 +375,7 @@ public:
     void dynamic(Dynamic const* const dyn, staff_idx_t staff);
     void symbol(Symbol const* const sym, staff_idx_t staff);
     void tempoText(TempoText const* const text, staff_idx_t staff);
-    void harmony(Harmony const* const, FretDiagram const* const fd, int offset = 0);
+    void harmony(Harmony const* const, FretDiagram const* const fd, const Fraction& offset = Fraction(0, 1));
     Score* score() const { return m_score; }
     double getTenthsFromInches(double) const;
     double getTenthsFromDots(double) const;
@@ -7753,7 +7753,8 @@ void ExportMusicXml::writeMeasureTracks(const Measure* const m,
                         }
                         for (auto annot : seg1->annotations()) {
                             if (annot->isHarmony() && annot->track() == track) {
-                                harmony(toHarmony(annot), 0, (seg1->tick() - seg->tick()).ticks() / m_div);
+                                //harmony(toHarmony(annot), 0, (seg1->tick() - seg->tick()).ticks() / m_div);
+                                harmony(toHarmony(annot), 0, seg1->tick() - seg->tick());
                             }
                         }
                     }
@@ -8287,7 +8288,7 @@ static void writeMusicXML(const FretDiagram* item, XmlWriter& xml)
 //   harmony
 //---------------------------------------------------------
 
-void ExportMusicXml::harmony(Harmony const* const h, FretDiagram const* const fd, int offset)
+void ExportMusicXml::harmony(Harmony const* const h, FretDiagram const* const fd, const Fraction &offset)
 {
     // this code was probably in place to allow chord symbols shifted *right* to export with offset
     // since this was at once time the only way to get a chord to appear over beat 3 in an empty 4/4 measure
@@ -8405,8 +8406,15 @@ void ExportMusicXml::harmony(Harmony const* const h, FretDiagram const* const fd
             }
         }
 
-        if (offset > 0) {
-            m_xml.tag("offset", offset);
+        if (offset.isValid() && offset > Fraction(0, 1)) {
+            //m_xml.tag("offset", offset);
+            LOGD() << "valid offset " << fractionToStdString(offset);
+            const Fraction duration { 4 * m_div * offset };
+            LOGD() << "duration " << fractionToStdString(duration) << " reduced " << fractionToStdString(duration.reduced());
+            m_xml.tag("offset", duration.reduced().numerator());
+        }
+        else {
+            LOGD("invalid offset");
         }
         if (fd) {
             writeMusicXML(fd, m_xml);
