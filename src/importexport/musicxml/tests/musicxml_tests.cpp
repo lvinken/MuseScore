@@ -526,6 +526,12 @@ TEST_F(Musicxml_Tests, divisionsDuration005) {
 TEST_F(Musicxml_Tests, divisionsDuration006) {
     mxmlMscxExportTestRef("testDivisionsDuration006");
 }
+TEST_F(Musicxml_Tests, divisionsDuration007) {
+    mxmlMscxExportTestRef("testDivisionsDuration007");
+}
+TEST_F(Musicxml_Tests, divisionsDuration008) {
+    mxmlMscxExportTestRef("testDivisionsDuration008");
+}
 TEST_F(Musicxml_Tests, doubleClefError) {
     mxmlIoTestRef("testDoubleClefError");
 }
