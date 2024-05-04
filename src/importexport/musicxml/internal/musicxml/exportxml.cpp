@@ -4410,7 +4410,10 @@ void ExportMusicXml::rest(Rest* rest, staff_idx_t staff, const std::vector<Lyric
     LOGD(" tickLen=%d newtick=%d", tickLen, tick);
 #endif
 
-    m_xml.tag("duration", tickLen.ticks() / m_div);
+    //m_xml.tag("duration", tickLen.ticks() / m_div);
+    const Fraction duration { 4 * m_div * tickLen };
+    LOGD() << "duration " << fractionToStdString(duration) << " reduced " << fractionToStdString(duration.reduced());
+    m_xml.tag("duration", duration.reduced().numerator());
 
     // for a single-staff part, staff is 0, which needs to be corrected
     // to calculate the correct voice number
