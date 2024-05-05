@@ -1190,8 +1190,8 @@ static void addInteger(int len)
 
 static void addFraction(const Fraction& len)
 {
-    LOGD() << "add len " << fractionToStdString(len);
-    fractions.insert(len);
+    LOGD() << "add len " << fractionToStdString(len) << " reduced " << fractionToStdString(len.reduced());
+    fractions.insert(len.reduced());
 }
 
 //---------------------------------------------------------
