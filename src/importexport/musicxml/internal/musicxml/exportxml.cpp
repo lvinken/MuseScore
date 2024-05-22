@@ -1153,40 +1153,8 @@ static void findTrills(const Measure* const measure, track_idx_t strack, track_i
 // helpers for ::calcDivisions
 //---------------------------------------------------------
 
-typedef std::vector<int> IntVector;
 typedef std::set<Fraction> FractionSet;
-static IntVector integers;
-static IntVector primes;
 static FractionSet fractions;
-
-// check if all integers can be divided by d
-
-static bool canDivideBy(int d)
-{
-    bool res = true;
-    for (size_t i = 0; i < integers.size(); i++) {
-        if ((integers[i] <= 1) || ((integers[i] % d) != 0)) {
-            res = false;
-        }
-    }
-    return res;
-}
-
-// divide all integers by d
-
-static void divideBy(int d)
-{
-    for (size_t i = 0; i < integers.size(); i++) {
-        integers[i] /= d;
-    }
-}
-
-static void addInteger(int len)
-{
-    if (len > 0 && !mu::contains(integers, len)) {
-        integers.push_back(len);
-    }
-}
 
 static void addFraction(const Fraction& len)
 {
@@ -1204,13 +1172,11 @@ void ExportMusicXml::calcDivMoveToTick(const Fraction& t)
 #ifdef DEBUG_TICK
         LOGD("backup %d", (tick - t).ticks());
 #endif
-        addInteger((m_tick - t).ticks());
         addFraction(m_tick - t);
     } else if (t > m_tick) {
 #ifdef DEBUG_TICK
         LOGD("forward %d", (t - tick).ticks());
 #endif
-        addInteger((t - m_tick).ticks());
         addFraction(t - m_tick);
     }
     m_tick = t;
@@ -1233,25 +1199,13 @@ static bool isTwoNoteTremolo(Chord* chord)
 
 // Length of time in MusicXML is expressed in "units", which should allow expressing all time values
 // as an integral number of units. Divisions contains the number of units in a quarter note.
-// MuseScore uses division (480) midi ticks to represent a quarter note, which expresses all note values
-// plus triplets and quintuplets as integer values. Solution is to collect all time values required,
-// and divide them by the highest common denominator, which is implemented as a series of
-// divisions by prime factors. Initialize the list with division to make sure a quarter note can always
-// be written as an integral number of units.
-
-/**
- */
+// Compute divisions by finding all fractions used to move through the score in MusicXML
+// and computing the least common multiple of these fractions numerator and of fraction 1/4.
 
 void ExportMusicXml::calcDivisions()
 {
     // init
-    integers.clear();
-    primes.clear();
     fractions.clear();
-    integers.push_back(Constants::DIVISION);
-    primes.push_back(2);
-    primes.push_back(3);
-    primes.push_back(5);
 
     const std::vector<Part*>& il = m_score->parts();
 
@@ -1277,7 +1231,6 @@ void ExportMusicXml::calcDivisions()
 #ifdef DEBUG_TICK
                             LOGD("figuredbass tick %d duration %d", fb->tick().ticks(), fb->ticks().ticks());
 #endif
-                            addInteger(fb->ticks().ticks());
                             addFraction(fb->ticks());
                         }
                     }
@@ -1308,7 +1261,6 @@ void ExportMusicXml::calcDivisions()
 #endif
                         LOGD() << "chordrest tick " << fractionToStdString(el->tick())
                                << " tickLen" << durElemTicksToStdString(*toChordRest(el));
-                        addInteger(l.ticks());
                         addFraction(l);
                         m_tick += l;
                     }
@@ -1319,18 +1271,11 @@ void ExportMusicXml::calcDivisions()
         }
     }
 
-    // do it: divide by all primes as often as possible
-    for (size_t u = 0; u < primes.size(); u++) {
-        while (canDivideBy(primes[u])) {
-            divideBy(primes[u]);
-        }
-    }
-
     // debug: dump fractions
     for (auto f : fractions) {
         LOGD() << "f " << fractionToStdString(f);
     }
-    // do it: TBD
+    // compute divisions
     int res { 4 };  // ensure divisions > 0 for half and whole note
     for (auto f : fractions) {
         res = std::lcm(res, f.denominator());
@@ -1338,7 +1283,6 @@ void ExportMusicXml::calcDivisions()
     }
     res /= 4;
 
-    m_div = Constants::DIVISION / integers[0];
 #ifdef DEBUG_TICK
     LOGD("divisions=%d div=%d", integers[0], div);
 #endif
@@ -2172,7 +2116,6 @@ void ExportMusicXml::barlineRight(const Measure* const m, const track_idx_t stra
 
 static int calculateTimeDeltaInDivisions(const Fraction& t1, const Fraction& t2, const int divisions)
 {
-    //return (t1 - t2).ticks() / divisions;
     const Fraction resAsFraction { (4 * divisions * (t1 - t2)) };
     LOGD() << "duration " << fractionToStdString(resAsFraction) << " reduced " << fractionToStdString(resAsFraction.reduced());
     return resAsFraction.reduced().numerator();
@@ -4183,7 +4126,6 @@ void ExportMusicXml::chord(Chord* chord, staff_idx_t staff, const std::vector<Ly
 
         // duration
         if (!grace) {
-            //m_xml.tag("duration", stretchCorrActFraction(note).ticks() / m_div);
             const Fraction duration { 4 * m_div * stretchCorrActFraction(note) };
             LOGD() << "duration " << fractionToStdString(duration) << " reduced " << fractionToStdString(duration.reduced());
             m_xml.tag("duration", duration.reduced().numerator());
@@ -4410,7 +4352,6 @@ void ExportMusicXml::rest(Rest* rest, staff_idx_t staff, const std::vector<Lyric
     LOGD(" tickLen=%d newtick=%d", tickLen, tick);
 #endif
 
-    //m_xml.tag("duration", tickLen.ticks() / m_div);
     const Fraction duration { 4 * m_div * tickLen };
     LOGD() << "duration " << fractionToStdString(duration) << " reduced " << fractionToStdString(duration.reduced());
     m_xml.tag("duration", duration.reduced().numerator());
@@ -6354,7 +6295,6 @@ static void writeMusicXML(const FiguredBass* item, XmlWriter& xml, bool isOrigin
         writeMusicXML(fbItem, xml, isOriginalFigure, crEndTick, fbEndTick);
     }
     if (writeDuration) {
-        //xml.tag("duration", item->ticks().ticks() / divisions);
         const Fraction duration { 4 * divisions * item->ticks() };
         LOGD() << "duration " << fractionToStdString(duration) << " reduced " << fractionToStdString(duration.reduced());
         xml.tag("duration", duration.reduced().numerator());
@@ -7753,7 +7693,6 @@ void ExportMusicXml::writeMeasureTracks(const Measure* const m,
                         }
                         for (auto annot : seg1->annotations()) {
                             if (annot->isHarmony() && annot->track() == track) {
-                                //harmony(toHarmony(annot), 0, (seg1->tick() - seg->tick()).ticks() / m_div);
                                 harmony(toHarmony(annot), 0, seg1->tick() - seg->tick());
                             }
                         }
@@ -7884,7 +7823,6 @@ void ExportMusicXml::writeMeasure(const Measure* const m,
     // output attributes with the first actual measure (pickup or regular)
     if (isFirstActualMeasure) {
         m_attr.doAttr(m_xml, true);
-        //m_xml.tag("divisions", Constants::DIVISION / m_div);
         m_xml.tag("divisions", m_div);
     }
 
@@ -8407,7 +8345,6 @@ void ExportMusicXml::harmony(Harmony const* const h, FretDiagram const* const fd
         }
 
         if (offset.isValid() && offset > Fraction(0, 1)) {
-            //m_xml.tag("offset", offset);
             LOGD() << "valid offset " << fractionToStdString(offset);
             const Fraction duration { 4 * m_div * offset };
             LOGD() << "duration " << fractionToStdString(duration) << " reduced " << fractionToStdString(duration.reduced());
