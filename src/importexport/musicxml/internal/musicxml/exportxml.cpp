@@ -455,6 +455,7 @@ private:
 //   fractionToStdString
 //---------------------------------------------------------
 
+#ifdef DEBUG_TICK
 static std::string fractionToStdString(const Fraction& f)
 {
     if (!f.isValid()) {
@@ -464,11 +465,13 @@ static std::string fractionToStdString(const Fraction& f)
     res += String(u" (%1)").arg(String::number(f.ticks()));
     return res.toStdString();
 }
+#endif
 
 //---------------------------------------------------------
 //   fractionToStdString
 //---------------------------------------------------------
 
+#ifdef DEBUG_TICK
 static std::string durElemTicksToStdString(const DurationElement& d)
 {
     String res;
@@ -480,6 +483,7 @@ static std::string durElemTicksToStdString(const DurationElement& d)
     res += String(u" (%1)").arg(String::number(d.actualTicks().ticks()));
     return res.toStdString();
 }
+#endif
 
 //---------------------------------------------------------
 //   positionToString
@@ -1167,18 +1171,18 @@ static void addFraction(const Fraction& len)
 
 void ExportMusicXml::calcDivMoveToTick(const Fraction& t)
 {
-    if (t < m_tick) {
+    if (t < tick()) {
 #ifdef DEBUG_TICK
-        LOGD("backup %d", (tick - t).ticks());
+        LOGD() << "backup " << fractionToStdString(tick() - t);
 #endif
-        addFraction(m_tick - t);
-    } else if (t > m_tick) {
+        addFraction(tick() - t);
+    } else if (t > tick()) {
 #ifdef DEBUG_TICK
-        LOGD("forward %d", (t - tick).ticks());
+        LOGD() << "forward " << fractionToStdString(t- tick());
 #endif
-        addFraction(t - m_tick);
+        addFraction(t - tick());
     }
-    m_tick = t;
+    tick() = t;
 }
 
 //---------------------------------------------------------
@@ -1256,7 +1260,6 @@ void ExportMusicXml::calcDivisions()
                             }
                         }
 #ifdef DEBUG_TICK
-                        LOGD("chordrest tick %d duration %d", _tick.ticks(), l.ticks());
                         LOGD() << "chordrest tick " << fractionToStdString(el->tick())
                                << " tickLen" << durElemTicksToStdString(*toChordRest(el));
 #endif
@@ -4078,13 +4081,15 @@ void ExportMusicXml::chord(Chord* chord, staff_idx_t staff, const std::vector<Ly
      */
     std::vector<Note*> nl = chord->notes();
     bool grace = chord->isGrace();
+#ifdef DEBUG_TICK
+    LOGD() << "oldtick " << fractionToStdString(tick())
+           << " grace " << grace;
+#endif
     if (!grace) {
         m_tick += chord->actualTicks();
     }
 #ifdef DEBUG_TICK
-    LOGD("ExportMusicXml::chord() oldtick=%d", tick);
-    LOGD("notetype=%d grace=%d", gracen, grace);
-    LOGD(" newtick=%d", tick);
+    LOGD() << "newtick " << fractionToStdString(tick());
 #endif
 
     for (Note* note : nl) {
@@ -4270,7 +4275,7 @@ void ExportMusicXml::rest(Rest* rest, staff_idx_t staff, const std::vector<Lyric
 {
     static char16_t table2[]  = u"CDEFGAB";
 #ifdef DEBUG_TICK
-    LOGD("ExportMusicXml::rest() oldtick=%d", tick);
+    LOGD() << "oldtick " << fractionToStdString(tick());
 #endif
     m_attr.doAttr(m_xml, false);
 
@@ -4340,7 +4345,8 @@ void ExportMusicXml::rest(Rest* rest, staff_idx_t staff, const std::vector<Lyric
     }
     m_tick += tickLen;
 #ifdef DEBUG_TICK
-    LOGD(" tickLen=%d newtick=%d", tickLen, tick);
+    LOGD() << "tickLen " << fractionToStdString(tickLen)
+           << "newtick " << fractionToStdString(tick());
 #endif
 
     const Fraction duration { 4 * m_div * tickLen };
