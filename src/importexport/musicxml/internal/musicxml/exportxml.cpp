@@ -2117,6 +2117,15 @@ static int calculateTimeDeltaInDivisions(const Fraction& t1, const Fraction& t2,
 }
 
 //---------------------------------------------------------
+//   calculateDurationInDivisions
+//---------------------------------------------------------
+
+static int calculateDurationInDivisions(const Fraction& tick, const int divisions)
+{
+    return calculateTimeDeltaInDivisions(tick, Fraction {0, 1}, divisions);
+}
+
+//---------------------------------------------------------
 //   moveToTick
 //---------------------------------------------------------
 
@@ -4123,8 +4132,7 @@ void ExportMusicXml::chord(Chord* chord, staff_idx_t staff, const std::vector<Ly
 
         // duration
         if (!grace) {
-            const Fraction duration { 4 * m_div * stretchCorrActFraction(note) };
-            m_xml.tag("duration", duration.reduced().numerator());
+            m_xml.tag("duration", calculateDurationInDivisions(stretchCorrActFraction(note), m_div));
         }
 
         if (!isCueNote(note)) {
@@ -4349,8 +4357,7 @@ void ExportMusicXml::rest(Rest* rest, staff_idx_t staff, const std::vector<Lyric
            << "newtick " << fractionToStdString(tick());
 #endif
 
-    const Fraction duration { 4 * m_div * tickLen };
-    m_xml.tag("duration", duration.reduced().numerator());
+    m_xml.tag("duration", calculateDurationInDivisions(tickLen, m_div));
 
     // for a single-staff part, staff is 0, which needs to be corrected
     // to calculate the correct voice number
@@ -6291,8 +6298,7 @@ static void writeMusicXML(const FiguredBass* item, XmlWriter& xml, bool isOrigin
         writeMusicXML(fbItem, xml, isOriginalFigure, crEndTick, fbEndTick);
     }
     if (writeDuration) {
-        const Fraction duration { 4 * divisions * item->ticks() };
-        xml.tag("duration", duration.reduced().numerator());
+        xml.tag("duration", calculateDurationInDivisions(item->ticks(), divisions));
     }
     xml.endElement();
 }
@@ -8221,7 +8227,7 @@ static void writeMusicXML(const FretDiagram* item, XmlWriter& xml)
 //   harmony
 //---------------------------------------------------------
 
-void ExportMusicXml::harmony(Harmony const* const h, FretDiagram const* const fd, const Fraction &offset)
+void ExportMusicXml::harmony(Harmony const* const h, FretDiagram const* const fd, const Fraction& offset)
 {
     // this code was probably in place to allow chord symbols shifted *right* to export with offset
     // since this was at once time the only way to get a chord to appear over beat 3 in an empty 4/4 measure
@@ -8340,8 +8346,7 @@ void ExportMusicXml::harmony(Harmony const* const h, FretDiagram const* const fd
         }
 
         if (offset.isValid() && offset > Fraction(0, 1)) {
-            const Fraction duration { 4 * m_div * offset };
-            m_xml.tag("offset", duration.reduced().numerator());
+            m_xml.tag("offset", calculateDurationInDivisions(offset, m_div));
         }
         else {
             LOGD("invalid offset");
