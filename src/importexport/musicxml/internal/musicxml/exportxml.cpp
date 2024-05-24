@@ -1158,7 +1158,6 @@ static FractionSet fractions;
 
 static void addFraction(const Fraction& len)
 {
-    LOGD() << "add len " << fractionToStdString(len) << " reduced " << fractionToStdString(len.reduced());
     fractions.insert(len.reduced());
 }
 
@@ -1258,9 +1257,9 @@ void ExportMusicXml::calcDivisions()
                         }
 #ifdef DEBUG_TICK
                         LOGD("chordrest tick %d duration %d", _tick.ticks(), l.ticks());
-#endif
                         LOGD() << "chordrest tick " << fractionToStdString(el->tick())
                                << " tickLen" << durElemTicksToStdString(*toChordRest(el));
+#endif
                         addFraction(l);
                         m_tick += l;
                     }
@@ -1271,23 +1270,17 @@ void ExportMusicXml::calcDivisions()
         }
     }
 
-    // debug: dump fractions
-    for (auto f : fractions) {
-        LOGD() << "f " << fractionToStdString(f);
-    }
     // compute divisions
-    int res { 4 };  // ensure divisions > 0 for half and whole note
+    int divisions { 4 };  // ensure divisions > 0 for half and whole note
     for (auto f : fractions) {
-        res = std::lcm(res, f.denominator());
-        LOGD() << "res " << res;
+        divisions = std::lcm(divisions, f.denominator());
     }
-    res /= 4;
+    divisions /= 4;
 
 #ifdef DEBUG_TICK
-    LOGD("divisions=%d div=%d", integers[0], div);
+    LOGD("divisions %d", divisions);
 #endif
-    m_div = res;
-    LOGD("res (new) %d -> m_div %d", res, m_div);
+    m_div = divisions;
 }
 
 //---------------------------------------------------------
@@ -2117,7 +2110,6 @@ void ExportMusicXml::barlineRight(const Measure* const m, const track_idx_t stra
 static int calculateTimeDeltaInDivisions(const Fraction& t1, const Fraction& t2, const int divisions)
 {
     const Fraction resAsFraction { (4 * divisions * (t1 - t2)) };
-    LOGD() << "duration " << fractionToStdString(resAsFraction) << " reduced " << fractionToStdString(resAsFraction.reduced());
     return resAsFraction.reduced().numerator();
 }
 
@@ -4127,7 +4119,6 @@ void ExportMusicXml::chord(Chord* chord, staff_idx_t staff, const std::vector<Ly
         // duration
         if (!grace) {
             const Fraction duration { 4 * m_div * stretchCorrActFraction(note) };
-            LOGD() << "duration " << fractionToStdString(duration) << " reduced " << fractionToStdString(duration.reduced());
             m_xml.tag("duration", duration.reduced().numerator());
         }
 
@@ -4353,7 +4344,6 @@ void ExportMusicXml::rest(Rest* rest, staff_idx_t staff, const std::vector<Lyric
 #endif
 
     const Fraction duration { 4 * m_div * tickLen };
-    LOGD() << "duration " << fractionToStdString(duration) << " reduced " << fractionToStdString(duration.reduced());
     m_xml.tag("duration", duration.reduced().numerator());
 
     // for a single-staff part, staff is 0, which needs to be corrected
@@ -6296,7 +6286,6 @@ static void writeMusicXML(const FiguredBass* item, XmlWriter& xml, bool isOrigin
     }
     if (writeDuration) {
         const Fraction duration { 4 * divisions * item->ticks() };
-        LOGD() << "duration " << fractionToStdString(duration) << " reduced " << fractionToStdString(duration.reduced());
         xml.tag("duration", duration.reduced().numerator());
     }
     xml.endElement();
@@ -8345,9 +8334,7 @@ void ExportMusicXml::harmony(Harmony const* const h, FretDiagram const* const fd
         }
 
         if (offset.isValid() && offset > Fraction(0, 1)) {
-            LOGD() << "valid offset " << fractionToStdString(offset);
             const Fraction duration { 4 * m_div * offset };
-            LOGD() << "duration " << fractionToStdString(duration) << " reduced " << fractionToStdString(duration.reduced());
             m_xml.tag("offset", duration.reduced().numerator());
         }
         else {
