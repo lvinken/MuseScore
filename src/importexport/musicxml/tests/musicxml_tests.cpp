@@ -511,38 +511,6 @@ TEST_F(Musicxml_Tests, divisionsDefinedTooLate2) {
 TEST_F(Musicxml_Tests, divisionsDuration) {
     mxmlIoTest("testDivisionsDuration");
 }
-#if 0
-TEST_F(Musicxml_Tests, divisionsDuration001) {
-    mxmlMscxExportTestRef("testDivisionsDuration001");
-}
-TEST_F(Musicxml_Tests, divisionsDuration002) {
-    mxmlMscxExportTestRef("testDivisionsDuration002");
-}
-TEST_F(Musicxml_Tests, divisionsDuration003) {
-    mxmlMscxExportTestRef("testDivisionsDuration003");
-}
-TEST_F(Musicxml_Tests, divisionsDuration004) {
-    mxmlMscxExportTestRef("testDivisionsDuration004");
-}
-TEST_F(Musicxml_Tests, divisionsDuration005) {
-    mxmlMscxExportTestRef("testDivisionsDuration005");
-}
-TEST_F(Musicxml_Tests, divisionsDuration006) {
-    mxmlMscxExportTestRef("testDivisionsDuration006");
-}
-TEST_F(Musicxml_Tests, divisionsDuration007) {
-    mxmlMscxExportTestRef("testDivisionsDuration007");
-}
-TEST_F(Musicxml_Tests, divisionsDuration008) {
-    mxmlMscxExportTestRef("testDivisionsDuration008");
-}
-TEST_F(Musicxml_Tests, divisionsDuration009) {
-    mxmlMscxExportTestRef("testDivisionsDuration009");
-}
-TEST_F(Musicxml_Tests, divisionsDuration010) {
-    mxmlMscxExportTestRef("testDivisionsDuration010");
-}
-#endif
 TEST_F(Musicxml_Tests, doubleClefError) {
     mxmlIoTestRef("testDoubleClefError");
 }
