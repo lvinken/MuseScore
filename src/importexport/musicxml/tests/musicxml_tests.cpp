@@ -508,6 +508,10 @@ TEST_F(Musicxml_Tests, divisionsDefinedTooLate1) {
 TEST_F(Musicxml_Tests, divisionsDefinedTooLate2) {
     mxmlIoTestRef("testDivsDefinedTooLate2");
 }
+TEST_F(Musicxml_Tests, divisionsDuration) {
+    mxmlIoTest("testDivisionsDuration");
+}
+#if 0
 TEST_F(Musicxml_Tests, divisionsDuration001) {
     mxmlMscxExportTestRef("testDivisionsDuration001");
 }
@@ -538,6 +542,7 @@ TEST_F(Musicxml_Tests, divisionsDuration009) {
 TEST_F(Musicxml_Tests, divisionsDuration010) {
     mxmlMscxExportTestRef("testDivisionsDuration010");
 }
+#endif
 TEST_F(Musicxml_Tests, doubleClefError) {
     mxmlIoTestRef("testDoubleClefError");
 }
