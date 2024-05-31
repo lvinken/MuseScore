@@ -879,7 +879,7 @@ static VBox* addCreditWords(Score* score, const CreditWordsList& crWords,
         // frame with the title on top of the page.
         // Sibelius (direct export) typically exports no header
         // and puts the title etc. in the footer
-        const bool doSwap = footerWords.size() > headerWords.size();
+        const bool doSwap = false; //footerWords.size() > headerWords.size();
         if (top) {
             words = doSwap ? footerWords : headerWords;
         } else {
