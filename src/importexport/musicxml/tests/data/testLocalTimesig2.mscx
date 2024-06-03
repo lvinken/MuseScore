@@ -2,7 +2,6 @@
 <museScore version="4.20">
   <programVersion>4.4.0</programVersion>
   <programRevision></programRevision>
-  <LastEID>457</LastEID>
   <Score>
     <Division>480</Division>
     <showInvisible>1</showInvisible>
@@ -105,14 +104,11 @@
     <Staff id="1">
       <VBox>
         <height>10</height>
-        <eid>85899346043</eid>
         <Text>
-          <eid>90194313221</eid>
           <style>title</style>
           <text>Local Timesig 2</text>
           </Text>
         <Text>
-          <eid>94489280517</eid>
           <style>subtitle</style>
           <family>FreeSerif</family>
           <text><font face="FreeSerif"/>MuseScore testfile</text>
@@ -121,16 +117,13 @@
       <Measure>
         <voice>
           <KeySig>
-            <eid>60129542167</eid>
             <concertKey>0</concertKey>
             </KeySig>
           <TimeSig>
-            <eid>51539607577</eid>
             <sigN>9</sigN>
             <sigD>8</sigD>
             </TimeSig>
           <Rest>
-            <eid>68719476762</eid>
             <durationType>measure</durationType>
             <duration>9/8</duration>
             </Rest>
@@ -141,18 +134,15 @@
       <Measure>
         <voice>
           <KeySig>
-            <eid>1898375544855</eid>
             <concertKey>0</concertKey>
             </KeySig>
           <TimeSig>
-            <eid>1894080577561</eid>
             <sigN>3</sigN>
             <sigD>4</sigD>
             <stretchN>2</stretchN>
             <stretchD>3</stretchD>
             </TimeSig>
           <Rest>
-            <eid>1889785610266</eid>
             <durationType>measure</durationType>
             <duration>3/4</duration>
             </Rest>

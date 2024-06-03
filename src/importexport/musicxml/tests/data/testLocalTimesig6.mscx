@@ -2,7 +2,6 @@
 <museScore version="4.20">
   <programVersion>4.2.1</programVersion>
   <programRevision></programRevision>
-  <LastEID>505</LastEID>
   <Score>
     <Division>480</Division>
     <showInvisible>1</showInvisible>
@@ -122,14 +121,11 @@
     <Staff id="1">
       <VBox>
         <height>10</height>
-        <eid>85899346043</eid>
         <Text>
-          <eid>90194313221</eid>
           <style>title</style>
           <text>Local Timesig 6</text>
           </Text>
         <Text>
-          <eid>94489280517</eid>
           <style>subtitle</style>
           <family>FreeSerif</family>
           <text><font face="FreeSerif"></font>MuseScore testfile</text>
@@ -138,40 +134,32 @@
       <Measure>
         <voice>
           <KeySig>
-            <eid>60129542167</eid>
             <concertKey>0</concertKey>
             </KeySig>
           <TimeSig>
-            <eid>51539607577</eid>
             <sigN>9</sigN>
             <sigD>8</sigD>
             </TimeSig>
           <Chord>
-            <eid>2035814498420</eid>
             <dots>1</dots>
             <durationType>quarter</durationType>
             <Note>
-              <eid>2031519531028</eid>
               <pitch>67</pitch>
               <tpc>15</tpc>
               </Note>
             </Chord>
           <Chord>
-            <eid>2061584302196</eid>
             <dots>1</dots>
             <durationType>quarter</durationType>
             <Note>
-              <eid>2057289334804</eid>
               <pitch>67</pitch>
               <tpc>15</tpc>
               </Note>
             </Chord>
           <Chord>
-            <eid>2091649073268</eid>
             <dots>1</dots>
             <durationType>quarter</durationType>
             <Note>
-              <eid>2087354105876</eid>
               <pitch>67</pitch>
               <tpc>15</tpc>
               </Note>
@@ -183,34 +171,27 @@
       <Measure>
         <voice>
           <KeySig>
-            <eid>214748364823</eid>
             <concertKey>0</concertKey>
             </KeySig>
           <TimeSig>
-            <eid>184683593753</eid>
             <sigN>3</sigN>
             <sigD>4</sigD>
             <stretchN>2</stretchN>
             <stretchD>3</stretchD>
             </TimeSig>
           <Chord>
-            <eid>2151778615411</eid>
             <durationType>quarter</durationType>
             <Note>
-              <eid>2156073582612</eid>
               <pitch>67</pitch>
               <tpc>15</tpc>
               </Note>
             </Chord>
           <Rest>
-            <eid>2160368549913</eid>
             <durationType>quarter</durationType>
             </Rest>
           <Chord>
-            <eid>2164663517299</eid>
             <durationType>quarter</durationType>
             <Note>
-              <eid>2168958484500</eid>
               <pitch>67</pitch>
               <tpc>15</tpc>
               </Note>

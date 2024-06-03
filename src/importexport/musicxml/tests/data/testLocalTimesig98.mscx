@@ -2,7 +2,6 @@
 <museScore version="4.20">
   <programVersion>4.4.0</programVersion>
   <programRevision></programRevision>
-  <LastEID>612</LastEID>
   <Score>
     <Division>480</Division>
     <showInvisible>1</showInvisible>
@@ -99,14 +98,11 @@
     <Staff id="1">
       <VBox>
         <height>10</height>
-        <eid>85899346043</eid>
         <Text>
-          <eid>90194313221</eid>
           <style>title</style>
           <text>Local Timesig 98</text>
           </Text>
         <Text>
-          <eid>94489280517</eid>
           <style>subtitle</style>
           <family>FreeSerif</family>
           <text><font face="FreeSerif"></font>MuseScore testfile</text>
@@ -115,16 +111,13 @@
       <Measure>
         <voice>
           <KeySig>
-            <eid>2409476653079</eid>
             <concertKey>0</concertKey>
             </KeySig>
           <TimeSig>
-            <eid>2418066587673</eid>
             <sigN>2</sigN>
             <sigD>4</sigD>
             </TimeSig>
           <Tuplet>
-            <eid>2534030704686</eid>
             <normalNotes>2</normalNotes>
             <actualNotes>3</actualNotes>
             <baseNote>quarter</baseNote>
@@ -134,28 +127,22 @@
               </Number>
             </Tuplet>
           <Chord>
-            <eid>2538325672052</eid>
             <durationType>quarter</durationType>
             <Note>
-              <eid>2551210573844</eid>
               <pitch>67</pitch>
               <tpc>15</tpc>
               </Note>
             </Chord>
           <Chord>
-            <eid>2585570312308</eid>
             <durationType>quarter</durationType>
             <Note>
-              <eid>2581275344916</eid>
               <pitch>67</pitch>
               <tpc>15</tpc>
               </Note>
             </Chord>
           <Chord>
-            <eid>2611340116084</eid>
             <durationType>quarter</durationType>
             <Note>
-              <eid>2607045148692</eid>
               <pitch>67</pitch>
               <tpc>15</tpc>
               </Note>

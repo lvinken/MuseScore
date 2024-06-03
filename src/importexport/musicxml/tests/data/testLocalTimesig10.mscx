@@ -2,7 +2,6 @@
 <museScore version="4.20">
   <programVersion>4.4.0</programVersion>
   <programRevision></programRevision>
-  <LastEID>724</LastEID>
   <Score>
     <Division>480</Division>
     <showInvisible>1</showInvisible>
@@ -107,14 +106,11 @@
     <Staff id="1">
       <VBox>
         <height>10</height>
-        <eid>85899346043</eid>
         <Text>
-          <eid>90194313221</eid>
           <style>title</style>
           <text>Local Timesig 10</text>
           </Text>
         <Text>
-          <eid>94489280517</eid>
           <style>subtitle</style>
           <family>FreeSerif</family>
           <text><font face="FreeSerif"></font>MuseScore testfile</text>
@@ -123,41 +119,33 @@
       <Measure>
         <voice>
           <KeySig>
-            <eid>60129542167</eid>
             <concertKey>0</concertKey>
             </KeySig>
           <TimeSig>
-            <eid>51539607577</eid>
             <sigN>9</sigN>
             <sigD>8</sigD>
             </TimeSig>
           <Chord>
-            <eid>2147483648116</eid>
             <dots>1</dots>
             <durationType>quarter</durationType>
             <Note>
-              <eid>2143188680724</eid>
               <pitch>79</pitch>
               <tpc>15</tpc>
               </Note>
             </Chord>
           <Chord>
-            <eid>2177548419188</eid>
             <dots>1</dots>
             <durationType>quarter</durationType>
             <StemDirection>up</StemDirection>
             <Note>
-              <eid>2173253451796</eid>
               <pitch>79</pitch>
               <tpc>15</tpc>
               </Note>
             </Chord>
           <Chord>
-            <eid>2211908157556</eid>
             <dots>1</dots>
             <durationType>quarter</durationType>
             <Note>
-              <eid>2207613190164</eid>
               <pitch>79</pitch>
               <tpc>15</tpc>
               </Note>
@@ -165,11 +153,9 @@
           </voice>
         <voice>
           <Chord>
-            <eid>2383706849396</eid>
             <dots>1</dots>
             <durationType>quarter</durationType>
             <Note>
-              <eid>2379411882004</eid>
               <pitch>67</pitch>
               <tpc>15</tpc>
               </Note>
@@ -178,11 +164,9 @@
             <fractions>3/8</fractions>
             </location>
           <Chord>
-            <eid>2422361555060</eid>
             <dots>1</dots>
             <durationType>quarter</durationType>
             <Note>
-              <eid>2418066587668</eid>
               <pitch>67</pitch>
               <tpc>15</tpc>
               </Note>
@@ -194,40 +178,32 @@
       <Measure>
         <voice>
           <KeySig>
-            <eid>1898375544855</eid>
             <concertKey>0</concertKey>
             </KeySig>
           <TimeSig>
-            <eid>1894080577561</eid>
             <sigN>3</sigN>
             <sigD>4</sigD>
             <stretchN>2</stretchN>
             <stretchD>3</stretchD>
             </TimeSig>
           <Chord>
-            <eid>2456721293428</eid>
             <durationType>quarter</durationType>
             <Note>
-              <eid>2452426326036</eid>
               <pitch>55</pitch>
               <tpc>15</tpc>
               </Note>
             </Chord>
           <Chord>
-            <eid>2486786064500</eid>
             <durationType>quarter</durationType>
             <StemDirection>up</StemDirection>
             <Note>
-              <eid>2482491097108</eid>
               <pitch>55</pitch>
               <tpc>15</tpc>
               </Note>
             </Chord>
           <Chord>
-            <eid>2512555868276</eid>
             <durationType>quarter</durationType>
             <Note>
-              <eid>2508260900884</eid>
               <pitch>55</pitch>
               <tpc>15</tpc>
               </Note>
@@ -235,10 +211,8 @@
           </voice>
         <voice>
           <Chord>
-            <eid>2546915606644</eid>
             <durationType>quarter</durationType>
             <Note>
-              <eid>2542620639252</eid>
               <pitch>43</pitch>
               <tpc>15</tpc>
               </Note>
@@ -247,10 +221,8 @@
             <fractions>3/8</fractions>
             </location>
           <Chord>
-            <eid>2654289789044</eid>
             <durationType>quarter</durationType>
             <Note>
-              <eid>2649994821652</eid>
               <pitch>43</pitch>
               <tpc>15</tpc>
               </Note>
