@@ -12,7 +12,9 @@
 # OS X Xcode build (since early 2020)
 #MSCORE=../../../build.xcode/main/Debug/mscore.app/Contents/MacOS/mscore
 # OS X QtCreator build (since early 2024)
-MSCORE=../../../../../builds/Mac-Qtlibexec-qt5-Make-RelWithDebInfo/install/mscore.app/Contents/MacOS/mscore
+#MSCORE=../../../../../builds/Mac-Qtlibexec-qt5-Make-RelWithDebInfo/install/mscore.app/Contents/MacOS/mscore
+# OS X QtCreator build (since early 2024) using Qt6
+MSCORE=../../../../../builds/Mac-Qt6.2.4-macos-Make-RelWithDebInfo/install/mscore.app/Contents/MacOS/mscore
 
 echo "----------------------------------------------"
 echo "Regression Tests for MuseScore MusicXML import"
@@ -22,7 +24,7 @@ $MSCORE -v
 echo
 
 musicxml_files=`cat ../musicxml_tests.cpp | grep mxmlMscxExportTestRef | grep testLocalTimesig | awk -F\" '{print $2}' | sort`
-# temp                                                                 ^^^^^^^^^^^^^^^^^^^^^^^
+# temp -------------------------------------------------------------->   ^^^^^^^^^^^^^^^^^^^^^^^
 echo $musicxml_files
 
 testcount=0
