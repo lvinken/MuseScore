@@ -1290,8 +1290,11 @@ void ExportMusicXml::calcDivisions()
                             LOGD("figuredbass tick %d duration %d", fb->tick().ticks(), fb->ticks().ticks());
 #endif
                             LOGD() << "figuredbass tick " << fractionToStdString(fb->tick())
-                                   << " tickLen" << fractionToStdString(fb->ticks());
-                            addInteger(fb->ticks().ticks());
+                                   << " tickLen " << fractionToStdString(fb->ticks());
+                            Staff* staff { m->score()->staff(track2staff(st)) };
+                            Fraction stretch { staff->timeStretch(m->tick()) };
+                            LOGD("staff %p stretch %s", staff, stretch.toString().toStdString().c_str());
+                            addInteger(stretch.numerator() * fb->ticks().ticks() / stretch.denominator());
                         }
                     }
 
