@@ -1108,6 +1108,7 @@ Err MusicXMLParserPass1::parse(const ByteArray& data)
         return res;
     }
 
+    m_score->sigmap()->dump();
     // Determine the start tick of each measure in the part
     determineMeasureLength(m_measureLength);
     determineMeasureStart(m_measureLength, m_measureStart);
@@ -2871,6 +2872,7 @@ void MusicXMLParserPass1::time(const Fraction cTime)
         int bts = 0;           // total beats as integer (beats may contain multiple numbers, separated by "+")
         int btp = 0;           // beat-type as integer
         if (determineTimeSig(m_logger, &m_e, beats, beatType, timeSymbol, st, bts, btp)) {
+            LOGD() << "bts " << bts << " btp " << btp;
             m_timeSigDura = Fraction(bts, btp);
             m_score->sigmap()->add(cTime.ticks(), m_timeSigDura);
         }

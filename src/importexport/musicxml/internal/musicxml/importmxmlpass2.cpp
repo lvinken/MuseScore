@@ -5573,6 +5573,7 @@ void MusicXMLParserPass2::time(const String& partId, Measure* measure, const Fra
                 }
                 track_idx_t track = m_pass1.trackForPart(partId) + i * VOICES;
                 timesig->setTrack(track);
+                LOGD() << "track " << track << " bts " << bts << " btp " << btp;
                 timesig->setSig(fractionTSig, st);
                 // handle simple compound time signature
                 if (beats.contains(Char(u'+'))) {
