@@ -2724,7 +2724,7 @@ void MusicXMLParserPass1::attributes(const String& partId, const Fraction cTime)
         } else if (m_e.name() == "staves") {
             staves = m_e.readText().toInt();
         } else if (m_e.name() == "time") {
-            time(cTime);
+            time(partId, cTime);
         } else if (m_e.name() == "transpose") {
             transpose(partId, cTime);
         } else {
@@ -2850,7 +2850,7 @@ static bool determineTimeSig(MxmlLogger* logger, const XmlStreamReader* const xm
  Parse the /score-partwise/part/measure/attributes/time node.
  */
 
-void MusicXMLParserPass1::time(const Fraction cTime)
+void MusicXMLParserPass1::time(const String& partId, const Fraction cTime)
 {
     String beats;
     String beatType;
@@ -2872,9 +2872,13 @@ void MusicXMLParserPass1::time(const Fraction cTime)
         int bts = 0;           // total beats as integer (beats may contain multiple numbers, separated by "+")
         int btp = 0;           // beat-type as integer
         if (determineTimeSig(m_logger, &m_e, beats, beatType, timeSymbol, st, bts, btp)) {
-            LOGD() << "bts " << bts << " btp " << btp;
-            m_timeSigDura = Fraction(bts, btp);
-            m_score->sigmap()->add(cTime.ticks(), m_timeSigDura);
+            track_idx_t track = trackForPart(partId);
+            LOGD() << "tick " << cTime.ticks() << " track " << track << " bts " << bts << " btp " << btp;
+            if (track == 0) {
+                // assume first staff defines global time signature
+                m_timeSigDura = Fraction(bts, btp);
+                m_score->sigmap()->add(cTime.ticks(), m_timeSigDura);
+            }
         }
     }
 }

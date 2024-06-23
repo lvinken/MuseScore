@@ -68,6 +68,7 @@
 #include "engraving/dom/rehearsalmark.h"
 #include "engraving/dom/rest.h"
 #include "engraving/dom/score.h"
+#include "engraving/dom/sig.h"
 #include "engraving/dom/slur.h"
 #include "engraving/dom/staff.h"
 #include "engraving/dom/stafftext.h"
@@ -5573,7 +5574,11 @@ void MusicXMLParserPass2::time(const String& partId, Measure* measure, const Fra
                 }
                 track_idx_t track = m_pass1.trackForPart(partId) + i * VOICES;
                 timesig->setTrack(track);
-                LOGD() << "track " << track << " bts " << bts << " btp " << btp;
+                LOGD() << "tick " << tick.ticks() << " track " << track << " bts " << bts << " btp " << btp;
+                Fraction globalTSig = m_score->sigmap()->timesig(tick).timesig();
+                LOGD() << "tick " << tick.ticks() << " global tsig " << globalTSig.numerator() << "/" << globalTSig.denominator();
+                Fraction stretch = globalTSig / fractionTSig;
+                LOGD() << "stretch " << stretch.numerator() << "/" << stretch.denominator();
                 timesig->setSig(fractionTSig, st);
                 // handle simple compound time signature
                 if (beats.contains(Char(u'+'))) {

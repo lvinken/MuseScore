@@ -146,7 +146,7 @@ public:
     void print(const int measureNr);
     void attributes(const String& partId, const Fraction cTime);
     void clef(const String& partId);
-    void time(const Fraction cTime);
+    void time(const String &partId, const Fraction cTime);
     void transpose(const String& partId, const Fraction& tick);
     void divisions();
     void direction(const String& partId, const Fraction& cTime);
