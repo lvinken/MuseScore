@@ -2555,6 +2555,11 @@ void MusicXMLParserPass1::measure(const String& partId,
                 mTime += missingPrev;
             }
             if (dura.isValid()) {
+                // divide (check) by stretch
+                // (which is not yet available in the current implementation, but m_score->sigmap() is)
+                LOGD("stretch ura %s (%s) stretched dura",
+                     mDura.toString().toStdString().c_str(),
+                     mDura.reduced().toString().toStdString().c_str());
                 mTime += dura;
             }
             if (missingCurr.isValid()) {
@@ -2595,13 +2600,11 @@ void MusicXMLParserPass1::measure(const String& partId,
             skipLogCurrElem();
         }
 
-        /*
-         LOGD("mTime %s (%s) mDura %s (%s)",
-         muPrintable(mTime.print()),
-         muPrintable(mTime.reduced().print()),
-         muPrintable(mDura.print()),
-         muPrintable(mDura.reduced().print()));
-         */
+        LOGD("mTime %s (%s) mDura %s (%s)",
+             mTime.toString().toStdString().c_str(),
+             mTime.reduced().toString().toStdString().c_str(),
+             mDura.toString().toStdString().c_str(),
+             mDura.reduced().toString().toStdString().c_str());
     }
 
     // debug vod
@@ -2667,6 +2670,8 @@ void MusicXMLParserPass1::measure(const String& partId,
     LOGD("part %s measure %s dura %s (%d)",
            muPrintable(partId), muPrintable(number), muPrintable(mdur.print()), mdur.ticks());
      */
+    LOGD("part %s measure %s dura %s (%d)",
+         muPrintable(partId), muPrintable(number), muPrintable(mDura.toString()), mdur.ticks());
     m_parts[partId].addMeasureNumberAndDuration(number, mdur);
 
     addError(checkAtEndElement(m_e, u"measure"));
@@ -3615,6 +3620,12 @@ void MusicXMLParserPass1::note(const String& partId,
     if (!errorStr.empty()) {
         m_logger->logError(errorStr, &m_e);
     }
+    LOGD("sTime %s (%s) dura %s (%s)",
+         sTime.toString().toStdString().c_str(),
+         sTime.reduced().toString().toStdString().c_str(),
+         dura.toString().toStdString().c_str(),
+         dura.reduced().toString().toStdString().c_str());
+
 
     // don't count chord or grace note duration
     // note that this does not check the MusicXML requirement that notes in a chord
