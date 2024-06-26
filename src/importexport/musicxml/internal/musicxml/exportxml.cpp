@@ -467,7 +467,8 @@ private:
 //   fractionToStdString
 //---------------------------------------------------------
 
-#ifdef DEBUG_TICK
+#if 1
+//#ifdef DEBUG_TICK
 static std::string fractionToStdString(const Fraction& f)
 {
     if (!f.isValid()) {
@@ -484,7 +485,8 @@ static std::string fractionToStdString(const Fraction& f)
 //   durElemTicksToStdString
 //---------------------------------------------------------
 
-#ifdef DEBUG_TICK
+#if 1
+//#ifdef DEBUG_TICK
 static std::string durElemTicksToStdString(const DurationElement& d)
 {
     String res;
@@ -1277,6 +1279,11 @@ void ExportMusicXml::calcDivisions()
                         LOGD() << "chordrest tick " << fractionToStdString(el->tick())
                                << " tickLen" << durElemTicksToStdString(*toChordRest(el));
 #endif
+                        LOGD() << "chordrest tick " << fractionToStdString(el->tick())
+                               << " tickLen" << durElemTicksToStdString(*toChordRest(el));
+                        Staff* staff { m->score()->staff(track2staff(st)) };
+                        Fraction stretch { staff->timeStretch(m->tick()) };
+                        LOGD("staff %p stretch %s", staff, stretch.toString().toStdString().c_str());
                         addFraction(l);
                         m_tick += l;
                     }
