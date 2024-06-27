@@ -141,8 +141,8 @@ public:
     void scoreInstrument(const String& partId);
     void setStyle(const String& type, const double val);
     void midiInstrument(const String& partId);
-    void part();
-    void measure(const String& partId, const Fraction cTime, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr);
+    void part(const unsigned int partIdx);
+    void measure(const bool isFirstPart, const String& partId, const Fraction cTime, Fraction& tsig, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr);
     void print(const int measureNr);
     void attributes(const String& partId, const Fraction cTime);
     void clef(const String& partId);

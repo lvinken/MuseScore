@@ -1206,10 +1206,12 @@ void MusicXMLParserPass1::scorePartwise()
     m_logger->logDebugTrace(u"MusicXMLParserPass1::scorePartwise", &m_e);
 
     MusicXmlPartGroupList partGroupList;
+    unsigned int partIdx = 0;
 
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "part") {
-            part();
+            part(partIdx);
+            ++partIdx;
         } else if (m_e.name() == "part-list") {
             partList(partGroupList);
         } else if (m_e.name() == "work") {
@@ -2451,7 +2453,7 @@ static void setNumberOfStavesForPart(Part* const part, const size_t staves)
  Assign voices and staves.
  */
 
-void MusicXMLParserPass1::part()
+void MusicXMLParserPass1::part(const unsigned int partIdx)
 {
     m_logger->logDebugTrace(u"MusicXMLParserPass1::part", &m_e);
     const String id = m_e.attribute("id").trimmed();
@@ -2466,12 +2468,13 @@ void MusicXMLParserPass1::part()
 
     VoiceOverlapDetector vod;
     Fraction time;    // current time within part
+    Fraction tsig;    // current time signature TODO: support multiple timesigs per part
     Fraction mdur;    // measure duration
 
     int measureNr = 0;
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "measure") {
-            measure(id, time, mdur, vod, measureNr);
+            measure(partIdx == 0, id, time, tsig, mdur, vod, measureNr);
             time += mdur;
             ++measureNr;
         } else {
@@ -2526,14 +2529,19 @@ static Fraction measureDurationAsFraction(const Fraction length, const int tsigt
  and assign voices and staves.
  */
 
-void MusicXMLParserPass1::measure(const String& partId,
+void MusicXMLParserPass1::measure(const bool isFirstPart,
+                                  const String& partId,
                                   const Fraction cTime,
+                                  Fraction& tsig,
                                   Fraction& mdur,
                                   VoiceOverlapDetector& vod,
                                   const int measureNr)
 {
     m_logger->logDebugTrace(u"MusicXMLParserPass1::measure", &m_e);
     String number = m_e.attribute("number");
+
+    LOGD("part %s isFirstPart %d measure %s",
+         muPrintable(partId), isFirstPart, muPrintable(number));
 
     Fraction mTime;   // current time stamp within measure
     Fraction mDura;   // current total measure duration
@@ -2542,10 +2550,11 @@ void MusicXMLParserPass1::measure(const String& partId,
 
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "attributes") {
-            attributes(partId, cTime + mTime);
+            attributes(partId, cTime + mTime); // TODO: update tsig
         } else if (m_e.name() == "barline") {
             m_e.skipCurrentElement();        // skip but don't log
         } else if (m_e.name() == "note") {
+            LOGD("tsig %s", muPrintable(tsig.toString()));
             Fraction missingPrev;
             Fraction dura;
             Fraction missingCurr;
@@ -2557,7 +2566,7 @@ void MusicXMLParserPass1::measure(const String& partId,
             if (dura.isValid()) {
                 // divide (check) by stretch
                 // (which is not yet available in the current implementation, but m_score->sigmap() is)
-                LOGD("stretch ura %s (%s) stretched dura",
+                LOGD("dura %s (%s) stretched dura",
                      mDura.toString().toStdString().c_str(),
                      mDura.reduced().toString().toStdString().c_str());
                 mTime += dura;
