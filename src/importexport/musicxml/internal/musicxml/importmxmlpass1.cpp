@@ -2550,11 +2550,17 @@ void MusicXMLParserPass1::measure(const bool isFirstPart,
 
     while (m_e.readNextStartElement()) {
         if (m_e.name() == "attributes") {
-            attributes(partId, cTime + mTime); // TODO: update tsig
+            attributes(partId, cTime + mTime, tsig);
         } else if (m_e.name() == "barline") {
             m_e.skipCurrentElement();        // skip but don't log
         } else if (m_e.name() == "note") {
-            LOGD("tsig %s", muPrintable(tsig.toString()));
+            Fraction globalTsig = m_score->sigmap()->timesig(cTime).timesig();
+            Fraction stretch = tsig / globalTsig;
+            LOGD("cTime %s globalTsig %s tsig %s stretch %s",
+                 muPrintable(cTime.toString()),
+                 muPrintable(globalTsig.toString()),
+                 muPrintable(tsig.toString()),
+                 muPrintable(stretch.toString()));
             Fraction missingPrev;
             Fraction dura;
             Fraction missingCurr;
@@ -2714,7 +2720,7 @@ void MusicXMLParserPass1::print(const int measureNr)
  Parse the /score-partwise/part/measure/attributes node.
  */
 
-void MusicXMLParserPass1::attributes(const String& partId, const Fraction cTime)
+void MusicXMLParserPass1::attributes(const String& partId, const Fraction cTime, Fraction& tsig)
 {
     m_logger->logDebugTrace(u"MusicXMLParserPass1::attributes", &m_e);
 
@@ -2738,7 +2744,7 @@ void MusicXMLParserPass1::attributes(const String& partId, const Fraction cTime)
         } else if (m_e.name() == "staves") {
             staves = m_e.readText().toInt();
         } else if (m_e.name() == "time") {
-            time(partId, cTime);
+            time(partId, cTime, tsig);
         } else if (m_e.name() == "transpose") {
             transpose(partId, cTime);
         } else {
@@ -2864,7 +2870,7 @@ static bool determineTimeSig(MxmlLogger* logger, const XmlStreamReader* const xm
  Parse the /score-partwise/part/measure/attributes/time node.
  */
 
-void MusicXMLParserPass1::time(const String& partId, const Fraction cTime)
+void MusicXMLParserPass1::time(const String& partId, const Fraction cTime, Fraction& tsig)
 {
     String beats;
     String beatType;
@@ -2893,6 +2899,7 @@ void MusicXMLParserPass1::time(const String& partId, const Fraction cTime)
                 m_timeSigDura = Fraction(bts, btp);
                 m_score->sigmap()->add(cTime.ticks(), m_timeSigDura);
             }
+            tsig = Fraction(bts, btp);
         }
     }
 }

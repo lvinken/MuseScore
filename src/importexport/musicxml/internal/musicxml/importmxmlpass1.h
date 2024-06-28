@@ -144,9 +144,9 @@ public:
     void part(const unsigned int partIdx);
     void measure(const bool isFirstPart, const String& partId, const Fraction cTime, Fraction& tsig, Fraction& mdur, VoiceOverlapDetector& vod, const int measureNr);
     void print(const int measureNr);
-    void attributes(const String& partId, const Fraction cTime);
+    void attributes(const String& partId, const Fraction cTime, Fraction& tsig);
     void clef(const String& partId);
-    void time(const String &partId, const Fraction cTime);
+    void time(const String &partId, const Fraction cTime, Fraction& tsig);
     void transpose(const String& partId, const Fraction& tick);
     void divisions();
     void direction(const String& partId, const Fraction& cTime);
