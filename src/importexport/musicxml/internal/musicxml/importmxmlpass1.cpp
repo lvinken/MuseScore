@@ -2572,10 +2572,14 @@ void MusicXMLParserPass1::measure(const bool isFirstPart,
             if (dura.isValid()) {
                 // divide (check) by stretch
                 // (which is not yet available in the current implementation, but m_score->sigmap() is)
-                LOGD("dura %s (%s) stretched dura",
-                     mDura.toString().toStdString().c_str(),
-                     mDura.reduced().toString().toStdString().c_str());
-                mTime += dura;
+                Fraction stretchedDura = dura / stretch;
+                LOGD("dura %s (%s) stretched dura %s (%s)",
+                     muPrintable(dura.toString()),
+                     muPrintable(dura.reduced().toString()),
+                     muPrintable(stretchedDura.toString()),
+                     muPrintable(stretchedDura.reduced().toString())
+                     );
+                mTime += stretchedDura;
             }
             if (missingCurr.isValid()) {
                 mTime += missingCurr;
@@ -2623,7 +2627,7 @@ void MusicXMLParserPass1::measure(const bool isFirstPart,
     }
 
     // debug vod
-    // vod.dump();
+    vod.dump();
     // copy overlap data from vod to voicelist
     copyOverlapData(vod, m_parts[partId].voicelist);
 
