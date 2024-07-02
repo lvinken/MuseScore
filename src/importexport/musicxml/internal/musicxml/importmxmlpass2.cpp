@@ -349,33 +349,33 @@ static void fillGapsInFirstVoices(Measure* measure, Part* part)
     Fraction measLen      = measure->ticks();
     Fraction nextMeasTick = measTick + measLen;
     staff_idx_t staffIdx = part->score()->staffIdx(part);
-    /*
-     LOGD("fillGIFV measure %p part %p idx %d nstaves %d tick %d - %d (len %d)",
-     measure, part, staffIdx, part->nstaves(),
-     measTick, nextMeasTick, measLen);
-     */
+
+    LOGN("fillGIFV measure %p part %p idx %zu nstaves %zu tick %s - %s (len %s)",
+         measure, part, staffIdx, part->nstaves(),
+         muPrintable(measTick.toString()), muPrintable(nextMeasTick.toString()), muPrintable(measLen.toString()));
+
     for (staff_idx_t st = 0; st < part->nstaves(); ++st) {
         track_idx_t track = (staffIdx + st) * VOICES;
         Fraction endOfLastCR = measTick;
         for (Segment* s = measure->first(); s; s = s->next()) {
-            // LOGD("fillGIFV   segment %p tp %s", s, s->subTypeName());
+            LOGN("fillGIFV   segment %p tp %s", s, s->subTypeName());
             EngravingItem* el = s->element(track);
             if (el) {
-                // LOGD(" el[%d] %p", track, el);
+                LOGN(" el[%zu] %p", track, el);
                 if (s->isChordRestType()) {
                     ChordRest* cr  = static_cast<ChordRest*>(el);
                     Fraction crTick     = cr->tick();
-                    Fraction crLen      = cr->globalTicks();
+                    Fraction crLen      = cr->actualTicks();
                     Fraction nextCrTick = crTick + crLen;
-                    /*
-                     LOGD(" chord/rest tick %d - %d (len %d)",
-                     crTick, nextCrTick, crLen);
-                     */
+
+                    LOGN(" chord/rest tick %s - %s (len %s)",
+                         muPrintable(crTick.toString()), muPrintable(nextCrTick.toString()), muPrintable(crLen.toString()));
+
                     if (crTick > endOfLastCR) {
-                        /*
-                         LOGD(" GAP: track %d tick %d - %d",
-                         track, endOfLastCR, crTick);
-                         */
+
+                        LOGN(" GAP: track %zu tick %s - %s",
+                             track, muPrintable(endOfLastCR.toString()), muPrintable(crTick.toString()));
+
                         fillGap(measure, track, endOfLastCR, crTick);
                     }
                     endOfLastCR = nextCrTick;
@@ -383,10 +383,10 @@ static void fillGapsInFirstVoices(Measure* measure, Part* part)
             }
         }
         if (nextMeasTick > endOfLastCR) {
-            /*
-             LOGD("fillGIFV   measure end GAP: track %d tick %d - %d",
-             track, endOfLastCR, nextMeasTick);
-             */
+
+            LOGN("fillGIFV   measure end GAP: track %zu tick %s - %s",
+                 track, muPrintable(endOfLastCR.toString()), muPrintable(nextMeasTick.toString()));
+
             fillGap(measure, track, endOfLastCR, nextMeasTick);
         }
     }
