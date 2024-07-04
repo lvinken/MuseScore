@@ -1022,6 +1022,7 @@ void MusicXMLParserPass1::createMeasuresAndVboxes(Score* score,
         measure->setTick(ms.at(i));
         measure->setTicks(ml.at(i));
         measure->setNo(int(i));
+        LOGD("measure %p tick %s ticks %s", measure, muPrintable(ms.at(i).toString()), muPrintable(ml.at(i).toString()));
         score->measures()->add(measure);
 
         // add break to previous measure or vbox

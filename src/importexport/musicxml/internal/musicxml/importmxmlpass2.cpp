@@ -2629,6 +2629,9 @@ void MusicXMLParserPass2::measure(const String& partId, const Fraction time)
     // TODO:
     // - how to handle _timeSigDura.isZero (shouldn't happen ?)
     // - how to handle unmetered music
+    LOGD("m_timeSigDura %s (%s)",
+    muPrintable(m_timeSigDura.toString()),
+    muPrintable(m_timeSigDura.reduced().toString()));
     if (m_timeSigDura.isValid() && !m_timeSigDura.isZero()) {
         measure->setTimesig(m_timeSigDura);
     }
@@ -5563,8 +5566,12 @@ void MusicXMLParserPass2::time(const String& partId, Measure* measure, const Fra
         int bts = 0;     // total beats as integer (beats may contain multiple numbers, separated by "+")
         int btp = 0;     // beat-type as integer
         if (determineTimeSig(beats, beatType, timeSymbol, st, bts, btp)) {
-            m_timeSigDura = Fraction(bts, btp);
             Fraction fractionTSig = Fraction(bts, btp);
+            Fraction globalTSig = m_score->sigmap()->timesig(tick).timesig();
+            LOGD() << "tick " << tick.ticks() << " global tsig " << globalTSig.numerator() << "/" << globalTSig.denominator();
+            Fraction stretch = fractionTSig / globalTSig;
+            LOGD() << "stretch " << stretch.numerator() << "/" << stretch.denominator();
+            m_timeSigDura = globalTSig;
             for (size_t i = 0; i < m_pass1.getPart(partId)->nstaves(); ++i) {
                 Segment* s = measure->getSegment(SegmentType::TimeSig, tick);
                 TimeSig* timesig = Factory::createTimeSig(s);
@@ -5581,10 +5588,6 @@ void MusicXMLParserPass2::time(const String& partId, Measure* measure, const Fra
                     timesig->setNumeratorString(beats);
                     timesig->setDenominatorString(beatType);
                 }
-                Fraction globalTSig = m_score->sigmap()->timesig(tick).timesig();
-                LOGD() << "tick " << tick.ticks() << " global tsig " << globalTSig.numerator() << "/" << globalTSig.denominator();
-                Fraction stretch = fractionTSig / globalTSig;
-                LOGD() << "stretch " << stretch.numerator() << "/" << stretch.denominator();
                 timesig->setStretch(stretch);
                 s->add(timesig);
             }
