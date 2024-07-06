@@ -1511,6 +1511,8 @@ static Rest* addRest(Score*, Measure* m,
                      const Fraction& tick, const track_idx_t track, const int move,
                      const TDuration duration, const Fraction dura)
 {
+    LOGD("m %p tick %s duration %d dura %s",
+         m, muPrintable(tick.toString()), static_cast<int>(duration.type()), muPrintable(dura.toString()));
     Segment* s = m->getSegment(SegmentType::ChordRest, tick);
     // Sibelius might export two rests at the same place, ignore the 2nd one
     // <?DoletSibelius Two NoteRests in same voice at same position may be an error?>
@@ -2629,10 +2631,12 @@ void MusicXMLParserPass2::measure(const String& partId, const Fraction time)
     // TODO:
     // - how to handle _timeSigDura.isZero (shouldn't happen ?)
     // - how to handle unmetered music
-    LOGD("m_timeSigDura %s (%s)",
-    muPrintable(m_timeSigDura.toString()),
-    muPrintable(m_timeSigDura.reduced().toString()));
+    LOGD("measure %p m_timeSigDura %s (%s)",
+         measure,
+         muPrintable(m_timeSigDura.toString()),
+         muPrintable(m_timeSigDura.reduced().toString()));
     if (m_timeSigDura.isValid() && !m_timeSigDura.isZero()) {
+         // doing this for every part is superfluous but does not hurt
         measure->setTimesig(m_timeSigDura);
     }
 
@@ -5641,6 +5645,7 @@ static bool isWholeMeasureRest(const bool rest, const String& type, const Fracti
         return false;
     }
 
+    // does not yet work for stretched measures
     return (type.empty() && dura == mDura)
            || (type == u"whole" && dura == mDura && dura != Fraction(1, 1));
 }
@@ -5656,8 +5661,8 @@ static bool isWholeMeasureRest(const bool rest, const String& type, const Fracti
 
 static TDuration determineDuration(const bool rest, const String& type, const int dots, const Fraction dura, const Fraction mDura)
 {
-    //LOGD("determineDuration rest %d type '%s' dots %d dura %s mDura %s",
-    //       rest, muPrintable(type), dots, muPrintable(dura.print()), muPrintable(mDura.print()));
+    LOGD("determineDuration rest %d type '%s' dots %d dura %s mDura %s",
+           rest, muPrintable(type), dots, muPrintable(dura.toString()), muPrintable(mDura.toString()));
 
     TDuration res;
     if (rest) {
@@ -5681,8 +5686,8 @@ static TDuration determineDuration(const bool rest, const String& type, const in
         }
     }
 
-    //LOGD("-> dur %hhd (%s) dots %d ticks %s",
-    //       res.type(), muPrintable(res.name()), res.dots(), muPrintable(dura.print()));
+    LOGD("-> dur %hhd dots %d ticks %s",
+           static_cast<int>(res.type()), res.dots(), muPrintable(dura.toString()));
 
     return res;
 }
@@ -6328,7 +6333,11 @@ Note* MusicXMLParserPass2::note(const String& partId,
     ChordRest* cr { nullptr };
     Note* note { nullptr };
 
-    TDuration duration = determineDuration(rest, type, mnd.dots(), dura, measure->ticks());
+    Staff* lstaff { m_score->staff(track2staff(msTrack + msVoice)) };
+    Fraction stretch { lstaff->timeStretch(noteStartTime) };
+    LOGD("staff %p stretch %s", lstaff, muPrintable(stretch.toString()));
+
+    TDuration duration = determineDuration(rest, type, mnd.dots(), dura / stretch, measure->ticks());
 
     const Part* part = m_pass1.getPart(partId);
     const Instrument* instrument = part->instrument(noteStartTime);
