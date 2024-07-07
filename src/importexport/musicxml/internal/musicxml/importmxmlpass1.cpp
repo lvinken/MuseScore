@@ -2571,10 +2571,10 @@ void MusicXMLParserPass1::measure(const bool isFirstPart,
                 mTime += missingPrev;
             }
             if (dura.isValid()) {
-                // divide (check) by stretch
+                // divide by stretch
                 // (which is not yet available in the current implementation, but m_score->sigmap() is)
                 Fraction stretchedDura = dura / stretch;
-                LOGD("dura %s (%s) stretched dura %s (%s)",
+                LOGD("note dura %s (%s) stretched dura %s (%s)",
                      muPrintable(dura.toString()),
                      muPrintable(dura.reduced().toString()),
                      muPrintable(stretchedDura.toString()),
@@ -2598,11 +2598,27 @@ void MusicXMLParserPass1::measure(const bool isFirstPart,
                 }
             }
         } else if (m_e.name() == "backup") {
+            Fraction globalTsig = m_score->sigmap()->timesig(cTime).timesig();
+            Fraction stretch = tsig / globalTsig;
+            LOGD("cTime %s globalTsig %s tsig %s stretch %s",
+                 muPrintable(cTime.toString()),
+                 muPrintable(globalTsig.toString()),
+                 muPrintable(tsig.toString()),
+                 muPrintable(stretch.toString()));
             Fraction dura;
             backup(dura);
             if (dura.isValid()) {
+                // divide by stretch
+                // (which is not yet available in the current implementation, but m_score->sigmap() is)
+                Fraction stretchedDura = dura / stretch;
+                LOGD("backup dura %s (%s) stretched dura %s (%s)",
+                     muPrintable(dura.toString()),
+                     muPrintable(dura.reduced().toString()),
+                     muPrintable(stretchedDura.toString()),
+                     muPrintable(stretchedDura.reduced().toString())
+                     );
                 if (dura <= mTime) {
-                    mTime -= dura;
+                    mTime -= stretchedDura;
                 } else {
                     m_logger->logError(u"backup beyond measure start", &m_e);
                     mTime.set(0, 1);
