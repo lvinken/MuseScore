@@ -7144,6 +7144,7 @@ static bool hasPageBreak(const System* const system)
 void ExportMusicXml::print(const Measure* const m, const int partNr, const int firstStaffOfPart,
                            const int nrStavesInPart, const MeasurePrintContext& mpc)
 {
+    //LOGD("m %p partNr %d", m, partNr);
     const MeasureBase* const prevSysMB = lastMeasureBase(mpc.prevSystem);
 
     const bool prevMeasLineBreak = prevSysMB ? prevSysMB->lineBreak() : false;
@@ -7227,8 +7228,19 @@ void ExportMusicXml::print(const Measure* const m, const int partNr, const int f
             for (int staffIdx = (firstStaffOfPart == 0) ? 1 : 0; staffIdx < nrStavesInPart; staffIdx++) {
                 // calculate distance between this and previous staff using the bounding boxes
                 const int staffNr = firstStaffOfPart + staffIdx;
+                /*
                 const RectF& prevBbox = system->staff(staffNr - 1)->bbox();
                 const double staffDist = system->staff(staffNr)->bbox().y() - prevBbox.y() - prevBbox.height();
+                */
+                const SysStaff* prevStaff = system->staff(staffNr - 1);
+                const RectF& prevBbox = prevStaff->bbox();
+                const SysStaff* currStaff = system->staff(staffNr);
+                const RectF& currBbox = currStaff->bbox();
+                const double staffDist = currBbox.y() - prevBbox.y() - prevBbox.height();
+                LOGD("prevStaff %p y %g show %d height %g currStaff %p y %g show %d staffDist %g",
+                     prevStaff, getTenthsFromDots(prevBbox.y()), prevStaff->show(), getTenthsFromDots(prevBbox.height()),
+                     currStaff, getTenthsFromDots(currBbox.y()), currStaff->show(), getTenthsFromDots(staffDist)
+                     );
 
                 m_xml.startElement("staff-layout", { { "number", staffIdx + 1 } });
                 m_xml.tag("staff-distance", String::number(getTenthsFromDots(staffDist), 2));
@@ -8387,6 +8399,31 @@ static std::vector<const Jump*> findJumpElements(const Score* score)
 }
 
 //---------------------------------------------------------
+//  dumpStaffShowHide
+//---------------------------------------------------------
+
+static void dumpStaffShowHide(std::vector<Page*>& pages)
+{
+    for (size_t pageIndex = 0; pageIndex < pages.size(); ++pageIndex) {
+        LOGD("page %zu", pageIndex + 1);
+        const Page* page = pages.at(pageIndex);
+        const auto& systems = page->systems();
+
+        for (size_t systemIndex = 0; systemIndex < systems.size(); ++systemIndex) {
+            const System* system = systems.at(systemIndex);
+            LOGD("system %zu", systemIndex + 1);
+            const auto& staves = system->staves();
+
+            for (size_t staffIndex = 0; staffIndex < staves.size(); ++staffIndex) {
+                const SysStaff* sysstaff = staves.at(staffIndex);
+                LOGD("sysstaff %zu %p y %g show %d",
+                     staffIndex + 1, sysstaff, sysstaff->y(), sysstaff->show());
+            }
+        }
+    }
+}
+
+//---------------------------------------------------------
 //  write
 //---------------------------------------------------------
 
@@ -8396,6 +8433,7 @@ static std::vector<const Jump*> findJumpElements(const Score* score)
 
 void ExportMusicXml::write(muse::io::IODevice* dev)
 {
+    //dumpStaffShowHide(m_score->pages());
     calcDivisions();
 
     for (int i = 0; i < MAX_NUMBER_LEVEL; ++i) {
