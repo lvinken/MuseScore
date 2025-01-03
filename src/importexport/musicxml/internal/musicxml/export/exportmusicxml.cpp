@@ -8200,6 +8200,39 @@ void ExportMusicXml::writeMeasureStaves(const Measure* m,
 }
 
 //---------------------------------------------------------
+//  needStaffPrintObject
+//---------------------------------------------------------
+
+/*
+ * must show print-object for a staff when:
+ * - it is in the first measure of a system and:
+ * - the system is the first one with music and:
+ * - the staff is not shown
+ * or:
+ * - it is in the first measure of a system and:
+ * - the staff's show status differs from that
+ *   of the previous staff with music
+ */
+static bool needStaffPrintObject(const Measure* const m, const track_idx_t staff)
+{
+    bool res { false };
+    const System* const previousSystem = m->prevNonVBoxSystem();
+    const System* const currentSystem = m->system();
+
+    if (!previousSystem && !currentSystem->staff(staff)->show()) {
+        res = true;
+    }
+    if (previousSystem && previousSystem->staff(staff)->show() != currentSystem->staff(staff)->show()) {
+        res = true;
+    }
+
+    LOGD("measure %p staff %zu currentSystem %p previousSystem %p -> res %d",
+         m, staff, currentSystem, previousSystem, res);
+
+    return res;
+}
+
+//---------------------------------------------------------
 //  writeMeasure
 //---------------------------------------------------------
 
@@ -8270,6 +8303,7 @@ void ExportMusicXml::writeMeasure(const Measure* const m,
     exportDefaultClef(part, m);
 
     // output attributes with the first actual measure (pickup or regular) only
+    (void) needStaffPrintObject(m, strack / VOICES);
     if (isFirstActualMeasure) {
         writeStaffDetails(m_xml, part); // <- add print-object here ?
         writeInstrumentDetails(part->instrument(), m_score->style().styleB(Sid::concertPitch));
