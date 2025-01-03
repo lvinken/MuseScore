@@ -7232,14 +7232,21 @@ void ExportMusicXml::print(const Measure* const m, const int partNr, const int f
                 const RectF& prevBbox = system->staff(staffNr - 1)->bbox();
                 const double staffDist = system->staff(staffNr)->bbox().y() - prevBbox.y() - prevBbox.height();
                 */
-                const SysStaff* prevStaff = system->staff(staffNr - 1);
-                const RectF& prevBbox = prevStaff->bbox();
-                const SysStaff* currStaff = system->staff(staffNr);
-                const RectF& currBbox = currStaff->bbox();
+                const SysStaff* prevSysStaff = system->staff(staffNr - 1);
+                const RectF& prevBbox = prevSysStaff->bbox();
+                const SysStaff* sysStaff = system->staff(staffNr);
+                const RectF& currBbox = sysStaff->bbox();
                 const double staffDist = currBbox.y() - prevBbox.y() - prevBbox.height();
-                LOGD("prevStaff %p y %g show %d height %g currStaff %p y %g show %d staffDist %g",
-                     prevStaff, getTenthsFromDots(prevBbox.y()), prevStaff->show(), getTenthsFromDots(prevBbox.height()),
-                     currStaff, getTenthsFromDots(currBbox.y()), currStaff->show(), getTenthsFromDots(staffDist)
+                /*
+                LOGD("prevSysStaff %p y %g show %d height %g currStaff %p y %g show %d staffDist %g",
+                     prevSysStaff, getTenthsFromDots(prevBbox.y()), prevSysStaff->show(), getTenthsFromDots(prevBbox.height()),
+                     sysStaff, getTenthsFromDots(currBbox.y()), sysStaff->show(), getTenthsFromDots(staffDist)
+                     );
+                     */
+                LOGD("sysStaff %p y %g bboxy %g show %d prevSysStaff %p y %g  bboxy %g show %d bboxheight %g -> staffDist %g",
+                     sysStaff, sysStaff->y(), getTenthsFromDots(currBbox.y()), sysStaff->show(),
+                     prevSysStaff, sysStaff->y(), getTenthsFromDots(prevBbox.y()), prevSysStaff->show(), getTenthsFromDots(prevBbox.height()),
+                     getTenthsFromDots(staffDist)
                      );
 
                 m_xml.startElement("staff-layout", { { "number", staffIdx + 1 } });
@@ -8212,6 +8219,8 @@ void ExportMusicXml::writeMeasure(const Measure* const m,
     const size_t staves = part->nstaves();
     const track_idx_t strack = part->startTrack();
     const track_idx_t etrack = part->endTrack();
+    LOGD("measure %p strack %zu etrack %zu system %p prevNonVBoxSystem %p",
+         m, strack, etrack, m->system(), m->prevNonVBoxSystem());
 
     // pickup and other irregular measures need special care
     String measureTag = u"measure";
@@ -8262,7 +8271,7 @@ void ExportMusicXml::writeMeasure(const Measure* const m,
 
     // output attributes with the first actual measure (pickup or regular) only
     if (isFirstActualMeasure) {
-        writeStaffDetails(m_xml, part);
+        writeStaffDetails(m_xml, part); // <- add print-object here ?
         writeInstrumentDetails(part->instrument(), m_score->style().styleB(Sid::concertPitch));
     }
 
@@ -8411,7 +8420,7 @@ static void dumpStaffShowHide(std::vector<Page*>& pages)
 
         for (size_t systemIndex = 0; systemIndex < systems.size(); ++systemIndex) {
             const System* system = systems.at(systemIndex);
-            LOGD("system %zu", systemIndex + 1);
+            LOGD("system %zu %p", systemIndex + 1, system);
             const auto& staves = system->staves();
 
             for (size_t staffIndex = 0; staffIndex < staves.size(); ++staffIndex) {
@@ -8433,7 +8442,7 @@ static void dumpStaffShowHide(std::vector<Page*>& pages)
 
 void ExportMusicXml::write(muse::io::IODevice* dev)
 {
-    //dumpStaffShowHide(m_score->pages());
+    dumpStaffShowHide(m_score->pages());
     calcDivisions();
 
     for (int i = 0; i < MAX_NUMBER_LEVEL; ++i) {
