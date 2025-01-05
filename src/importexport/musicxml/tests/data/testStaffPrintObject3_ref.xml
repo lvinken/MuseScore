@@ -62,7 +62,7 @@
           <sign>G</sign>
           <line>2</line>
           </clef>
-        <staff-details print-object="yes"/>
+        <staff-details print-object="no"/>
         </attributes>
       <note>
         <rest measure="yes"/>
