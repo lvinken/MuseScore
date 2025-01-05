@@ -7702,6 +7702,39 @@ static void clampMusicXmlOctave(int& octave)
 }
 
 //---------------------------------------------------------
+//  needStaffPrintObject
+//---------------------------------------------------------
+
+/*
+ * must show print-object for a staff when:
+ * - it is in the first measure of a system and:
+ * - the system is the first one with music and:
+ * - the staff is not shown
+ * or:
+ * - it is in the first measure of a system and:
+ * - the staff's show status differs from that
+ *   of the previous staff with music
+ */
+static bool needStaffPrintObject(const Measure* const m, const track_idx_t staff)
+{
+    bool res { false };
+    const System* const previousSystem = m->prevNonVBoxSystem();
+    const System* const currentSystem = m->system();
+
+    if (!previousSystem && !currentSystem->staff(staff)->show()) {
+        res = true;
+    }
+    if (previousSystem && previousSystem->staff(staff)->show() != currentSystem->staff(staff)->show()) {
+        res = true;
+    }
+
+    LOGD("measure %p staff %zu currentSystem %p previousSystem %p -> res %d",
+         m, staff, currentSystem, previousSystem, res);
+
+    return res;
+}
+
+//---------------------------------------------------------
 //  writeStaffDetails
 //---------------------------------------------------------
 
@@ -8197,39 +8230,6 @@ void ExportMusicXml::writeMeasureStaves(const Measure* m,
         m = origM;
         m_tick += tickDelta;
     }
-}
-
-//---------------------------------------------------------
-//  needStaffPrintObject
-//---------------------------------------------------------
-
-/*
- * must show print-object for a staff when:
- * - it is in the first measure of a system and:
- * - the system is the first one with music and:
- * - the staff is not shown
- * or:
- * - it is in the first measure of a system and:
- * - the staff's show status differs from that
- *   of the previous staff with music
- */
-static bool needStaffPrintObject(const Measure* const m, const track_idx_t staff)
-{
-    bool res { false };
-    const System* const previousSystem = m->prevNonVBoxSystem();
-    const System* const currentSystem = m->system();
-
-    if (!previousSystem && !currentSystem->staff(staff)->show()) {
-        res = true;
-    }
-    if (previousSystem && previousSystem->staff(staff)->show() != currentSystem->staff(staff)->show()) {
-        res = true;
-    }
-
-    LOGD("measure %p staff %zu currentSystem %p previousSystem %p -> res %d",
-         m, staff, currentSystem, previousSystem, res);
-
-    return res;
 }
 
 //---------------------------------------------------------
