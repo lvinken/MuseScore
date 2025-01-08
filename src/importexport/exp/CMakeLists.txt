@@ -18,4 +18,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-declare_module(iex_mei)
+declare_module(iex_exp)
+
+set(MODULE_SRC
+    ${CMAKE_CURRENT_LIST_DIR}/expmodule.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/expmodule.h
+    )
+
+setup_module()
