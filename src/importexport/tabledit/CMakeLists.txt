@@ -18,30 +18,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-if (MUE_BUILD_IMPORTEXPORT_MODULE)
-    add_subdirectory(bb)
+declare_module(iex_tabledit)
 
-    add_subdirectory(bww)
-    add_subdirectory(capella)
-    add_subdirectory(midi)
-    add_subdirectory(musedata)
-    add_subdirectory(musicxml)
-    add_subdirectory(ove)
-    add_subdirectory(audioexport)
-    add_subdirectory(imagesexport)
-    add_subdirectory(guitarpro)
-    add_subdirectory(mei)
-    add_subdirectory(tabledit)
+set(MODULE_SRC
+    ${CMAKE_CURRENT_LIST_DIR}/tableditmodule.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/tableditmodule.h
+    ${CMAKE_CURRENT_LIST_DIR}/internal/tableditreader.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/internal/tableditreader.h
+    )
 
-    if (MUE_BUILD_VIDEOEXPORT_MODULE)
-        add_subdirectory(videoexport)
-    endif()
-else()
-    if (MUE_BUILD_IMAGESEXPORT_MODULE)
-        add_subdirectory(imagesexport)
-    endif()
-endif()
-
-
-
-
+setup_module()

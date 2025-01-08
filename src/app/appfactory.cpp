@@ -136,6 +136,7 @@
 #include "importexport/audioexport/audioexportmodule.h"
 #include "importexport/imagesexport/imagesexportmodule.h"
 #include "importexport/mei/meimodule.h"
+#include "importexport/tabledit/tableditmodule.h"
 #ifdef MUE_BUILD_VIDEOEXPORT_MODULE
 #include "importexport/videoexport/videoexportmodule.h"
 #endif
@@ -289,6 +290,7 @@ std::shared_ptr<muse::IApplication> AppFactory::newGuiApp(const CmdOptions& opti
     app->addModule(new mu::iex::audioexport::AudioExportModule());
     app->addModule(new mu::iex::imagesexport::ImagesExportModule());
     app->addModule(new mu::iex::mei::MeiModule());
+    app->addModule(new mu::iex::tabledit::TablEditModule());
 #ifdef MUE_BUILD_VIDEOEXPORT_MODULE
     app->addModule(new mu::iex::videoexport::VideoExportModule());
 #endif
@@ -395,6 +397,7 @@ std::shared_ptr<muse::IApplication> AppFactory::newConsoleApp(const CmdOptions& 
     app->addModule(new mu::iex::audioexport::AudioExportModule());
     app->addModule(new mu::iex::imagesexport::ImagesExportModule());
     app->addModule(new mu::iex::mei::MeiModule());
+    app->addModule(new mu::iex::tabledit::TablEditModule());
 #ifdef MUE_BUILD_VIDEOEXPORT_MODULE
     app->addModule(new mu::iex::videoexport::VideoExportModule());
 #endif
