@@ -19,23 +19,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_IMPORTEXPORT_EXPMODULE_H
-#define MU_IMPORTEXPORT_EXPMODULE_H
+#ifndef MU_IEX_EXPBREADER_H
+#define MU_IEX_EXPBREADER_H
 
-#include "modularity/imodulesetup.h"
+#include "project/inotationreader.h"
 
 namespace mu::iex::exp {
-class ExpConfiguration;
-class ExpModule : public muse::modularity::IModuleSetup
+class NotationExpReader : public project::INotationReader
 {
 public:
-
-    std::string moduleName() const override;
-    void resolveImports() override;
-
-private:
-    std::shared_ptr<ExpConfiguration> m_configuration;
+    muse::Ret read(mu::engraving::MasterScore* score, const muse::io::path_t& path, const Options& options = Options()) override;
 };
 }
 
-#endif // MU_IMPORTEXPORT_EXPMODULE_H
+#endif // MU_IEX_EXPBREADER_H

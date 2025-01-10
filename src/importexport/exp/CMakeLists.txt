@@ -23,6 +23,8 @@ declare_module(iex_exp)
 set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/expmodule.cpp
     ${CMAKE_CURRENT_LIST_DIR}/expmodule.h
+    ${CMAKE_CURRENT_LIST_DIR}/internal/expreader.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/internal/expreader.h
     )
 
 setup_module()

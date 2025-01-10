@@ -19,23 +19,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef MU_IMPORTEXPORT_EXPMODULE_H
-#define MU_IMPORTEXPORT_EXPMODULE_H
+#include "expreader.h"
 
-#include "modularity/imodulesetup.h"
+#include "engraving/dom/score.h"
+#include "engraving/engravingerrors.h"
+
+using namespace mu::iex::exp;
+using namespace mu::engraving;
 
 namespace mu::iex::exp {
-class ExpConfiguration;
-class ExpModule : public muse::modularity::IModuleSetup
-{
-public:
-
-    std::string moduleName() const override;
-    void resolveImports() override;
-
-private:
-    std::shared_ptr<ExpConfiguration> m_configuration;
-};
+extern Err importExp(MasterScore* score, const QString& name);
 }
 
-#endif // MU_IMPORTEXPORT_EXPMODULE_H
+muse::Ret NotationExpReader::read(MasterScore* score, const muse::io::path_t& path, const Options&)
+{
+    Err err = Err::FileUnknownError; // TODO
+    return make_ret(err, path);
+}

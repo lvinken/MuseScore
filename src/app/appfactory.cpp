@@ -290,7 +290,7 @@ std::shared_ptr<muse::IApplication> AppFactory::newGuiApp(const CmdOptions& opti
     app->addModule(new mu::iex::audioexport::AudioExportModule());
     app->addModule(new mu::iex::imagesexport::ImagesExportModule());
     app->addModule(new mu::iex::mei::MeiModule());
-// TODO    app->addModule(new mu::iex::exp::ExpModule());
+    app->addModule(new mu::iex::exp::ExpModule());
 #ifdef MUE_BUILD_VIDEOEXPORT_MODULE
     app->addModule(new mu::iex::videoexport::VideoExportModule());
 #endif

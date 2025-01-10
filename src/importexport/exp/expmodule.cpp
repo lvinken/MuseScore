@@ -19,3 +19,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include "expmodule.h"
+
+#include "log.h"
+#include "modularity/ioc.h"
+
+#include "project/inotationreadersregister.h"
+#include "internal/expreader.h"
+
+
+using namespace muse::modularity;
+using namespace mu::iex::exp;
+using namespace mu::project;
+
+std::string ExpModule::moduleName() const
+{
+    return "iex_exp";
+}
+
+void ExpModule::resolveImports()
+{
+    auto readers = ioc()->resolve<INotationReadersRegister>(moduleName());
+    if (readers) {
+        readers->reg({ "exp" }, std::make_shared<NotationExpReader>());
+    }
+}
