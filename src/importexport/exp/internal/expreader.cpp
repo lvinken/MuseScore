@@ -33,6 +33,7 @@ extern Err importExp(MasterScore* score, const QString& name);
 
 muse::Ret NotationExpReader::read(MasterScore* score, const muse::io::path_t& path, const Options&)
 {
-    Err err = Err::FileUnknownError; // TODO
+    LOGD("path %s", muPrintable(path.toString()));
+    Err err = Err::FileUnknownType; // TODO
     return make_ret(err, path);
 }
