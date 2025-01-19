@@ -22,13 +22,18 @@
 #ifndef MU_IEX_TABLEDITREADER_H
 #define MU_IEX_TABLEDITREADER_H
 
+#include "engraving/engravingerrors.h"
+#include "io/ifilesystem.h"
+#include "modularity/ioc.h"
 #include "project/inotationreader.h"
 
 namespace mu::iex::tabledit {
 class TablEditReader : public project::INotationReader
 {
+    INJECT(muse::io::IFileSystem, fileSystem)
 public:
     muse::Ret read(mu::engraving::MasterScore* score, const muse::io::path_t& path, const Options& options = Options()) override;
+    mu::engraving::Err import(mu::engraving::MasterScore* score, const muse::io::path_t& path, const Options& options = Options());
 };
 }
 
