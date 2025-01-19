@@ -19,39 +19,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#ifndef MU_IMPORTEXPORT_IMPORTTEF_H
+#define MU_IMPORTEXPORT_IMPORTTEF_H
 
-#include "engraving/dom/score.h"
+#include "engraving/dom/masterscore.h"
 #include "engraving/engravingerrors.h"
-#include "io/file.h"
-
-#include "importtef.h"
-#include "tableditreader.h"
-
-using namespace mu::iex::tabledit;
-using namespace mu::engraving;
+#include "io/iodevice.h"
 
 namespace mu::iex::tabledit {
-extern Err importTablEdit(MasterScore* score, const QString& name);
-}
 
-muse::Ret TablEditReader::read(MasterScore* score, const muse::io::path_t& path, const Options&)
+class TablEdit
 {
-    LOGD("path %s", muPrintable(path.toString()));
-    Err err = import(score, path);
-    return make_ret(err, path);
-}
+    muse::io::IODevice* _file = nullptr;
+    mu::engraving::MasterScore* score = nullptr;
 
+public:
+    TablEdit(muse::io::IODevice* f, mu::engraving::MasterScore* s)
+        : _file(f), score(s) {}
+    mu::engraving::Err import();
+};
 
-Err TablEditReader::import(MasterScore* score, const muse::io::path_t& path, const Options& options)
-{
-    LOGD("begin import");
-    if (!fileSystem()->exists(path)) {
-        return Err::FileNotFound;
-    }
+} // namespace mu::iex::tabledit
 
-    muse::io::File file(path);
-    TablEdit tablEdit{&file, score};
-    Err err = tablEdit.import();
+#endif // MU_IMPORTEXPORT_IMPORTTEF_H
 
-    return err;
-}

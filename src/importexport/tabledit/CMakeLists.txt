@@ -25,6 +25,9 @@ set(MODULE_SRC
     ${CMAKE_CURRENT_LIST_DIR}/tableditmodule.h
     ${CMAKE_CURRENT_LIST_DIR}/internal/tableditreader.cpp
     ${CMAKE_CURRENT_LIST_DIR}/internal/tableditreader.h
+
+    ${CMAKE_CURRENT_LIST_DIR}/internal/importtef.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/internal/importtef.h
     )
 
 setup_module()

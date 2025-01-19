@@ -19,39 +19,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-#include "engraving/dom/score.h"
-#include "engraving/engravingerrors.h"
-#include "io/file.h"
-
 #include "importtef.h"
-#include "tableditreader.h"
 
-using namespace mu::iex::tabledit;
+#include "log.h"
+
 using namespace mu::engraving;
 
 namespace mu::iex::tabledit {
-extern Err importTablEdit(MasterScore* score, const QString& name);
-}
 
-muse::Ret TablEditReader::read(MasterScore* score, const muse::io::path_t& path, const Options&)
-{
-    LOGD("path %s", muPrintable(path.toString()));
-    Err err = import(score, path);
-    return make_ret(err, path);
-}
+//---------------------------------------------------------
+//   import
+//---------------------------------------------------------
 
-
-Err TablEditReader::import(MasterScore* score, const muse::io::path_t& path, const Options& options)
+Err TablEdit::import()
 {
     LOGD("begin import");
-    if (!fileSystem()->exists(path)) {
-        return Err::FileNotFound;
-    }
-
-    muse::io::File file(path);
-    TablEdit tablEdit{&file, score};
-    Err err = tablEdit.import();
-
-    return err;
+    //if (!readVersion()) {
+        return Err::FileBadFormat;
+    //}
+    return Err::NoError;
 }
+
+} // namespace mu::iex::tabledit
