@@ -50,6 +50,9 @@ Err TablEditReader::import(MasterScore* score, const muse::io::path_t& path, con
     }
 
     muse::io::File file(path);
+    if (!file.open(muse::io::IODevice::ReadOnly)) {
+        return Err::FileOpenError;
+    }
     TablEdit tablEdit{&file, score};
     Err err = tablEdit.import();
 
