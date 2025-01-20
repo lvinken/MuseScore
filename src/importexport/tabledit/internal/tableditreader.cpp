@@ -36,15 +36,13 @@ extern Err importTablEdit(MasterScore* score, const QString& name);
 
 muse::Ret TablEditReader::read(MasterScore* score, const muse::io::path_t& path, const Options&)
 {
-    LOGD("path %s", muPrintable(path.toString()));
     Err err = import(score, path);
     return make_ret(err, path);
 }
 
 
-Err TablEditReader::import(MasterScore* score, const muse::io::path_t& path, const Options& options)
+Err TablEditReader::import(MasterScore* score, const muse::io::path_t& path, const Options&)
 {
-    LOGD("begin import");
     if (!fileSystem()->exists(path)) {
         return Err::FileNotFound;
     }
