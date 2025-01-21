@@ -37,7 +37,7 @@ class TablEdit
     uint8_t readUInt8();
     uint16_t readUInt16();
     uint32_t readUInt32();
-    string readText(uint32_t offsetOffset);
+    string readText(uint32_t positionOfPosition);
 
     struct TefHeader {
         int version { 0 };
@@ -59,6 +59,7 @@ class TablEdit
         std::string copyright;
     };
 
+    void readTefContents();
     void readTefHeader();
 
     TefHeader tefHeader;
