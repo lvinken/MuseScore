@@ -50,16 +50,16 @@ uint32_t TablEdit::readUInt32()
 }
 
 // read sized utf8 text
-// input is the offset where the text's offset is stored
+// input is the position where the text's position in the file is stored
 
-string TablEdit::readText(uint32_t offsetOffset)
+string TablEdit::readText(uint32_t positionOfPosition)
 {
     string result;
-    _file->seek(offsetOffset);
-    uint32_t offset = readUInt32();
-    _file->seek(offset);
+    _file->seek(positionOfPosition);
+    uint32_t position = readUInt32();
+    _file->seek(position);
     uint16_t size = readUInt16();
-    LOGD("offset %d size %d", offset, size);
+    LOGD("position %d size %d", position, size);
     for (uint16_t i = 0; i < size - 1; ++i) {
         auto c = readUInt8();
         if (0x20 <= c && c <= 0x7E) {
@@ -70,6 +70,15 @@ string TablEdit::readText(uint32_t offsetOffset)
         }
     }
     return result;
+}
+
+void TablEdit::readTefContents()
+{
+    _file->seek(0x3c);
+    uint32_t position = readUInt32();
+    _file->seek(position);
+    uint32_t offset = readUInt32();
+    LOGD("position %d offset %d", position, offset);
 }
 
 void TablEdit::readTefHeader()
@@ -116,9 +125,13 @@ Err TablEdit::import()
     LOGD("notes '%s'", tefHeader.notes.c_str());
     LOGD("copyright '%s'", tefHeader.copyright.c_str());
     LOGD("tbed %d wOldNum %d wFormat %d", tefHeader.tbed, tefHeader.wOldNum, tefHeader.wFormat);
-    //if (!readVersion()) {
+    if ((tefHeader.wFormat >> 8) != 10) {
         return Err::FileBadFormat;
-    //}
+    }
+    if (tefHeader.securityCode != 0) {
+        return Err::FileBadFormat; // todo "file is protected" message ?
+    }
+    readTefContents();
     return Err::NoError;
 }
 
