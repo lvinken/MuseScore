@@ -49,11 +49,17 @@ uint32_t TablEdit::readUInt32()
     return result;
 }
 
-string TablEdit::readText()
+// read sized utf8 text
+// input is the offset where the text's offset is stored
+
+string TablEdit::readText(uint32_t offsetOffset)
 {
     string result;
+    _file->seek(offsetOffset);
+    uint32_t offset = readUInt32();
+    _file->seek(offset);
     uint16_t size = readUInt16();
-    LOGD("size %d", size);
+    LOGD("offset %d size %d", offset, size);
     for (uint16_t i = 0; i < size - 1; ++i) {
         auto c = readUInt8();
         if (0x20 <= c && c <= 0x7E) {
@@ -84,7 +90,11 @@ void TablEdit::readTefHeader()
     auto titlePtr = readUInt32();
     LOGD("titlePtr %d", titlePtr);
     _file->seek(titlePtr);
-    tefHeader.title = readText();
+    tefHeader.title = readText(0x40);
+    tefHeader.subTitle = readText(0x44);
+    tefHeader.comment = readText(0x48);
+    tefHeader.notes = readText(0x4c);
+    tefHeader.copyright = readText(0x8c);
     _file->seek(202);
     tefHeader.wOldNum = readUInt16();
     tefHeader.wFormat = readUInt16();
@@ -101,6 +111,10 @@ Err TablEdit::import()
     LOGD("tempo %d chorus %d reverb %d", tefHeader.tempo, tefHeader.chorus, tefHeader.reverb);
     LOGD("securityCode %d securityFlags %d", tefHeader.securityCode, tefHeader.securityFlags);
     LOGD("title '%s'", tefHeader.title.c_str());
+    LOGD("subTitle '%s'", tefHeader.subTitle.c_str());
+    LOGD("comment '%s'", tefHeader.comment.c_str());
+    LOGD("notes '%s'", tefHeader.notes.c_str());
+    LOGD("copyright '%s'", tefHeader.copyright.c_str());
     LOGD("tbed %d wOldNum %d wFormat %d", tefHeader.tbed, tefHeader.wOldNum, tefHeader.wFormat);
     //if (!readVersion()) {
         return Err::FileBadFormat;
