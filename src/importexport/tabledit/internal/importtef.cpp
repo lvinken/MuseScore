@@ -72,6 +72,7 @@ string TablEdit::readText(uint32_t positionOfPosition)
     return result;
 }
 
+// todo handle rest
 void TablEdit::readTefContents()
 {
     _file->seek(0x3c);
@@ -79,6 +80,30 @@ void TablEdit::readTefContents()
     _file->seek(position);
     uint32_t offset = readUInt32();
     LOGD("position %d offset %d", position, offset);
+    while (offset != 0xFFFFFFFF) {
+        uint8_t byte1 = readUInt8();
+        uint8_t byte2 = readUInt8();
+        uint8_t byte3 = readUInt8();
+        uint8_t byte4 = readUInt8();
+        uint8_t byte5 = readUInt8();
+        uint8_t byte6 = readUInt8();
+        uint8_t byte7 = readUInt8();
+        uint8_t byte8 = readUInt8();
+        const int nstrings { 6 }; // todo
+        TefNote note;
+        note.position = position = (offset >> 3) / nstrings;
+        const auto noteRestMarker = byte1 & 0x3F;
+        if (noteRestMarker < 0x33) {
+            note.string = ((offset >> 3) % nstrings) + 1;
+            note.fret = noteRestMarker - 1;
+            note.duration = byte2 & 0x1F;
+            note.voice = (byte3 & 0x30) / 0x10;
+        }
+        LOGD("offset %d position %d string %d fret %d duration %d voice %d",
+             offset, note.position, note.string, note.fret, note.duration, note.voice);
+        tefContents.push_back(note);
+        offset = readUInt32();
+    }
 }
 
 void TablEdit::readTefHeader()
