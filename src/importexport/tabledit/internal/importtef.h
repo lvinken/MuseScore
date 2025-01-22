@@ -34,6 +34,7 @@ class TablEdit
     muse::io::IODevice* _file = nullptr;
     /* todo mu::engraving::MasterScore* score = nullptr; */
 
+    int8_t readInt8();
     uint8_t readUInt8();
     uint16_t readUInt16();
     uint32_t readUInt32();
@@ -59,6 +60,14 @@ class TablEdit
         std::string copyright;
     };
 
+    struct TefMeasure {
+        int flag { 0 };
+        int key { 0 };
+        int size { 0 };
+        int numerator { 0 };
+        int denominator { 0 };
+    };
+
     struct TefNote {
         int position { 0 };
         int string { 0 };
@@ -69,9 +78,11 @@ class TablEdit
 
     void readTefContents();
     void readTefHeader();
+    void readTefMeasures();
 
     TefHeader tefHeader;
     vector<TefNote> tefContents;
+    vector<TefMeasure> tefMeasures;
 
 public:
     TablEdit(muse::io::IODevice* f, mu::engraving::MasterScore* /* todo s */)

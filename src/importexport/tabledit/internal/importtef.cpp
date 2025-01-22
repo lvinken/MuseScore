@@ -27,6 +27,12 @@ using namespace mu::engraving;
 
 namespace mu::iex::tabledit {
 
+int8_t TablEdit::readInt8()
+{
+    int8_t result;
+    _file->read((uint8_t*)&result, 1);
+    return result;
+}
 
 uint8_t TablEdit::readUInt8()
 {
@@ -104,6 +110,27 @@ void TablEdit::readTefContents()
     }
 }
 
+void TablEdit::readTefMeasures()
+{
+    _file->seek(0x5c);
+    uint32_t position = readUInt32();
+    _file->seek(position);
+    /* uint16_t structSize = */ readUInt16();
+    uint16_t numberOfMeasures = readUInt16();
+    /* uint32_t zero = */ readUInt32();
+    for (uint16_t i = 0; i < numberOfMeasures; ++i) {
+        TefMeasure measure;
+        measure.flag = readUInt8();
+        /* uint8_t uTmp = */ readUInt8();
+        measure.key = readInt8();
+        measure.size = readUInt8();
+        measure.denominator = readUInt8();
+        measure.numerator = readUInt8();
+        /* uint16_t margins = */ readUInt16();
+        tefMeasures.push_back(measure);
+    }
+}
+
 void TablEdit::readTefHeader()
 {
     readUInt16(); // skip private01
@@ -158,6 +185,11 @@ Err TablEdit::import()
     for (const auto& note : tefContents) {
         LOGD("position %d string %d fret %d duration %d voice %d",
              note.position, note.string, note.fret, note.duration, note.voice);
+    }
+    readTefMeasures();
+    for (const auto& measure : tefMeasures) {
+        LOGD("flag %d key %d size %d numerator %d denominator %d",
+             measure.flag, measure.key, measure.size, measure.numerator, measure.denominator);
     }
     return Err::NoError;
 }
