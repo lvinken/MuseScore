@@ -59,10 +59,19 @@ class TablEdit
         std::string copyright;
     };
 
+    struct TefNote {
+        int position { 0 };
+        int string { 0 };
+        int fret { 0 };
+        int duration { 0 };
+        int voice { 0 };
+    };
+
     void readTefContents();
     void readTefHeader();
 
     TefHeader tefHeader;
+    vector<TefNote> tefContents;
 
 public:
     TablEdit(muse::io::IODevice* f, mu::engraving::MasterScore* /* todo s */)
