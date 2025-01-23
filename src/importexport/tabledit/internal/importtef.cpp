@@ -21,6 +21,11 @@
  */
 #include "importtef.h"
 
+#include "engraving/dom/chord.h"
+#include "engraving/dom/factory.h"
+#include "engraving/dom/note.h"
+#include "engraving/dom/part.h"
+#include "engraving/dom/timesig.h"
 #include "log.h"
 
 using namespace mu::engraving;
@@ -76,6 +81,62 @@ string TablEdit::readText(uint32_t positionOfPosition)
         }
     }
     return result;
+}
+
+void TablEdit::createMeasures()
+{
+    Fraction tick { 0, 1 }; // start tick
+    for (const auto& tefMeasure : tefMeasures) {
+        // create measure
+        auto measure = Factory::createMeasure(score->dummy()->system());
+        measure->setTick(tick);
+        Fraction length{ tefMeasure.numerator, tefMeasure.denominator };
+        measure->setTimesig(length);
+        measure->setTicks(length);
+        measure->setEndBarLineType(BarLineType::NORMAL, 0);
+        score->measures()->add(measure);
+
+        if (tick == Fraction { 0, 1 }) {
+            auto s1 = measure->getSegment(mu::engraving::SegmentType::TimeSig, tick);
+            mu::engraving::TimeSig* timesig = Factory::createTimeSig(s1);
+            timesig->setSig(length);
+            timesig->setTrack(0);
+            s1->add(timesig);
+        }
+
+        // create chord
+        mu::engraving::Chord* cr = Factory::createChord(score->dummy()->segment());
+        cr->setTrack(0);
+        cr->setDurationType(DurationType::V_WHOLE);
+        cr->setTicks(length);
+        // add note to chord
+        mu::engraving::Note* note = Factory::createNote(cr);
+        note->setTrack(0);
+        int pitch {60};
+        note->setPitch(pitch);
+        note->setTpcFromPitch(Prefer::NEAREST);
+        cr->add(note);
+        // add chord to measure
+        auto s2 = measure->getSegment(mu::engraving::SegmentType::ChordRest, tick);
+        s2->add(cr);
+
+        tick += length;
+    }
+}
+
+void TablEdit::createScore()
+{
+    Part* part = new Part(score);
+    score->appendPart(part);
+
+    Staff* staff = Factory::createStaff(part);
+    score->appendStaff(staff);
+
+    createMeasures();
+
+#if 0
+
+#endif
 }
 
 // todo handle rest
@@ -234,6 +295,7 @@ Err TablEdit::import()
         LOGD("stringNumber %d firstString %d midiVoice %d midiBank %d",
              instrument.stringNumber, instrument.firstString, instrument.midiVoice, instrument.midiBank);
     }
+    createScore();
     return Err::NoError;
 }
 
