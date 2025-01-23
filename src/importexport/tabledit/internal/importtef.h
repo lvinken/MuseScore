@@ -32,7 +32,7 @@ namespace mu::iex::tabledit {
 class TablEdit
 {
     muse::io::IODevice* _file = nullptr;
-    /* todo mu::engraving::MasterScore* score = nullptr; */
+    mu::engraving::MasterScore* score = nullptr;
 
     int8_t readInt8();
     uint8_t readUInt8();
@@ -94,6 +94,8 @@ class TablEdit
         int voice { 0 };
     };
 
+    void createMeasures();
+    void createScore();
     void readTefContents();
     void readTefHeader();
     void readTefInstruments();
@@ -105,8 +107,8 @@ class TablEdit
     vector<TefMeasure> tefMeasures;
 
 public:
-    TablEdit(muse::io::IODevice* f, mu::engraving::MasterScore* /* todo s */)
-        : _file(f) /* todo , score(s) */ {}
+    TablEdit(muse::io::IODevice* f, mu::engraving::MasterScore* s)
+        : _file(f), score(s) {}
     mu::engraving::Err import();
 };
 
