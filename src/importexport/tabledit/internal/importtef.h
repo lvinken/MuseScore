@@ -60,6 +60,24 @@ class TablEdit
         std::string copyright;
     };
 
+    struct TefInstrument {
+        int stringNumber { 0 };
+        int firstString { 0 };
+        int available16U { 0 };
+        int verticalSpacing { 0 };
+        int midiVoice { 0 };
+        int midiBank { 0 };
+        int nBanjo5 { 0 };
+        int uSpec { 0 };
+        int nCapo { 0 };
+        int fMiddleC { 0 };
+        int fClef { 0 };
+        int output { 0 };
+        int options { 0 };
+        array<int, 12> tuning = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        std::string name;
+    };
+
     struct TefMeasure {
         int flag { 0 };
         int key { 0 };
@@ -78,10 +96,12 @@ class TablEdit
 
     void readTefContents();
     void readTefHeader();
+    void readTefInstruments();
     void readTefMeasures();
 
     TefHeader tefHeader;
     vector<TefNote> tefContents;
+    vector<TefInstrument> tefInstruments;
     vector<TefMeasure> tefMeasures;
 
 public:

@@ -110,6 +110,44 @@ void TablEdit::readTefContents()
     }
 }
 
+void TablEdit::readTefInstruments()
+{
+    _file->seek(0x60);
+    uint32_t position = readUInt32();
+    _file->seek(position);
+    uint16_t structSize = readUInt16();
+    uint16_t numberOfInstruments = readUInt16();
+    //uint32_t zero = readUInt16();
+    LOGD("structSize %d numberOfInstruments %d", structSize, numberOfInstruments);
+    for (uint16_t i = 0; i < numberOfInstruments; ++i) {
+        TefInstrument instrument;
+        instrument.stringNumber = readUInt16();
+        instrument.firstString = readUInt16();
+        instrument.available16U = readUInt16();
+        instrument.verticalSpacing = readUInt16();
+        instrument.midiVoice = readUInt8();
+        instrument.midiBank = readUInt8();
+        instrument.nBanjo5 = readUInt8();
+        instrument.uSpec = readUInt8();
+        instrument.nCapo = readUInt16();
+        instrument.fMiddleC = readUInt8();
+        instrument.fClef = readUInt8();
+        instrument.output = readUInt16();
+        instrument.options = readUInt16();
+        for (uint16_t i = 0; i < 12; ++i) {
+            auto n = readUInt8();
+            instrument.tuning[i] = n;
+        }
+        for (uint16_t i = 0; i < 36; ++i) {
+            auto c = readUInt8();
+            if (0x20 <= c && c <= 0x7E) {
+                instrument.name += static_cast<char>(c);
+            }
+        }
+        tefInstruments.push_back(instrument);
+    }
+}
+
 void TablEdit::readTefMeasures()
 {
     _file->seek(0x5c);
@@ -190,6 +228,11 @@ Err TablEdit::import()
     for (const auto& measure : tefMeasures) {
         LOGD("flag %d key %d size %d numerator %d denominator %d",
              measure.flag, measure.key, measure.size, measure.numerator, measure.denominator);
+    }
+    readTefInstruments();
+    for (const auto& instrument : tefInstruments) {
+        LOGD("stringNumber %d firstString %d midiVoice %d midiBank %d",
+             instrument.stringNumber, instrument.firstString, instrument.midiVoice, instrument.midiBank);
     }
     return Err::NoError;
 }
