@@ -21,10 +21,13 @@
  */
 #include "importtef.h"
 
+#include "engraving/dom/box.h"
 #include "engraving/dom/chord.h"
 #include "engraving/dom/factory.h"
+#include "engraving/dom/measurebase.h"
 #include "engraving/dom/note.h"
 #include "engraving/dom/part.h"
+#include "engraving/dom/text.h"
 #include "engraving/dom/timesig.h"
 #include "log.h"
 
@@ -197,8 +200,24 @@ void TablEdit::createScore()
     Staff* staff = Factory::createStaff(part);
     score->appendStaff(staff);
 
+    createTitleFrame();
     createMeasures();
     createNotes();
+}
+
+void TablEdit::createTitleFrame()
+{
+    VBox* vbox = Factory::createTitleVBox(score->dummy()->system());
+    vbox->setTick(mu::engraving::Fraction(0, 1));
+    score->measures()->add(vbox);
+    std::string title = tefHeader.title;
+    if (!title.empty()) {
+        Text* s = Factory::createText(vbox, TextStyleType::TITLE);
+        std::string valid;
+        muse::UtfCodec::replaceInvalid(title, valid);
+        s->setPlainText(String::fromStdString(valid));
+        vbox->add(s);
+    }
 }
 
 /*
