@@ -139,6 +139,69 @@ void TablEdit::createScore()
 #endif
 }
 
+/*
+ * encoding of note durations
+ * 0 whole
+ * 1 half dotted
+ * 2 whole triplet
+ * 3 half
+ * 4 quarter dotted
+ * 5 half triplet
+ * 6 quarter
+ * 7 eight dotted
+ * 8 quarter triplet
+ * ...
+ * 18 1/64th note
+ */
+
+// return note length in 64th
+
+static int duration2length(const int duration) {
+    if (0 <= duration && duration <= 18) {
+        // remove dot and triplet
+        int noteType { 0 };
+        int dotOrTriplet { duration % 3 };
+        switch (dotOrTriplet) {
+        case 0: noteType = duration / 3; break;
+        case 1: noteType = (duration + 2) / 3; break;
+        case 2: noteType = (duration + 1) / 3; break;
+        default: LOGD("impossible value %d", dotOrTriplet);
+        }
+        switch (noteType) {
+        case 0: return 64; // 1/1
+        case 1: return 32; // 1/2
+        case 2: return 16; // 1/4
+        case 3: return  8; // 1/8
+        case 4: return  4; // 1/16
+        case 5: return  2; // 1/32
+        case 6: return  1; // 1/64
+        default: LOGD("impossible value %d", dotOrTriplet);
+        }
+    }
+    LOGD("invalid note duration %d", duration);
+    return 0; // invalid
+}
+
+static bool duration2dotted(const int duration) {
+    if (0 <= duration && duration <= 18) {
+        return duration % 3 == 1;
+    }
+    else {
+        LOGD("invalid note duration %d", duration);
+        return false; // invalid
+    }
+}
+
+static bool duration2triplet(const int duration) {
+    if (0 <= duration && duration <= 18) {
+        return duration % 3 == 2;
+    }
+    else {
+        LOGD("invalid note duration %d", duration);
+        return false; // invalid
+    }
+}
+
 // todo handle rest
 void TablEdit::readTefContents()
 {
@@ -164,6 +227,9 @@ void TablEdit::readTefContents()
             note.string = ((offset >> 3) % nstrings) + 1;
             note.fret = noteRestMarker - 1;
             note.duration = byte2 & 0x1F;
+            note.length = duration2length(note.duration);
+            note.dotted = duration2dotted(note.duration);
+            note.triplet = duration2triplet(note.duration);
             note.voice = (byte3 & 0x30) / 0x10;
         }
         tefContents.push_back(note);
@@ -282,8 +348,8 @@ Err TablEdit::import()
     }
     readTefContents();
     for (const auto& note : tefContents) {
-        LOGD("position %d string %d fret %d duration %d voice %d",
-             note.position, note.string, note.fret, note.duration, note.voice);
+        LOGD("position %d string %d fret %d duration %d length %d dotted %d triplet %d voice %d",
+             note.position, note.string, note.fret, note.duration, note.length, note.dotted, note.triplet, note.voice);
     }
     readTefMeasures();
     for (const auto& measure : tefMeasures) {
