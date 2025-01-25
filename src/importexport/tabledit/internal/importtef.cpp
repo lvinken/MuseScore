@@ -291,11 +291,11 @@ void TablEdit::readTefContents()
         uint8_t byte1 = readUInt8();
         uint8_t byte2 = readUInt8();
         uint8_t byte3 = readUInt8();
-        uint8_t byte4 = readUInt8();
-        uint8_t byte5 = readUInt8();
-        uint8_t byte6 = readUInt8();
-        uint8_t byte7 = readUInt8();
-        uint8_t byte8 = readUInt8();
+        /* uint8_t byte4 = */ readUInt8();
+        /* uint8_t byte5 = */ readUInt8();
+        /* uint8_t byte6 = */ readUInt8();
+        /* uint8_t byte7 = */ readUInt8();
+        /* uint8_t byte8 = */ readUInt8();
         const int nstrings { 6 }; // todo
         TefNote note;
         note.position = (offset >> 3) / nstrings;
