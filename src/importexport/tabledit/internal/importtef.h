@@ -91,6 +91,9 @@ class TablEdit
         int string { 0 };
         int fret { 0 };
         int duration { 0 };
+        int length { 0 };
+        bool dotted { false };
+        bool triplet { false };
         int voice { 0 };
     };
 
