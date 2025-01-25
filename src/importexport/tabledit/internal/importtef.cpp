@@ -103,45 +103,89 @@ void TablEdit::createMeasures()
             timesig->setTrack(0);
             s1->add(timesig);
         }
+
+        tick += length;
     }
 }
+
+static std::array<int, 6> stdTuning = { 40, 45, 50, 55, 59, 64 };
 
 void TablEdit::createNotes()
 {
     for (const auto& tefNote : tefContents) {
-        if (0 <= tefNote.voice && tefNote.voice <= 3) {
-            // create chord
-            mu::engraving::Chord* cr = Factory::createChord(score->dummy()->segment());
-            cr->setTrack(tefNote.voice); // TODO staff
-            Fraction length { tefNote.length, 64 }; // length is in 64th
-            if (tefNote.dotted) {
-                length *= Fraction{ 3, 2 };
-            }
-            // TODO: triplets
-            LOGD("length %d/%d", length.numerator(), length.denominator());
-            TDuration tDuration(length);
-            if (tefNote.dotted) {
-                tDuration.setDots(1);
-            }
-            cr->setDurationType(tDuration);
-            cr->setTicks(length);
-            // add note to chord
-            mu::engraving::Note* note = Factory::createNote(cr);
-            note->setTrack(tefNote.voice);
-            int pitch {60};
-            note->setPitch(pitch);
-            note->setTpcFromPitch(Prefer::NEAREST);
-            cr->add(note);
-            // add chord to measure
-            Fraction tick { tefNote.position, 64 }; // position is in 64th
-            LOGD("tick %d/%d", tick.numerator(), tick.denominator());
-            Measure* measure { score->tick2measure(tick) };
-            Segment* segment { measure->getSegment(mu::engraving::SegmentType::ChordRest, tick) };
-            segment->add(cr);
+        if (tefInstruments.size() == 0) {
+            LOGD("no instruments");
+            return;
         }
-        else {
+
+        const TefInstrument& instrument { tefInstruments.at(0) };
+        if (instrument.stringNumber < 1 || 12 < instrument.stringNumber) {
+            LOGD("invalid instrument.stringNumber %d", instrument.stringNumber);
+            return;
+        }
+
+        if (instrument.stringNumber != 6
+            || instrument.tuning.at(0) != 32
+            || instrument.tuning.at(1) != 37
+            || instrument.tuning.at(2) != 41
+            || instrument.tuning.at(3) != 46
+            || instrument.tuning.at(4) != 51
+            || instrument.tuning.at(5) != 56
+            ) {
+            LOGD("non-standard instrument tuning");
+            return;
+        }
+
+        if (tefNote.string < 1 || instrument.stringNumber < tefNote.string) {
+            LOGD("invalid string %d", tefNote.string);
+            continue;
+        }
+
+        if (tefNote.voice < 0 || 3 < tefNote.voice) {
             LOGD("invalid voice %d", tefNote.voice);
+            continue;
         }
+
+        // create chord
+        mu::engraving::Chord* cr = Factory::createChord(score->dummy()->segment());
+        cr->setTrack(tefNote.voice); // TODO staff
+        Fraction length { tefNote.length, 64 }; // length is in 64th
+        if (tefNote.dotted) {
+            length *= Fraction{ 3, 2 };
+        }
+        // TODO: triplets
+        LOGD("length %d/%d", length.numerator(), length.denominator());
+        TDuration tDuration(length);
+        if (tefNote.dotted) {
+            tDuration.setDots(1);
+        }
+        cr->setDurationType(tDuration);
+        cr->setTicks(length);
+        // add note to chord
+        mu::engraving::Note* note = Factory::createNote(cr);
+        note->setTrack(tefNote.voice);
+        LOGD("string %d fret %d", tefNote.string, tefNote.fret);
+        int pitch { stdTuning.at(instrument.stringNumber - tefNote.string) + tefNote.fret };
+        //pitch += 8; // ???
+        //int pitch { instrument.tuning.at(tefNote.string) + tefNote.fret };
+        LOGD("pitch %d", pitch);
+        note->setPitch(pitch);
+        note->setTpcFromPitch(Prefer::NEAREST);
+        cr->add(note);
+        // add chord to measure
+        Fraction tick { tefNote.position, 64 }; // position is in 64th
+        LOGD("tick %d/%d", tick.numerator(), tick.denominator());
+        Measure* measure { score->tick2measure(tick) };
+        if (!measure) {
+            LOGD("no measure");
+            return;
+        }
+        Segment* segment { measure->getSegment(mu::engraving::SegmentType::ChordRest, tick) };
+        if (!segment) {
+            LOGD("no segment");
+            return;
+        }
+        segment->add(cr);
     }
 }
 
