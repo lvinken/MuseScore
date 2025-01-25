@@ -38,7 +38,7 @@ class TablEdit
     uint8_t readUInt8();
     uint16_t readUInt16();
     uint32_t readUInt32();
-    string readText(uint32_t positionOfPosition);
+    string readUtf8Text(uint32_t positionOfPosition);
 
     struct TefHeader {
         int version { 0 };
