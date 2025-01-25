@@ -100,6 +100,7 @@ class TablEdit
     void createMeasures();
     void createNotes();
     void createScore();
+    void createTitleFrame();
     void readTefContents();
     void readTefHeader();
     void readTefInstruments();
