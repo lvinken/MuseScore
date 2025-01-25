@@ -66,7 +66,7 @@ uint32_t TablEdit::readUInt32()
 // read sized utf8 text
 // input is the position where the text's position in the file is stored
 
-string TablEdit::readText(uint32_t positionOfPosition)
+string TablEdit::readUtf8Text(uint32_t positionOfPosition)
 {
     string result;
     _file->seek(positionOfPosition);
@@ -75,13 +75,7 @@ string TablEdit::readText(uint32_t positionOfPosition)
     uint16_t size = readUInt16();
     LOGD("position %d size %d", position, size);
     for (uint16_t i = 0; i < size - 1; ++i) {
-        auto c = readUInt8();
-        if (0x20 <= c && c <= 0x7E) {
-            result += static_cast<char>(c);
-        }
-        else {
-            result += '.';
-        }
+        result += readUInt8();
     }
     return result;
 }
@@ -210,12 +204,14 @@ void TablEdit::createTitleFrame()
     VBox* vbox = Factory::createTitleVBox(score->dummy()->system());
     vbox->setTick(mu::engraving::Fraction(0, 1));
     score->measures()->add(vbox);
-    std::string title = tefHeader.title;
-    if (!title.empty()) {
+    if (!tefHeader.title.empty()) {
         Text* s = Factory::createText(vbox, TextStyleType::TITLE);
-        std::string valid;
-        muse::UtfCodec::replaceInvalid(title, valid);
-        s->setPlainText(String::fromStdString(valid));
+        s->setPlainText(String::fromUtf8(tefHeader.title.c_str()));
+        vbox->add(s);
+    }
+    if (!tefHeader.subTitle.empty()) {
+        Text* s = Factory::createText(vbox, TextStyleType::SUBTITLE);
+        s->setPlainText(String::fromUtf8(tefHeader.subTitle.c_str()));
         vbox->add(s);
     }
 }
@@ -395,11 +391,11 @@ void TablEdit::readTefHeader()
     auto titlePtr = readUInt32();
     LOGD("titlePtr %d", titlePtr);
     _file->seek(titlePtr);
-    tefHeader.title = readText(0x40);
-    tefHeader.subTitle = readText(0x44);
-    tefHeader.comment = readText(0x48);
-    tefHeader.notes = readText(0x4c);
-    tefHeader.copyright = readText(0x8c);
+    tefHeader.title = readUtf8Text(0x40);
+    tefHeader.subTitle = readUtf8Text(0x44);
+    tefHeader.comment = readUtf8Text(0x48);
+    tefHeader.notes = readUtf8Text(0x4c);
+    tefHeader.copyright = readUtf8Text(0x8c);
     _file->seek(202);
     tefHeader.wOldNum = readUInt16();
     tefHeader.wFormat = readUInt16();
