@@ -103,24 +103,45 @@ void TablEdit::createMeasures()
             timesig->setTrack(0);
             s1->add(timesig);
         }
+    }
+}
 
-        // create chord
-        mu::engraving::Chord* cr = Factory::createChord(score->dummy()->segment());
-        cr->setTrack(0);
-        cr->setDurationType(DurationType::V_WHOLE);
-        cr->setTicks(length);
-        // add note to chord
-        mu::engraving::Note* note = Factory::createNote(cr);
-        note->setTrack(0);
-        int pitch {60};
-        note->setPitch(pitch);
-        note->setTpcFromPitch(Prefer::NEAREST);
-        cr->add(note);
-        // add chord to measure
-        auto s2 = measure->getSegment(mu::engraving::SegmentType::ChordRest, tick);
-        s2->add(cr);
-
-        tick += length;
+void TablEdit::createNotes()
+{
+    for (const auto& tefNote : tefContents) {
+        if (0 <= tefNote.voice && tefNote.voice <= 3) {
+            // create chord
+            mu::engraving::Chord* cr = Factory::createChord(score->dummy()->segment());
+            cr->setTrack(tefNote.voice); // TODO staff
+            Fraction length { tefNote.length, 64 }; // length is in 64th
+            if (tefNote.dotted) {
+                length *= Fraction{ 3, 2 };
+            }
+            // TODO: triplets
+            LOGD("length %d/%d", length.numerator(), length.denominator());
+            TDuration tDuration(length);
+            if (tefNote.dotted) {
+                tDuration.setDots(1);
+            }
+            cr->setDurationType(tDuration);
+            cr->setTicks(length);
+            // add note to chord
+            mu::engraving::Note* note = Factory::createNote(cr);
+            note->setTrack(tefNote.voice);
+            int pitch {60};
+            note->setPitch(pitch);
+            note->setTpcFromPitch(Prefer::NEAREST);
+            cr->add(note);
+            // add chord to measure
+            Fraction tick { tefNote.position, 64 }; // position is in 64th
+            LOGD("tick %d/%d", tick.numerator(), tick.denominator());
+            Measure* measure { score->tick2measure(tick) };
+            Segment* segment { measure->getSegment(mu::engraving::SegmentType::ChordRest, tick) };
+            segment->add(cr);
+        }
+        else {
+            LOGD("invalid voice %d", tefNote.voice);
+        }
     }
 }
 
@@ -133,10 +154,7 @@ void TablEdit::createScore()
     score->appendStaff(staff);
 
     createMeasures();
-
-#if 0
-
-#endif
+    createNotes();
 }
 
 /*
