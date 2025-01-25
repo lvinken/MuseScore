@@ -24,6 +24,7 @@
 #include "engraving/dom/box.h"
 #include "engraving/dom/chord.h"
 #include "engraving/dom/factory.h"
+#include "engraving/dom/keysig.h"
 #include "engraving/dom/measurebase.h"
 #include "engraving/dom/note.h"
 #include "engraving/dom/part.h"
@@ -82,7 +83,7 @@ string TablEdit::readUtf8Text(uint32_t positionOfPosition)
 
 void TablEdit::createMeasures()
 {
-    Fraction tick { 0, 1 }; // start tick
+    Fraction tick { 0, 1 };
     for (const auto& tefMeasure : tefMeasures) {
         // create measure
         auto measure = Factory::createMeasure(score->dummy()->system());
@@ -94,11 +95,24 @@ void TablEdit::createMeasures()
         score->measures()->add(measure);
 
         if (tick == Fraction { 0, 1 }) {
-            auto s1 = measure->getSegment(mu::engraving::SegmentType::TimeSig, tick);
-            mu::engraving::TimeSig* timesig = Factory::createTimeSig(s1);
+            auto s1 = measure->getSegment(mu::engraving::SegmentType::HeaderClef, tick);
+            auto clef = Factory::createClef(s1);
+            clef->setTrack(0);
+            ClefType clefId { ClefType::G8_VB };
+            clef->setClefType(clefId);
+            s1->add(clef);
+
+            auto s2 = measure->getSegment(mu::engraving::SegmentType::KeySig, tick);
+            mu::engraving::KeySig* keysig = Factory::createKeySig(s2);
+            keysig->setKey(Key(tefMeasure.key));
+            keysig->setTrack(0);
+            s2->add(keysig);
+
+            auto s3 = measure->getSegment(mu::engraving::SegmentType::TimeSig, tick);
+            mu::engraving::TimeSig* timesig = Factory::createTimeSig(s3);
             timesig->setSig(length);
             timesig->setTrack(0);
-            s1->add(timesig);
+            s3->add(timesig);
         }
 
         tick += length;
