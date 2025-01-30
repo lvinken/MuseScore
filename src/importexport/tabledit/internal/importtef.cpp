@@ -296,6 +296,18 @@ static bool duration2triplet(const int duration) {
 // todo handle rest
 void TablEdit::readTefContents()
 {
+    // calculate the total number of strings
+    // instruments must have been read before reading contents
+    if (tefInstruments.empty()) {
+        LOGD("no instruments");
+        return;
+    }
+    int totalNumberOfStrings { 0 };
+    for (const auto& instrument : tefInstruments) {
+        totalNumberOfStrings += instrument.stringNumber;
+    }
+    LOGD("totalNumberOfStrings %d", totalNumberOfStrings);
+
     _file->seek(0x3c);
     uint32_t position = readUInt32();
     _file->seek(position);
@@ -310,12 +322,11 @@ void TablEdit::readTefContents()
         /* uint8_t byte6 = */ readUInt8();
         /* uint8_t byte7 = */ readUInt8();
         /* uint8_t byte8 = */ readUInt8();
-        const int nstrings { 6 }; // todo
         TefNote note;
-        note.position = (offset >> 3) / nstrings;
+        note.position = (offset >> 3) / totalNumberOfStrings;
         const auto noteRestMarker = byte1 & 0x3F;
         if (noteRestMarker < 0x33) {
-            note.string = ((offset >> 3) % nstrings) + 1;
+            note.string = ((offset >> 3) % totalNumberOfStrings) + 1;
             note.fret = noteRestMarker - 1;
             note.duration = byte2 & 0x1F;
             note.length = duration2length(note.duration);
@@ -327,6 +338,10 @@ void TablEdit::readTefContents()
         offset = readUInt32();
     }
 }
+
+// tuning to MIDI: 96 - tuning[string] with string 0 is highest
+// MIDI E2 = 40 E4 = 64
+// todo: check interaction with fMiddleC
 
 void TablEdit::readTefInstruments()
 {
@@ -356,9 +371,15 @@ void TablEdit::readTefInstruments()
             auto n = readUInt8();
             instrument.tuning[i] = n;
         }
+        // name is a zero-terminated utf8 string
+        bool atEnd = false;
         for (uint16_t i = 0; i < 36; ++i) {
             auto c = readUInt8();
-            if (0x20 <= c && c <= 0x7E) {
+            if (c == 0) {
+                // stop appending, but continue reading
+                atEnd = true;
+            }
+            if (0x20 <= c && c <= 0x7E && !atEnd) {
                 instrument.name += static_cast<char>(c);
             }
         }
@@ -437,11 +458,6 @@ Err TablEdit::import()
     if (tefHeader.securityCode != 0) {
         return Err::FileBadFormat; // todo "file is protected" message ?
     }
-    readTefContents();
-    for (const auto& note : tefContents) {
-        LOGD("position %d string %d fret %d duration %d length %d dotted %d triplet %d voice %d",
-             note.position, note.string, note.fret, note.duration, note.length, note.dotted, note.triplet, note.voice);
-    }
     readTefMeasures();
     for (const auto& measure : tefMeasures) {
         LOGD("flag %d key %d size %d numerator %d denominator %d",
@@ -451,6 +467,11 @@ Err TablEdit::import()
     for (const auto& instrument : tefInstruments) {
         LOGD("stringNumber %d firstString %d midiVoice %d midiBank %d",
              instrument.stringNumber, instrument.firstString, instrument.midiVoice, instrument.midiBank);
+    }
+    readTefContents();
+    for (const auto& note : tefContents) {
+        LOGD("position %d string %d fret %d duration %d length %d dotted %d triplet %d voice %d",
+             note.position, note.string, note.fret, note.duration, note.length, note.dotted, note.triplet, note.voice);
     }
     createScore();
     return Err::NoError;
