@@ -119,8 +119,6 @@ void TablEdit::createMeasures()
     }
 }
 
-static std::array<int, 6> stdTuning = { 40, 45, 50, 55, 59, 64 };
-
 void TablEdit::createNotes()
 {
     for (const auto& tefNote : tefContents) {
@@ -132,18 +130,6 @@ void TablEdit::createNotes()
         const TefInstrument& instrument { tefInstruments.at(0) };
         if (instrument.stringNumber < 1 || 12 < instrument.stringNumber) {
             LOGD("invalid instrument.stringNumber %d", instrument.stringNumber);
-            return;
-        }
-
-        if (instrument.stringNumber != 6
-            || instrument.tuning.at(0) != 32
-            || instrument.tuning.at(1) != 37
-            || instrument.tuning.at(2) != 41
-            || instrument.tuning.at(3) != 46
-            || instrument.tuning.at(4) != 51
-            || instrument.tuning.at(5) != 56
-            ) {
-            LOGD("non-standard instrument tuning");
             return;
         }
 
@@ -175,11 +161,8 @@ void TablEdit::createNotes()
         // add note to chord
         mu::engraving::Note* note = Factory::createNote(cr);
         note->setTrack(tefNote.voice);
-        LOGD("string %d fret %d", tefNote.string, tefNote.fret);
-        int pitch { stdTuning.at(instrument.stringNumber - tefNote.string) + tefNote.fret };
-        //pitch += 8; // ???
-        //int pitch { instrument.tuning.at(tefNote.string) + tefNote.fret };
-        LOGD("pitch %d", pitch);
+        int pitch = 96 - instrument.tuning.at(tefNote.string - 1)  + tefNote.fret;  // todo fix magical constant and code duplication
+        LOGD("string %d fret %d pitch %d", tefNote.string, tefNote.fret, pitch);
         note->setPitch(pitch);
         note->setTpcFromPitch(Prefer::NEAREST);
         cr->add(note);
@@ -200,14 +183,36 @@ void TablEdit::createNotes()
     }
 }
 
+void TablEdit::createParts()
+{
+    for (const auto& instrument : tefInstruments) {
+        Part* part = new Part(score);
+        score->appendPart(part);
+        String staffName { String::fromUtf8(instrument.name.c_str()) };
+        part->setPartName(staffName);
+        part->setPlainLongName(staffName);
+
+        StringData stringData;
+        stringData.setFrets(25); // reasonable default (?)
+        for (int i = 0; i < instrument.stringNumber; ++i) {
+            int pitch = 96 - instrument.tuning.at(instrument.stringNumber - i - 1);
+            LOGD("pitch %d", pitch);
+            instrString str { pitch };
+            stringData.stringList().push_back(str);
+        }
+        part->instrument()->setStringData(stringData);
+
+        part->setMidiProgram(instrument.midiVoice);
+        part->setMidiChannel(instrument.midiBank);
+
+        Staff* staff = Factory::createStaff(part);
+        score->appendStaff(staff);
+    }
+}
+
 void TablEdit::createScore()
 {
-    Part* part = new Part(score);
-    score->appendPart(part);
-
-    Staff* staff = Factory::createStaff(part);
-    score->appendStaff(staff);
-
+    createParts();
     createTitleFrame();
     createMeasures();
     createNotes();
