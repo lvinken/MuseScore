@@ -36,12 +36,12 @@
         <trackName></trackName>
         <StringData>
           <frets>25</frets>
-          <string>40</string>
-          <string>45</string>
+          <string>36</string>
+          <string>43</string>
           <string>50</string>
-          <string>55</string>
-          <string>59</string>
+          <string>57</string>
           <string>64</string>
+          <string>67</string>
           </StringData>
         <Channel>
           <program value="25"/>
@@ -53,7 +53,7 @@
         <height>10</height>
         <Text>
           <style>title</style>
-          <text>Guitar (standard)</text>
+          <text>Guitar (new standard tuning)</text>
           </Text>
         </VBox>
       <Measure>
@@ -67,14 +67,55 @@
             <concertKey>0</concertKey>
             </KeySig>
           <TimeSig>
-            <sigN>4</sigN>
+            <sigN>3</sigN>
             <sigD>4</sigD>
             </TimeSig>
           <Chord>
-            <durationType>whole</durationType>
+            <durationType>quarter</durationType>
             <Note>
-              <pitch>48</pitch>
+              <pitch>36</pitch>
               <tpc>14</tpc>
+              </Note>
+            </Chord>
+          <Chord>
+            <durationType>quarter</durationType>
+            <Note>
+              <pitch>43</pitch>
+              <tpc>15</tpc>
+              </Note>
+            </Chord>
+          <Chord>
+            <durationType>quarter</durationType>
+            <Note>
+              <pitch>50</pitch>
+              <tpc>16</tpc>
+              </Note>
+            </Chord>
+          <BarLine>
+            </BarLine>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Chord>
+            <durationType>quarter</durationType>
+            <Note>
+              <pitch>57</pitch>
+              <tpc>17</tpc>
+              </Note>
+            </Chord>
+          <Chord>
+            <durationType>quarter</durationType>
+            <Note>
+              <pitch>64</pitch>
+              <tpc>18</tpc>
+              </Note>
+            </Chord>
+          <Chord>
+            <durationType>quarter</durationType>
+            <Note>
+              <pitch>67</pitch>
+              <tpc>15</tpc>
               </Note>
             </Chord>
           <BarLine>

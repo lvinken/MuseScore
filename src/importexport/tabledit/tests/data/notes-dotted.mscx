@@ -53,7 +53,7 @@
         <height>10</height>
         <Text>
           <style>title</style>
-          <text>Guitar (standard)</text>
+          <text>Notes (dotted)</text>
           </Text>
         </VBox>
       <Measure>
@@ -67,16 +67,81 @@
             <concertKey>0</concertKey>
             </KeySig>
           <TimeSig>
-            <sigN>4</sigN>
+            <sigN>3</sigN>
             <sigD>4</sigD>
             </TimeSig>
           <Chord>
-            <durationType>whole</durationType>
+            <dots>1</dots>
+            <durationType>half</durationType>
             <Note>
-              <pitch>48</pitch>
-              <tpc>14</tpc>
+              <pitch>55</pitch>
+              <tpc>15</tpc>
               </Note>
             </Chord>
+          <BarLine>
+            </BarLine>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Chord>
+            <dots>1</dots>
+            <durationType>quarter</durationType>
+            <Note>
+              <pitch>55</pitch>
+              <tpc>15</tpc>
+              </Note>
+            </Chord>
+          <Beam>
+            <l1>-12</l1>
+            <l2>-12</l2>
+            </Beam>
+          <Chord>
+            <dots>1</dots>
+            <durationType>eighth</durationType>
+            <Note>
+              <pitch>55</pitch>
+              <tpc>15</tpc>
+              </Note>
+            </Chord>
+          <Chord>
+            <dots>1</dots>
+            <durationType>16th</durationType>
+            <Note>
+              <pitch>55</pitch>
+              <tpc>15</tpc>
+              </Note>
+            </Chord>
+          <Chord>
+            <dots>1</dots>
+            <durationType>32nd</durationType>
+            <Note>
+              <pitch>55</pitch>
+              <tpc>15</tpc>
+              </Note>
+            </Chord>
+          <Chord>
+            <dots>1</dots>
+            <durationType>64th</durationType>
+            <Note>
+              <pitch>55</pitch>
+              <tpc>15</tpc>
+              </Note>
+            </Chord>
+          <location>
+            <fractions>-1/128</fractions>
+            </location>
+          <Chord>
+            <dots>1</dots>
+            <durationType>64th</durationType>
+            <Note>
+              <pitch>55</pitch>
+              <tpc>15</tpc>
+              </Note>
+            </Chord>
+          <location>
+            <fractions>1/128</fractions>
+            </location>
           <BarLine>
             </BarLine>
           </voice>
