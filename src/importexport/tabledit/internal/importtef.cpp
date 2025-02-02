@@ -480,8 +480,13 @@ Err TablEdit::import()
     LOGD("notes '%s'", tefHeader.notes.c_str());
     LOGD("copyright '%s'", tefHeader.copyright.c_str());
     LOGD("tbed %d wOldNum %d wFormat %d", tefHeader.tbed, tefHeader.wOldNum, tefHeader.wFormat);
-    if ((tefHeader.wFormat >> 8) != 10) {
+    if ((tefHeader.wFormat >> 8) < 10) {
         return Err::FileBadFormat;
+        //return Err::FileTooOld; // TODO: message is too specific for MuseScore format
+    }
+    if ((tefHeader.wFormat >> 8) > 10) {
+        return Err::FileBadFormat;
+        //return Err::FileTooNew;
     }
     if (tefHeader.securityCode != 0) {
         return Err::FileBadFormat; // todo "file is protected" message ?
