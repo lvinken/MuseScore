@@ -28,6 +28,7 @@
 #include "engraving/dom/measurebase.h"
 #include "engraving/dom/note.h"
 #include "engraving/dom/part.h"
+#include "engraving/dom/rest.h"
 #include "engraving/dom/text.h"
 #include "engraving/dom/timesig.h"
 #include "log.h"
@@ -133,7 +134,7 @@ void TablEdit::createNotes()
             return;
         }
 
-        if (tefNote.string < 1 || instrument.stringNumber < tefNote.string) {
+        if (!tefNote.rest && (tefNote.string < 1 || instrument.stringNumber < tefNote.string)) {
             LOGD("invalid string %d", tefNote.string);
             continue;
         }
@@ -143,9 +144,7 @@ void TablEdit::createNotes()
             continue;
         }
 
-        // create chord
-        mu::engraving::Chord* cr = Factory::createChord(score->dummy()->segment());
-        cr->setTrack(tefNote.voice); // TODO staff
+        ChordRest* cr { nullptr };
         Fraction length { tefNote.length, 64 }; // length is in 64th
         if (tefNote.dotted) {
             length *= Fraction{ 3, 2 };
@@ -156,16 +155,31 @@ void TablEdit::createNotes()
         if (tefNote.dotted) {
             tDuration.setDots(1);
         }
-        cr->setDurationType(tDuration);
-        cr->setTicks(length);
-        // add note to chord
-        mu::engraving::Note* note = Factory::createNote(cr);
-        note->setTrack(tefNote.voice);
-        int pitch = 96 - instrument.tuning.at(tefNote.string - 1)  + tefNote.fret;  // todo fix magical constant and code duplication
-        LOGD("string %d fret %d pitch %d", tefNote.string, tefNote.fret, pitch);
-        note->setPitch(pitch);
-        note->setTpcFromPitch(Prefer::NEAREST);
-        cr->add(note);
+
+        if (tefNote.rest) {
+            mu::engraving::Rest* rest = Factory::createRest(score->dummy()->segment());
+            cr = rest;
+            rest->setTrack(tefNote.voice); // TODO staff
+            rest->setDurationType(tDuration);
+            rest->setTicks(length);
+            LOGD("rest");
+        }
+        else {
+            // create chord
+            mu::engraving::Chord* chord = Factory::createChord(score->dummy()->segment());
+            cr = chord;
+            chord->setTrack(tefNote.voice); // TODO staff
+            chord->setDurationType(tDuration);
+            chord->setTicks(length);
+            // add note to chord
+            mu::engraving::Note* note = Factory::createNote(chord);
+            note->setTrack(tefNote.voice);
+            int pitch = 96 - instrument.tuning.at(tefNote.string - 1)  + tefNote.fret;  // todo fix magical constant and code duplication
+            LOGD("string %d fret %d pitch %d", tefNote.string, tefNote.fret, pitch);
+            note->setPitch(pitch);
+            note->setTpcFromPitch(Prefer::NEAREST);
+            chord->add(note);
+        }
         // add chord to measure
         Fraction tick { tefNote.position, 64 }; // position is in 64th
         LOGD("tick %d/%d", tick.numerator(), tick.denominator());
@@ -333,12 +347,21 @@ void TablEdit::readTefContents()
         if (noteRestMarker < 0x33) {
             note.string = ((offset >> 3) % totalNumberOfStrings) + 1;
             note.fret = noteRestMarker - 1;
+        }
+        else if (noteRestMarker == 0x33) {
+            note.rest = true;
+        }
+        else {
+            // not a note or rest
+        }
+        if (noteRestMarker <= 0x33) {
             note.duration = byte2 & 0x1F;
             note.length = duration2length(note.duration);
             note.dotted = duration2dotted(note.duration);
             note.triplet = duration2triplet(note.duration);
             note.voice = (byte3 & 0x30) / 0x10;
         }
+        //LOGD("marker %d duration %d length %d dotted %d", noteRestMarker, note.duration, note.length, note.dotted);
         tefContents.push_back(note);
         offset = readUInt32();
     }
@@ -475,8 +498,8 @@ Err TablEdit::import()
     }
     readTefContents();
     for (const auto& note : tefContents) {
-        LOGD("position %d string %d fret %d duration %d length %d dotted %d triplet %d voice %d",
-             note.position, note.string, note.fret, note.duration, note.length, note.dotted, note.triplet, note.voice);
+        LOGD("position %d rest %d string %d fret %d duration %d length %d dotted %d triplet %d voice %d",
+             note.position, note.rest, note.string, note.fret, note.duration, note.length, note.dotted, note.triplet, note.voice);
     }
     createScore();
     return Err::NoError;
