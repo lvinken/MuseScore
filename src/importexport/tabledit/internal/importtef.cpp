@@ -156,31 +156,6 @@ void TablEdit::createNotes()
             tDuration.setDots(1);
         }
 
-        if (tefNote.rest) {
-            mu::engraving::Rest* rest = Factory::createRest(score->dummy()->segment());
-            cr = rest;
-            rest->setTrack(tefNote.voice); // TODO staff
-            rest->setDurationType(tDuration);
-            rest->setTicks(length);
-            LOGD("rest");
-        }
-        else {
-            // create chord
-            mu::engraving::Chord* chord = Factory::createChord(score->dummy()->segment());
-            cr = chord;
-            chord->setTrack(tefNote.voice); // TODO staff
-            chord->setDurationType(tDuration);
-            chord->setTicks(length);
-            // add note to chord
-            mu::engraving::Note* note = Factory::createNote(chord);
-            note->setTrack(tefNote.voice);
-            int pitch = 96 - instrument.tuning.at(tefNote.string - 1)  + tefNote.fret;  // todo fix magical constant and code duplication
-            LOGD("string %d fret %d pitch %d", tefNote.string, tefNote.fret, pitch);
-            note->setPitch(pitch);
-            note->setTpcFromPitch(Prefer::NEAREST);
-            chord->add(note);
-        }
-        // add chord to measure
         Fraction tick { tefNote.position, 64 }; // position is in 64th
         LOGD("tick %d/%d", tick.numerator(), tick.denominator());
         Measure* measure { score->tick2measure(tick) };
@@ -193,7 +168,63 @@ void TablEdit::createNotes()
             LOGD("no segment");
             return;
         }
-        segment->add(cr);
+
+        if (segment->element(tefNote.voice)) { // TODO staff
+            //LOGD("segment not empty");
+        }
+
+        if (tefNote.rest) {
+            if (segment->element(tefNote.voice)) { // TODO staff
+                LOGD("ignoring rest: segment not empty");
+            }
+            else {
+                mu::engraving::Rest* rest = Factory::createRest(segment);
+                cr = rest;
+                rest->setTrack(tefNote.voice); // TODO staff
+                rest->setDurationType(tDuration);
+                rest->setTicks(length);
+                segment->add(cr);
+                LOGD("rest");
+            }
+        }
+        else {
+            // handle note
+            mu::engraving::Chord* chord { nullptr };
+            mu::engraving::EngravingItem* element { segment->element(tefNote.voice) }; // TODO staff
+            if (!element) {
+                // create chord
+                chord = Factory::createChord(segment);
+                cr = chord;
+                //segment->add(cr);
+            }
+            else if (element->isChord()) {
+                chord = toChord(element);
+                cr = chord;
+            }
+            else {
+                LOGD("ignoring note: segment not empty");
+                return;
+            }
+            if (chord) {
+                chord->setTrack(tefNote.voice); // TODO staff
+                chord->setDurationType(tDuration);
+                chord->setTicks(length);
+                // add note to chord
+                mu::engraving::Note* note = Factory::createNote(chord);
+                note->setTrack(tefNote.voice);
+                int pitch = 96 - instrument.tuning.at(tefNote.string - 1)  + tefNote.fret;  // todo fix magical constant and code duplication
+                LOGD("string %d fret %d pitch %d", tefNote.string, tefNote.fret, pitch);
+                note->setPitch(pitch);
+                note->setTpcFromPitch(Prefer::NEAREST);
+                chord->add(note);
+                if (!element) {
+                    // create chord
+                    //chord = Factory::createChord(segment);
+                    //cr = chord;
+                    segment->add(cr);
+                }
+            }
+        }
     }
 }
 
@@ -312,7 +343,6 @@ static bool duration2triplet(const int duration) {
     }
 }
 
-// todo handle rest
 void TablEdit::readTefContents()
 {
     // calculate the total number of strings
