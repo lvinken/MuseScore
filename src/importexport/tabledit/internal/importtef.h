@@ -103,10 +103,13 @@ class TablEdit
     void createParts();
     void createScore();
     void createTitleFrame();
+    engraving::part_idx_t partIdx(size_t stringIdx, bool& ok) const;
+    int stringNumberPreviousParts(engraving::part_idx_t partIdx) const;
     void readTefContents();
     void readTefHeader();
     void readTefInstruments();
     void readTefMeasures();
+
 
     TefHeader tefHeader;
     vector<TefNote> tefContents;
