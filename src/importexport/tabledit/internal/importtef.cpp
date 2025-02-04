@@ -82,6 +82,44 @@ string TablEdit::readUtf8Text(uint32_t positionOfPosition)
     return result;
 }
 
+// return the start track for the instrument containing stringIdx
+
+engraving::part_idx_t TablEdit::partIdx(size_t stringIdx, bool &ok) const
+{
+    ok = true;
+    engraving::track_idx_t result { 0 };
+    engraving::track_idx_t lowerBound { 1 };
+    engraving::track_idx_t upperBound { 0 };
+
+    for (const auto& instrument : tefInstruments) {
+        upperBound += instrument.stringNumber;
+        if (lowerBound <= stringIdx && stringIdx <= upperBound) {
+            LOGD("string %zu lower %zu upper %zu found result %zu", stringIdx, lowerBound, upperBound, result);
+            return result;
+        }
+        ++result;
+        lowerBound += instrument.stringNumber;
+    }
+    ok = false;
+    result = 0;
+    LOGD("string %zu not found result %zu", stringIdx, result);
+    return result;
+}
+
+// return total number of strings in previous parts
+
+int TablEdit::stringNumberPreviousParts(part_idx_t partIdx) const
+{
+    part_idx_t result { 0 };
+    for (part_idx_t i = 0; i < partIdx; ++i) {
+        result += tefInstruments.at(i).stringNumber;
+    }
+    LOGD("partIdx %zu result %zu", partIdx, result);
+    return result;
+
+}
+
+
 void TablEdit::createMeasures()
 {
     Fraction tick { 0, 1 };
@@ -124,23 +162,28 @@ void TablEdit::createNotes()
 {
     for (const auto& tefNote : tefContents) {
         if (tefInstruments.size() == 0) {
-            LOGD("no instruments");
+            LOGD("error: no instruments");
             return;
         }
 
-        const TefInstrument& instrument { tefInstruments.at(0) };
-        if (instrument.stringNumber < 1 || 12 < instrument.stringNumber) {
-            LOGD("invalid instrument.stringNumber %d", instrument.stringNumber);
-            return;
-        }
-
-        if (!tefNote.rest && (tefNote.string < 1 || instrument.stringNumber < tefNote.string)) {
-            LOGD("invalid string %d", tefNote.string);
+        bool ok { true };
+        const auto part = partIdx(tefNote.string, ok);
+        if (!ok) {
+            LOGD("error: invalid string %d", tefNote.string);
             continue;
+        }
+        const auto stringOffset = stringNumberPreviousParts(part);
+        const auto track = part * VOICES + tefNote.voice;
+        LOGD("part %zu stringOffset %d track %zu", part, stringOffset, track);
+
+        const TefInstrument& instrument { tefInstruments.at(part) };
+        if (instrument.stringNumber < 1 || 12 < instrument.stringNumber) {
+            LOGD("error: invalid instrument.stringNumber %d", instrument.stringNumber);
+            return;
         }
 
         if (tefNote.voice < 0 || 3 < tefNote.voice) {
-            LOGD("invalid voice %d", tefNote.voice);
+            LOGD("error: invalid voice %d", tefNote.voice);
             continue;
         }
 
@@ -160,27 +203,27 @@ void TablEdit::createNotes()
         LOGD("tick %d/%d", tick.numerator(), tick.denominator());
         Measure* measure { score->tick2measure(tick) };
         if (!measure) {
-            LOGD("no measure");
+            LOGD("error: no measure");
             return;
         }
         Segment* segment { measure->getSegment(mu::engraving::SegmentType::ChordRest, tick) };
         if (!segment) {
-            LOGD("no segment");
+            LOGD("error: no segment");
             return;
         }
 
-        if (segment->element(tefNote.voice)) { // TODO staff
+        if (segment->element(track)) {
             //LOGD("segment not empty");
         }
 
         if (tefNote.rest) {
-            if (segment->element(tefNote.voice)) { // TODO staff
-                LOGD("ignoring rest: segment not empty");
+            if (segment->element(track)) {
+                LOGD("error: ignoring rest: segment not empty");
             }
             else {
                 mu::engraving::Rest* rest = Factory::createRest(segment);
                 cr = rest;
-                rest->setTrack(tefNote.voice); // TODO staff
+                rest->setTrack(track);
                 rest->setDurationType(tDuration);
                 rest->setTicks(length);
                 segment->add(cr);
@@ -190,7 +233,7 @@ void TablEdit::createNotes()
         else {
             // handle note
             mu::engraving::Chord* chord { nullptr };
-            mu::engraving::EngravingItem* element { segment->element(tefNote.voice) }; // TODO staff
+            mu::engraving::EngravingItem* element { segment->element(track) };
             if (!element) {
                 // create chord
                 chord = Factory::createChord(segment);
@@ -202,17 +245,17 @@ void TablEdit::createNotes()
                 cr = chord;
             }
             else {
-                LOGD("ignoring note: segment not empty");
+                LOGD("error: ignoring note: segment not empty");
                 return;
             }
             if (chord) {
-                chord->setTrack(tefNote.voice); // TODO staff
+                chord->setTrack(track);
                 chord->setDurationType(tDuration);
                 chord->setTicks(length);
                 // add note to chord
                 mu::engraving::Note* note = Factory::createNote(chord);
-                note->setTrack(tefNote.voice);
-                int pitch = 96 - instrument.tuning.at(tefNote.string - 1)  + tefNote.fret;  // todo fix magical constant and code duplication
+                note->setTrack(part * VOICES + tefNote.voice);
+                int pitch = 96 - instrument.tuning.at(tefNote.string - stringOffset - 1)  + tefNote.fret;  // todo fix magical constant 96 and code duplication
                 LOGD("string %d fret %d pitch %d", tefNote.string, tefNote.fret, pitch);
                 note->setPitch(pitch);
                 note->setTpcFromPitch(Prefer::NEAREST);
@@ -379,6 +422,7 @@ void TablEdit::readTefContents()
             note.fret = noteRestMarker - 1;
         }
         else if (noteRestMarker == 0x33) {
+            note.string = ((offset >> 3) % totalNumberOfStrings) + 1;
             note.rest = true;
         }
         else {
