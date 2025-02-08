@@ -101,6 +101,7 @@ class TablEdit
     void createMeasures();
     void createNotes();
     void createParts();
+    void createProperties();
     void createScore();
     void createTitleFrame();
     engraving::part_idx_t partIdx(size_t stringIdx, bool& ok) const;
