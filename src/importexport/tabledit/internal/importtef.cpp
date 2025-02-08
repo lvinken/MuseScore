@@ -333,8 +333,28 @@ void TablEdit::createParts()
     }
 }
 
+void TablEdit::createProperties()
+{
+    if (!tefHeader.title.empty()) {
+        score->setMetaTag(u"workTitle", String::fromUtf8(tefHeader.title.c_str()));
+    }
+    if (!tefHeader.subTitle.empty()) {
+        score->setMetaTag(u"subtitle", String::fromUtf8(tefHeader.subTitle.c_str()));
+    }
+    if (!tefHeader.comment.empty()) {
+        score->setMetaTag(u"comment", String::fromUtf8(tefHeader.comment.c_str()));
+    }
+    if (!tefHeader.internetLink.empty()) {
+        score->setMetaTag(u"source", String::fromUtf8(tefHeader.internetLink.c_str()));
+    }
+    if (!tefHeader.copyright.empty()) {
+        score->setMetaTag(u"copyright", String::fromUtf8(tefHeader.copyright.c_str()));
+    }
+}
+
 void TablEdit::createScore()
 {
+    createProperties();
     createParts();
     createTitleFrame();
     createMeasures();
@@ -567,6 +587,7 @@ void TablEdit::readTefHeader()
     tefHeader.subTitle = readUtf8Text(0x44);
     tefHeader.comment = readUtf8Text(0x48);
     tefHeader.notes = readUtf8Text(0x4c);
+    tefHeader.internetLink = readUtf8Text(0x84);
     tefHeader.copyright = readUtf8Text(0x8c);
     _file->seek(202);
     tefHeader.wOldNum = readUInt16();
@@ -587,6 +608,7 @@ Err TablEdit::import()
     LOGD("subTitle '%s'", tefHeader.subTitle.c_str());
     LOGD("comment '%s'", tefHeader.comment.c_str());
     LOGD("notes '%s'", tefHeader.notes.c_str());
+    LOGD("internetLink '%s'", tefHeader.internetLink.c_str());
     LOGD("copyright '%s'", tefHeader.copyright.c_str());
     LOGD("tbed %d wOldNum %d wFormat %d", tefHeader.tbed, tefHeader.wOldNum, tefHeader.wFormat);
     if ((tefHeader.wFormat >> 8) < 10) {

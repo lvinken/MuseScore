@@ -14,16 +14,18 @@
     <showMargins>0</showMargins>
     <open>1</open>
     <metaTag name="arranger"></metaTag>
+    <metaTag name="comment">Minimal MusicXML example</metaTag>
     <metaTag name="composer"></metaTag>
-    <metaTag name="copyright"></metaTag>
+    <metaTag name="copyright">Copyright (c) Recordare LLC</metaTag>
     <metaTag name="lyricist"></metaTag>
     <metaTag name="movementNumber"></metaTag>
     <metaTag name="movementTitle"></metaTag>
     <metaTag name="originalFormat">tef</metaTag>
-    <metaTag name="source"></metaTag>
+    <metaTag name="source">http://www.mywebsite.com/ My Description</metaTag>
+    <metaTag name="subtitle">Recordare LLC</metaTag>
     <metaTag name="translator"></metaTag>
     <metaTag name="workNumber"></metaTag>
-    <metaTag name="workTitle"></metaTag>
+    <metaTag name="workTitle">Hello World</metaTag>
     <Part id="1">
       <Staff id="1">
         <StaffType group="pitched">

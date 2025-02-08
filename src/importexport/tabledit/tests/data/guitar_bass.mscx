@@ -23,7 +23,7 @@
     <metaTag name="source"></metaTag>
     <metaTag name="translator"></metaTag>
     <metaTag name="workNumber"></metaTag>
-    <metaTag name="workTitle"></metaTag>
+    <metaTag name="workTitle">Guitar plus bass</metaTag>
     <Part id="1">
       <Staff id="1">
         <StaffType group="pitched">
