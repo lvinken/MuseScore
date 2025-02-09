@@ -98,8 +98,8 @@ class TablEdit
         int voice { 0 };
     };
 
+    void createContents();
     void createMeasures();
-    void createNotes();
     void createParts();
     void createProperties();
     void createScore();
@@ -126,4 +126,3 @@ public:
 } // namespace mu::iex::tabledit
 
 #endif // MU_IMPORTEXPORT_IMPORTTEF_H
-
