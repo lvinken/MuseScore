@@ -100,6 +100,7 @@ class TablEdit
 
     void createContents();
     void createMeasures();
+    void createNotesFrame();
     void createParts();
     void createProperties();
     void createScore();

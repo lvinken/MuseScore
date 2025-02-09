@@ -302,6 +302,18 @@ void TablEdit::createMeasures()
     }
 }
 
+void TablEdit::createNotesFrame()
+{
+    if (!tefHeader.notes.empty()) {
+        VBox* vbox = Factory::createTitleVBox(score->dummy()->system());
+        vbox->setTick(mu::engraving::Fraction(0, 1)); // TODO find correct value (0/1 seems to work OK)
+        score->measures()->add(vbox);
+        Text* s = Factory::createText(vbox, TextStyleType::FRAME);
+        s->setPlainText(String::fromUtf8(tefHeader.notes.c_str()));
+        vbox->add(s);
+    }
+}
+
 void TablEdit::createParts()
 {
     for (const auto& instrument : tefInstruments) {
@@ -354,6 +366,7 @@ void TablEdit::createScore()
     createParts();
     createTitleFrame();
     createMeasures();
+    createNotesFrame();
     createContents();
 }
 

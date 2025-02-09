@@ -87,6 +87,14 @@
             </BarLine>
           </voice>
         </Measure>
+      <VBox>
+        <height>10</height>
+        <sizeIsSpatiumDependent>0</sizeIsSpatiumDependent>
+        <Text>
+          <style>frame</style>
+          <text>These are notes</text>
+          </Text>
+        </VBox>
       </Staff>
     </Score>
   </museScore>
