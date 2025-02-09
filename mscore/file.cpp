@@ -1,4 +1,4 @@
-//=============================================================================
+fz//=============================================================================
 //  MuseScore
 //  Music Composition & Notation
 //
@@ -2375,6 +2375,7 @@ Score::FileError readScore(MasterScore* score, QString name, bool ignoreVersionE
                   { "png",  &loadAndImportMSMR        },
                   { "jpg",  &loadAndImportMSMR        },
 #endif
+                  // TODO { "tef",  &importTef                },
                   };
 
             // import
