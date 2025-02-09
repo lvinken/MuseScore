@@ -94,7 +94,7 @@ engraving::part_idx_t TablEdit::partIdx(size_t stringIdx, bool &ok) const
     for (const auto& instrument : tefInstruments) {
         upperBound += instrument.stringNumber;
         if (lowerBound <= stringIdx && stringIdx <= upperBound) {
-            LOGD("string %zu lower %zu upper %zu found result %zu", stringIdx, lowerBound, upperBound, result);
+            LOGN("string %zu lower %zu upper %zu found result %zu", stringIdx, lowerBound, upperBound, result);
             return result;
         }
         ++result;
@@ -114,7 +114,7 @@ int TablEdit::stringNumberPreviousParts(part_idx_t partIdx) const
     for (part_idx_t i = 0; i < partIdx; ++i) {
         result += tefInstruments.at(i).stringNumber;
     }
-    LOGD("partIdx %zu result %zu", partIdx, result);
+    LOGN("partIdx %zu result %zu", partIdx, result);
     return result;
 
 }
@@ -214,7 +214,7 @@ void TablEdit::createNotes()
         const TefInstrument& instrument { tefInstruments.at(part) };
         if (instrument.stringNumber < 1 || 12 < instrument.stringNumber) {
             LOGD("error: invalid instrument.stringNumber %d", instrument.stringNumber);
-            return;
+            continue;
         }
 
         if (tefNote.voice < 0 || 3 < tefNote.voice) {
@@ -239,12 +239,12 @@ void TablEdit::createNotes()
         Measure* measure { score->tick2measure(tick) };
         if (!measure) {
             LOGD("error: no measure");
-            return;
+            continue;
         }
         Segment* segment { measure->getSegment(mu::engraving::SegmentType::ChordRest, tick) };
         if (!segment) {
             LOGD("error: no segment");
-            return;
+            continue;
         }
 
         if (segment->element(track)) {
@@ -253,7 +253,7 @@ void TablEdit::createNotes()
 
         if (tefNote.rest) {
             if (segment->element(track)) {
-                LOGD("error: ignoring rest: segment not empty");
+                LOGD("-> error: ignoring rest: segment not empty");
             }
             else {
                 mu::engraving::Rest* rest = Factory::createRest(segment);
@@ -262,7 +262,7 @@ void TablEdit::createNotes()
                 rest->setDurationType(tDuration);
                 rest->setTicks(length);
                 segment->add(cr);
-                LOGD("rest");
+                LOGD("-> rest");
             }
         }
         else {
@@ -280,8 +280,8 @@ void TablEdit::createNotes()
                 cr = chord;
             }
             else {
-                LOGD("error: ignoring note: segment not empty");
-                return;
+                LOGD("-> error: ignoring note: segment not empty");
+                continue;
             }
             if (chord) {
                 chord->setTrack(track);
@@ -291,7 +291,7 @@ void TablEdit::createNotes()
                 mu::engraving::Note* note = Factory::createNote(chord);
                 note->setTrack(part * VOICES + tefNote.voice);
                 int pitch = 96 - instrument.tuning.at(tefNote.string - stringOffset - 1)  + tefNote.fret;  // todo fix magical constant 96 and code duplication
-                LOGD("string %d fret %d pitch %d", tefNote.string, tefNote.fret, pitch);
+                LOGD("-> string %d fret %d pitch %d", tefNote.string, tefNote.fret, pitch);
                 note->setPitch(pitch);
                 note->setTpcFromPitch(Prefer::NEAREST);
                 chord->add(note);
@@ -482,6 +482,7 @@ void TablEdit::readTefContents()
         }
         else {
             // not a note or rest
+            //LOGD("marker %d duration %d length %d dotted %d", noteRestMarker, note.duration, note.length, note.dotted);
         }
         if (noteRestMarker <= 0x33) {
             note.duration = byte2 & 0x1F;
@@ -489,9 +490,8 @@ void TablEdit::readTefContents()
             note.dotted = duration2dotted(note.duration);
             note.triplet = duration2triplet(note.duration);
             note.voice = (byte3 & 0x30) / 0x10;
+            tefContents.push_back(note);
         }
-        //LOGD("marker %d duration %d length %d dotted %d", noteRestMarker, note.duration, note.length, note.dotted);
-        tefContents.push_back(note);
         offset = readUInt32();
     }
 }
