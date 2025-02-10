@@ -104,6 +104,7 @@ class TablEdit
     void createParts();
     void createProperties();
     void createScore();
+    void createTempo();
     void createTitleFrame();
     engraving::part_idx_t partIdx(size_t stringIdx, bool& ok) const;
     int stringNumberPreviousParts(engraving::part_idx_t partIdx) const;

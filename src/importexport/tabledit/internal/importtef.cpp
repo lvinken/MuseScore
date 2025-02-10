@@ -29,6 +29,7 @@
 #include "engraving/dom/note.h"
 #include "engraving/dom/part.h"
 #include "engraving/dom/rest.h"
+#include "engraving/dom/tempotext.h"
 #include "engraving/dom/text.h"
 #include "engraving/dom/timesig.h"
 #include "log.h"
@@ -274,6 +275,7 @@ void TablEdit::createMeasures()
                 s3->add(timesig);
             }
             lastTimeSig = length;
+            createTempo();
         }
         else {
             if (tefMeasure.key != lastKey) {
@@ -368,6 +370,21 @@ void TablEdit::createScore()
     createMeasures();
     createNotesFrame();
     createContents();
+}
+
+void TablEdit::createTempo()
+{
+    mu::engraving::Measure* measure = score->firstMeasure();
+    mu::engraving::Segment* segment = measure->getSegment(mu::engraving::SegmentType::ChordRest, mu::engraving::Fraction(0, 1));
+    mu::engraving::TempoText* tt = new mu::engraving::TempoText(segment);
+    tt->setTempo(double(tefHeader.tempo) / 60.0);
+    tt->setTrack(0);
+    tt->setFollowText(true);
+    muse::String tempoText = mu::engraving::TempoText::duration2tempoTextString(mu::engraving::DurationType::V_QUARTER);
+    tempoText += u" = ";
+    tempoText += muse::String::number(tefHeader.tempo);
+    tt->setXmlText(tempoText);
+    segment->add(tt);
 }
 
 void TablEdit::createTitleFrame()
