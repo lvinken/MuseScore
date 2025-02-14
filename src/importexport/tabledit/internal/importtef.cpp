@@ -151,14 +151,17 @@ void TablEdit::createContents()
 
         ChordRest* cr { nullptr };
         Fraction length { tefNote.length, 64 }; // length is in 64th
-        if (tefNote.dotted) {
+        if (tefNote.dots == 1) {
             length *= Fraction{ 3, 2 };
+        }
+        else if (tefNote.dots == 2) {
+            length *= Fraction{ 7, 4 };
         }
         // TODO: triplets
         LOGD("length %d/%d", length.numerator(), length.denominator());
         TDuration tDuration(length);
-        if (tefNote.dotted) {
-            tDuration.setDots(1);
+        if (tefNote.dots) {
+            tDuration.setDots(tefNote.dots);
         }
 
         Fraction tick { tefNote.position, 64 }; // position is in 64th
@@ -417,6 +420,10 @@ void TablEdit::createTitleFrame()
  * 8 quarter triplet
  * ...
  * 18 1/64th note
+ * 19 half double dotted
+ * 22 quarter double dotted
+ * 25 eighth double dotted
+ * 28 16th double dotted
  */
 
 // return note length in 64th
@@ -443,18 +450,28 @@ static int duration2length(const int duration) {
         default: LOGD("impossible value %d", dotOrTriplet);
         }
     }
+    else {
+        switch (duration) {
+        case 19: return 32; // 1/2
+        case 22: return 16; // 1/4
+        case 25: return  8; // 1/8
+        case 28: return  4; // 1/16
+        default: LOGD("impossible value %d", duration);
+        }
+    }
     LOGD("invalid note duration %d", duration);
-    return 0; // invalid
+    return 0; // invalid (result is weird layout)
 }
 
-static bool duration2dotted(const int duration) {
-    if (0 <= duration && duration <= 18) {
-        return duration % 3 == 1;
+static int duration2dots(const int duration) {
+    if (0 <= duration && duration <= 18 && (duration % 3) == 1) {
+        return 1;
     }
-    else {
-        LOGD("invalid note duration %d", duration);
-        return false; // invalid
+    else if (duration == 19 || duration == 22 || duration == 25 || duration == 28) {
+        return 2;
     }
+    LOGD("invalid note duration %d", duration);
+    return 0; // invalid
 }
 
 static bool duration2triplet(const int duration) {
@@ -508,12 +525,12 @@ void TablEdit::readTefContents()
         }
         else {
             // not a note or rest
-            //LOGD("marker %d duration %d length %d dotted %d", noteRestMarker, note.duration, note.length, note.dotted);
+            //LOGD("marker %d duration %d length %d dots %d", noteRestMarker, note.duration, note.length, note.dots);
         }
         if (noteRestMarker <= 0x33) {
             note.duration = byte2 & 0x1F;
             note.length = duration2length(note.duration);
-            note.dotted = duration2dotted(note.duration);
+            note.dots = duration2dots(note.duration);
             note.triplet = duration2triplet(note.duration);
             note.voice = (byte3 & 0x30) / 0x10;
             tefContents.push_back(note);
@@ -660,8 +677,8 @@ Err TablEdit::import()
     }
     readTefContents();
     for (const auto& note : tefContents) {
-        LOGD("position %d rest %d string %d fret %d duration %d length %d dotted %d triplet %d voice %d",
-             note.position, note.rest, note.string, note.fret, note.duration, note.length, note.dotted, note.triplet, note.voice);
+        LOGD("position %d rest %d string %d fret %d duration %d length %d dots %d triplet %d voice %d",
+             note.position, note.rest, note.string, note.fret, note.duration, note.length, note.dots, note.triplet, note.voice);
     }
     createScore();
     return Err::NoError;

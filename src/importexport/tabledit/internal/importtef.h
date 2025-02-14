@@ -93,7 +93,7 @@ class TablEdit
         bool rest { false };    // this is a bit of a hack
         int duration { 0 };
         int length { 0 };
-        bool dotted { false };
+        int dots { 0 };
         bool triplet { false };
         int voice { 0 };
     };
