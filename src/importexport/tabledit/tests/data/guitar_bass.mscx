@@ -106,6 +106,8 @@
             <Note>
               <pitch>64</pitch>
               <tpc>18</tpc>
+              <fret>0</fret>
+              <string>0</string>
               </Note>
             </Chord>
           <Chord>
@@ -113,6 +115,8 @@
             <Note>
               <pitch>59</pitch>
               <tpc>19</tpc>
+              <fret>0</fret>
+              <string>1</string>
               </Note>
             </Chord>
           <Chord>
@@ -120,6 +124,8 @@
             <Note>
               <pitch>55</pitch>
               <tpc>15</tpc>
+              <fret>0</fret>
+              <string>2</string>
               </Note>
             </Chord>
           <Chord>
@@ -127,6 +133,8 @@
             <Note>
               <pitch>50</pitch>
               <tpc>16</tpc>
+              <fret>0</fret>
+              <string>3</string>
               </Note>
             </Chord>
           <BarLine>
@@ -140,6 +148,8 @@
             <Note>
               <pitch>45</pitch>
               <tpc>17</tpc>
+              <fret>0</fret>
+              <string>4</string>
               </Note>
             </Chord>
           <Chord>
@@ -147,6 +157,8 @@
             <Note>
               <pitch>40</pitch>
               <tpc>18</tpc>
+              <fret>0</fret>
+              <string>5</string>
               </Note>
             </Chord>
           <Chord>
@@ -154,6 +166,8 @@
             <Note>
               <pitch>55</pitch>
               <tpc>15</tpc>
+              <fret>0</fret>
+              <string>2</string>
               </Note>
             </Chord>
           <Chord>
@@ -161,6 +175,8 @@
             <Note>
               <pitch>50</pitch>
               <tpc>16</tpc>
+              <fret>0</fret>
+              <string>3</string>
               </Note>
             </Chord>
           <BarLine>
@@ -174,6 +190,8 @@
             <Note>
               <pitch>45</pitch>
               <tpc>17</tpc>
+              <fret>0</fret>
+              <string>4</string>
               </Note>
             </Chord>
           <Chord>
@@ -181,6 +199,8 @@
             <Note>
               <pitch>40</pitch>
               <tpc>18</tpc>
+              <fret>0</fret>
+              <string>5</string>
               </Note>
             </Chord>
           <Chord>
@@ -188,6 +208,8 @@
             <Note>
               <pitch>40</pitch>
               <tpc>18</tpc>
+              <fret>0</fret>
+              <string>5</string>
               </Note>
             </Chord>
           <BarLine>
@@ -215,6 +237,8 @@
             <Note>
               <pitch>40</pitch>
               <tpc>18</tpc>
+              <fret>2</fret>
+              <string>7</string>
               </Note>
             </Chord>
           </voice>
@@ -226,6 +250,8 @@
             <Note>
               <pitch>33</pitch>
               <tpc>17</tpc>
+              <fret>0</fret>
+              <string>8</string>
               </Note>
             </Chord>
           <Chord>
@@ -233,6 +259,8 @@
             <Note>
               <pitch>43</pitch>
               <tpc>15</tpc>
+              <fret>0</fret>
+              <string>6</string>
               </Note>
             </Chord>
           <Chord>
@@ -240,6 +268,8 @@
             <Note>
               <pitch>38</pitch>
               <tpc>16</tpc>
+              <fret>0</fret>
+              <string>7</string>
               </Note>
             </Chord>
           </voice>
@@ -251,6 +281,8 @@
             <Note>
               <pitch>33</pitch>
               <tpc>17</tpc>
+              <fret>0</fret>
+              <string>8</string>
               </Note>
             </Chord>
           <Chord>
@@ -258,6 +290,8 @@
             <Note>
               <pitch>28</pitch>
               <tpc>18</tpc>
+              <fret>0</fret>
+              <string>9</string>
               </Note>
             </Chord>
           <Chord>
@@ -265,6 +299,8 @@
             <Note>
               <pitch>28</pitch>
               <tpc>18</tpc>
+              <fret>0</fret>
+              <string>9</string>
               </Note>
             </Chord>
           </voice>

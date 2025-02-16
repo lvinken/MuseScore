@@ -224,6 +224,8 @@ void TablEdit::createContents()
                 LOGD("-> string %d fret %d pitch %d", tefNote.string, tefNote.fret, pitch);
                 note->setPitch(pitch);
                 note->setTpcFromPitch(Prefer::NEAREST);
+                note->setFret(tefNote.fret);
+                note->setString(tefNote.string - 1); // TableEdit's strings start at 1, MuseScore's at 0
                 chord->add(note);
                 if (!element) {
                     // create chord

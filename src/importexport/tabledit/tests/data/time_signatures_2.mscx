@@ -109,6 +109,8 @@
             <Note>
               <pitch>45</pitch>
               <tpc>17</tpc>
+              <fret>0</fret>
+              <string>4</string>
               </Note>
             </Chord>
           <BarLine>
@@ -127,6 +129,8 @@
             <Note>
               <pitch>48</pitch>
               <tpc>14</tpc>
+              <fret>3</fret>
+              <string>4</string>
               </Note>
             </Chord>
           <BarLine>
@@ -154,6 +158,8 @@
             <Note>
               <pitch>57</pitch>
               <tpc>17</tpc>
+              <fret>2</fret>
+              <string>8</string>
               </Note>
             </Chord>
           </voice>
@@ -170,6 +176,8 @@
             <Note>
               <pitch>60</pitch>
               <tpc>14</tpc>
+              <fret>5</fret>
+              <string>8</string>
               </Note>
             </Chord>
           </voice>
