@@ -14,6 +14,7 @@
     <showMargins>0</showMargins>
     <open>1</open>
     <metaTag name="arranger"></metaTag>
+    <metaTag name="comment">TablEdited by </metaTag>
     <metaTag name="composer"></metaTag>
     <metaTag name="copyright"></metaTag>
     <metaTag name="lyricist"></metaTag>
@@ -23,7 +24,7 @@
     <metaTag name="source"></metaTag>
     <metaTag name="translator"></metaTag>
     <metaTag name="workNumber"></metaTag>
-    <metaTag name="workTitle">Multi-track with rests</metaTag>
+    <metaTag name="workTitle">Positions</metaTag>
     <Part id="1">
       <Staff id="1">
         <StaffType group="pitched">
@@ -45,32 +46,6 @@
           </StringData>
         <Channel>
           <program value="25"/>
-          <midiPort>0</midiPort>
-          <midiChannel>0</midiChannel>
-          </Channel>
-        </Instrument>
-      </Part>
-    <Part id="2">
-      <Staff id="2">
-        <StaffType group="pitched">
-          <name>stdNormal</name>
-          </StaffType>
-        </Staff>
-      <trackName>Acoustic Bass</trackName>
-      <Instrument>
-        <longName>Acoustic Bass</longName>
-        <trackName></trackName>
-        <StringData>
-          <frets>25</frets>
-          <string>28</string>
-          <string>33</string>
-          <string>38</string>
-          <string>43</string>
-          </StringData>
-        <Channel>
-          <program value="32"/>
-          <midiPort>1</midiPort>
-          <midiChannel>0</midiChannel>
           </Channel>
         </Instrument>
       </Part>
@@ -79,7 +54,7 @@
         <height>10</height>
         <Text>
           <style>title</style>
-          <text>Multi-track with rests</text>
+          <text>Positions</text>
           </Text>
         </VBox>
       <Measure>
@@ -104,71 +79,83 @@
           <Chord>
             <durationType>quarter</durationType>
             <Note>
-              <pitch>50</pitch>
-              <tpc>16</tpc>
+              <pitch>64</pitch>
+              <tpc>18</tpc>
               <fret>0</fret>
-              <string>3</string>
+              <string>0</string>
               </Note>
             </Chord>
-          <Rest>
-            <durationType>quarter</durationType>
-            </Rest>
           <Chord>
             <durationType>quarter</durationType>
             <Note>
-              <pitch>50</pitch>
-              <tpc>16</tpc>
-              <fret>0</fret>
+              <pitch>64</pitch>
+              <tpc>18</tpc>
+              <fret>5</fret>
+              <string>1</string>
+              </Note>
+            </Chord>
+          <Chord>
+            <durationType>quarter</durationType>
+            <Note>
+              <pitch>64</pitch>
+              <tpc>18</tpc>
+              <fret>9</fret>
+              <string>2</string>
+              </Note>
+            </Chord>
+          <Chord>
+            <durationType>quarter</durationType>
+            <Note>
+              <pitch>64</pitch>
+              <tpc>18</tpc>
+              <fret>14</fret>
               <string>3</string>
               </Note>
             </Chord>
-          <Rest>
-            <durationType>quarter</durationType>
-            </Rest>
           <BarLine>
             </BarLine>
           </voice>
         </Measure>
-      </Staff>
-    <Staff id="2">
       <Measure>
         <voice>
-          <Clef>
-            <concertClefType>G8vb</concertClefType>
-            <transposingClefType>G8vb</transposingClefType>
-            <isHeader>1</isHeader>
-            </Clef>
-          <KeySig>
-            <concertKey>0</concertKey>
-            </KeySig>
-          <TimeSig>
-            <sigN>4</sigN>
-            <sigD>4</sigD>
-            </TimeSig>
           <Chord>
             <durationType>quarter</durationType>
             <Note>
-              <pitch>38</pitch>
-              <tpc>16</tpc>
-              <fret>0</fret>
-              <string>7</string>
+              <pitch>60</pitch>
+              <tpc>14</tpc>
+              <fret>1</fret>
+              <string>1</string>
               </Note>
             </Chord>
-          <Rest>
-            <durationType>quarter</durationType>
-            </Rest>
           <Chord>
             <durationType>quarter</durationType>
             <Note>
-              <pitch>38</pitch>
-              <tpc>16</tpc>
-              <fret>0</fret>
-              <string>7</string>
+              <pitch>60</pitch>
+              <tpc>14</tpc>
+              <fret>5</fret>
+              <string>2</string>
               </Note>
             </Chord>
-          <Rest>
+          <Chord>
             <durationType>quarter</durationType>
-            </Rest>
+            <Note>
+              <pitch>60</pitch>
+              <tpc>14</tpc>
+              <fret>10</fret>
+              <string>3</string>
+              </Note>
+            </Chord>
+          <Chord>
+            <durationType>quarter</durationType>
+            <Note>
+              <pitch>60</pitch>
+              <tpc>14</tpc>
+              <fret>15</fret>
+              <string>4</string>
+              </Note>
+            </Chord>
+          <BarLine>
+            </BarLine>
           </voice>
         </Measure>
       </Staff>
