@@ -98,6 +98,20 @@ class TablEdit
         int voice { 0 };
     };
 
+    class VoiceAllocator
+    {
+    public:
+        void addColumn(const vector<const TefNote* const>& column);
+        bool canAddTefNoteToVoice(const TefNote* const note, const int voice);
+        int findFirstPossibleVoice(const TefNote* const note, const array<int, 3> voices);
+        int stopPosition(const size_t voice);
+        int voice(const TefNote* const note);
+    private:
+        map<const TefNote*, int> allocations;
+        array<const TefNote*, mu::engraving::VOICES> notesPlaying = { nullptr, nullptr, nullptr, nullptr };
+    };
+
+    void allocateVoices(VoiceAllocator& allocator);
     void createContents();
     void createMeasures();
     void createNotesFrame();
