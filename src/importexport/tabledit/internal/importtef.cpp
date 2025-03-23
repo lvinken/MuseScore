@@ -120,8 +120,185 @@ int TablEdit::stringNumberPreviousParts(part_idx_t partIdx) const
 
 }
 
+array<int, 6> standardTuning = { 40, 45, 50, 55, 59, 64 };
+
+int calculatePitch(const int string, const int fret)
+{
+    int res { -1 }; // invalid
+    if (1 <= string && string <= 6 && 0 <= fret) {
+        res = standardTuning.at(6 - string) + fret;
+    }
+    //cout << " string " << string << " fret " << fret << " pitch " << res << '\n';
+    return res;
+}
+
+bool TablEdit::VoiceAllocator::canAddTefNoteToVoice(const TefNote* const note, const int voice)
+{
+    // is there room after the previous note ?
+    if (stopPosition(voice) <= note->position) {
+        cout << "add string " << note->string
+             << " fret " << note->fret
+             << " to voice " << voice << '\n';
+        return true;
+    }
+    // can the note go into a chord ?
+    const auto notePlaying = notesPlaying.at(voice);
+    if (notePlaying
+        && !notePlaying->rest
+        && !note->rest
+        && notePlaying->position == note->position
+        && notePlaying->duration == note->duration ) {
+        cout << "add string " << note->string
+             << " fret " << note->fret
+             << " to voice " << voice << " as chord\n";
+        return true;
+    }
+    return false;
+}
+
+int TablEdit::VoiceAllocator::findFirstPossibleVoice(const TefNote* const note, const array<int, 3> voices)
+{
+    for (const auto v : voices) {
+        if (canAddTefNoteToVoice(note, v)) {
+            return v;
+        }
+    }
+    return -1;
+}
+
+int durationToInt(uint8_t duration)
+{
+    switch(duration) {
+    case  0: return 64; //"whole";
+    case  1: return 48; //"half dotted";
+    case  2: return 32; //"whole triplet";
+    case  3: return 32; //"half";
+    case  4: return 24; //"quarter dotted";
+    case  5: return 16; //"half triplet";
+    case  6: return 16; //"quarter";
+    case  7: return 12; //"eighth dotted";
+    case  8: return 8; //"quarter triplet";
+    case  9: return 8; //"eighth";
+    case 10: return 6; //"16th dotted";
+    case 11: return 4; //"eighth triplet";
+    case 12: return 4; //"16th";
+    case 13: return 3; //"32nd dotted";
+    case 14: return 2; //"16th triplet";
+    case 15: return 2; //"32nd";
+    //case 16: return "64th dotted";
+    case 17: return 1; //"32nd triplet";
+    case 18: return 1; //"64th";
+    case 19: return 56; //"half double dotted";
+    //case 20: return "16th quintuplet";
+    case 22: return 28; //"quarter double dotted";
+    case 25: return 14; //"eighth double dotted";
+    case 28: return 7; //"16th double dotted";
+    default: return 0; //"undefined";
+    }
+    return 0; //"undefined";
+}
+
+int TablEdit::VoiceAllocator::stopPosition(const size_t voice)
+{
+    if (VOICES <= voice) {
+        cout << "stopPosition: incorrect voice " << voice << '\n';
+        return -1;
+    }
+
+    const auto note = notesPlaying.at(voice);
+    if (note) {
+        return note->position + durationToInt(note->duration);
+    }
+    return 0;
+}
+
+void TablEdit::VoiceAllocator::addColumn(const vector<const TefNote* const>& column)
+{
+    const int C4 { 60 };
+    for (const auto note : column) {
+        if (note->rest) {
+            continue;   // ignore rests
+        }
+        int pitch { calculatePitch(note->string, note->fret) };
+        int voice { 0 };
+        if (C4 <= pitch) {
+            voice = findFirstPossibleVoice(note, { 0, 2, 3 });
+        }
+        else {
+            voice = findFirstPossibleVoice(note, { 1, 2, 3 });
+        }
+        if (voice >= 0) {
+            // TODO addTefNoteToVoice(note, voice);
+            if (allocations.count(note) == 0) {
+                allocations[note] = voice;
+            }
+            else {
+                LOGD("duplicate note allocation");
+            }
+        }
+        else {
+            // todo ???
+            cout << "cannot add string " << note->string
+                 << " fret " << note->fret
+                 << " to voice " << voice << '\n';
+            LOGD("cannot add string %d fret %d to voice %d", note->string, note->fret, voice);
+        }
+    }
+}
+
+int TablEdit::VoiceAllocator::voice(const TefNote* const note)
+{
+    int res { 0 }; // TODO -1 ?
+    if (allocations.count(note) > 0) {
+        res = allocations[note];
+    }
+    else {
+        LOGD("no voice allocated for note %p", note);
+    }
+
+    LOGD("note %p voice %d res %d", note, note->voice, res);
+    //return note->voice; // TODO: temp
+    return res;
+}
+
+// debug: use color cr to show voice
+
+static muse::draw::Color toColor(const int voice)
+{
+    switch (voice) {
+    case 0: return muse::draw::Color::BLUE;
+    case 1: return muse::draw::Color::GREEN;
+    case 2: return muse::draw::Color::RED;
+    case 3: return { 150, 150, 0, 255 };
+    //case 3: cr->setColor(muse::draw::Color::RED); break;
+    default: return muse::draw::Color::BLACK;
+    }
+
+}
+
+// TODO: make part-specific
+void TablEdit::allocateVoices(VoiceAllocator& allocator)
+{
+    vector<const TefNote* const> column;
+    int currentPosition { -1 };
+    for (const TefNote& tefNote : tefContents) {
+        if (tefNote.position != currentPosition) {
+            // handle the previous column
+            allocator.addColumn(column);
+            // start a new column
+            currentPosition = tefNote.position;
+            column.clear();
+        }
+        column.push_back(&tefNote);
+    }
+    // handle the last column
+    allocator.addColumn(column);
+}
+
 void TablEdit::createContents()
 {
+    VoiceAllocator voiceAllocator;  // TODO: make part-specific
+    allocateVoices(voiceAllocator);
     for (const auto& tefNote : tefContents) {
         if (tefInstruments.size() == 0) {
             LOGD("error: no instruments");
@@ -134,9 +311,6 @@ void TablEdit::createContents()
             LOGD("error: invalid string %d", tefNote.string);
             continue;
         }
-        const auto stringOffset = stringNumberPreviousParts(part);
-        const auto track = part * VOICES + tefNote.voice;
-        LOGD("part %zu stringOffset %d track %zu", part, stringOffset, track);
 
         const TefInstrument& instrument { tefInstruments.at(part) };
         if (instrument.stringNumber < 1 || 12 < instrument.stringNumber) {
@@ -148,6 +322,10 @@ void TablEdit::createContents()
             LOGD("error: invalid voice %d", tefNote.voice);
             continue;
         }
+        const auto stringOffset = stringNumberPreviousParts(part);
+        const auto voice = voiceAllocator.voice(&tefNote);
+        const auto track = part * VOICES + voice;
+        LOGD("part %zu stringOffset %d voice %d track %zu", part, stringOffset, voice, track);
 
         ChordRest* cr { nullptr };
         Fraction length { tefNote.length, 64 }; // length is in 64th
@@ -188,6 +366,7 @@ void TablEdit::createContents()
             else {
                 mu::engraving::Rest* rest = Factory::createRest(segment);
                 cr = rest;
+                rest->setColor(toColor(voice));
                 rest->setTrack(track);
                 rest->setDurationType(tDuration);
                 rest->setTicks(length);
@@ -219,6 +398,7 @@ void TablEdit::createContents()
                 chord->setTicks(length);
                 // add note to chord
                 mu::engraving::Note* note = Factory::createNote(chord);
+                note->setColor(toColor(voice));
                 note->setTrack(part * VOICES + tefNote.voice);
                 int pitch = 96 - instrument.tuning.at(tefNote.string - stringOffset - 1)  + tefNote.fret;  // todo fix magical constant 96 and code duplication
                 LOGD("-> string %d fret %d pitch %d", tefNote.string, tefNote.fret, pitch);
