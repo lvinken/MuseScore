@@ -128,7 +128,7 @@ int calculatePitch(const int string, const int fret)
     if (1 <= string && string <= 6 && 0 <= fret) {
         res = standardTuning.at(6 - string) + fret;
     }
-    //cout << " string " << string << " fret " << fret << " pitch " << res << '\n';
+    LOGN("string %d fret %d pitch %d", string, fret, res);
     return res;
 }
 
@@ -136,9 +136,7 @@ bool TablEdit::VoiceAllocator::canAddTefNoteToVoice(const TefNote* const note, c
 {
     // is there room after the previous note ?
     if (stopPosition(voice) <= note->position) {
-        cout << "add string " << note->string
-             << " fret " << note->fret
-             << " to voice " << voice << '\n';
+        LOGD("add string %d fret %d to voice %d", note->string, note->fret, voice);
         return true;
     }
     // can the note go into a chord ?
@@ -148,9 +146,7 @@ bool TablEdit::VoiceAllocator::canAddTefNoteToVoice(const TefNote* const note, c
         && !note->rest
         && notePlaying->position == note->position
         && notePlaying->duration == note->duration ) {
-        cout << "add string " << note->string
-             << " fret " << note->fret
-             << " to voice " << voice << " as chord\n";
+        LOGD("add string %d fret %d to voice %d as chord", note->string, note->fret, voice);
         return true;
     }
     return false;
@@ -201,7 +197,7 @@ int durationToInt(uint8_t duration)
 int TablEdit::VoiceAllocator::stopPosition(const size_t voice)
 {
     if (VOICES <= voice) {
-        cout << "stopPosition: incorrect voice " << voice << '\n';
+        LOGD("incorrect voice %zu", voice);
         return -1;
     }
 
@@ -221,7 +217,13 @@ void TablEdit::VoiceAllocator::addColumn(const vector<const TefNote* const>& col
         }
         int pitch { calculatePitch(note->string, note->fret) };
         int voice { 0 };
-        if (C4 <= pitch) {
+        if (note->voice == 2) { // TODO: fix magic constant
+            voice = findFirstPossibleVoice(note, { 0, 2, 3 });
+        }
+        else if (note->voice == 3) { // TODO: fix magic constant
+            voice = findFirstPossibleVoice(note, { 1, 2, 3 });
+        }
+        else if (pitch >= C4) {
             voice = findFirstPossibleVoice(note, { 0, 2, 3 });
         }
         else {
@@ -231,16 +233,13 @@ void TablEdit::VoiceAllocator::addColumn(const vector<const TefNote* const>& col
             // TODO addTefNoteToVoice(note, voice);
             if (allocations.count(note) == 0) {
                 allocations[note] = voice;
+                notesPlaying[voice] = note;
             }
             else {
                 LOGD("duplicate note allocation");
             }
         }
         else {
-            // todo ???
-            cout << "cannot add string " << note->string
-                 << " fret " << note->fret
-                 << " to voice " << voice << '\n';
             LOGD("cannot add string %d fret %d to voice %d", note->string, note->fret, voice);
         }
     }
@@ -265,6 +264,7 @@ int TablEdit::VoiceAllocator::voice(const TefNote* const note)
 
 static muse::draw::Color toColor(const int voice)
 {
+    //return muse::draw::Color::BLACK;
     switch (voice) {
     case 0: return muse::draw::Color::BLUE;
     case 1: return muse::draw::Color::GREEN;
