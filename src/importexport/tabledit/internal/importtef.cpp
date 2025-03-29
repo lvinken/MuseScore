@@ -230,7 +230,6 @@ void TablEdit::VoiceAllocator::addColumn(const vector<const TefNote* const>& col
             voice = findFirstPossibleVoice(note, { 1, 2, 3 });
         }
         if (voice >= 0) {
-            // TODO addTefNoteToVoice(note, voice);
             if (allocations.count(note) == 0) {
                 allocations[note] = voice;
                 notesPlaying[voice] = note;
@@ -256,7 +255,6 @@ int TablEdit::VoiceAllocator::voice(const TefNote* const note)
     }
 
     LOGD("note %p voice %d res %d", note, note->voice, res);
-    //return note->voice; // TODO: temp
     return res;
 }
 
@@ -264,16 +262,17 @@ int TablEdit::VoiceAllocator::voice(const TefNote* const note)
 
 static muse::draw::Color toColor(const int voice)
 {
-    //return muse::draw::Color::BLACK;
+#if 0
+    return muse::draw::Color::BLACK;
+#else
     switch (voice) {
     case 0: return muse::draw::Color::BLUE;
     case 1: return muse::draw::Color::GREEN;
     case 2: return muse::draw::Color::RED;
     case 3: return { 150, 150, 0, 255 };
-    //case 3: cr->setColor(muse::draw::Color::RED); break;
     default: return muse::draw::Color::BLACK;
     }
-
+#endif
 }
 
 // TODO: make part-specific
