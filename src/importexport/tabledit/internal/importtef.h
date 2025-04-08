@@ -95,13 +95,14 @@ class TablEdit
         int length { 0 };
         int dots { 0 };
         bool triplet { false };
-        int voice { 0 };
+        int voice { 0 };        // 0: default, 2: upper, 3: lower
     };
 
     class VoiceAllocator
     {
     public:
         void addColumn(const vector<const TefNote* const>& column);
+        void allocateVoice(const TefNote* const note, int voice);
         bool canAddTefNoteToVoice(const TefNote* const note, const int voice);
         int findFirstPossibleVoice(const TefNote* const note, const array<int, 3> voices);
         int stopPosition(const size_t voice);
