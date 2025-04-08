@@ -208,8 +208,25 @@ int TablEdit::VoiceAllocator::stopPosition(const size_t voice)
     return 0;
 }
 
+void TablEdit::VoiceAllocator::allocateVoice(const TefNote* const note, int voice)
+{
+    if (voice >= 0) {
+        if (allocations.count(note) == 0) {
+            allocations[note] = voice;
+            notesPlaying[voice] = note;
+        }
+        else {
+            LOGD("duplicate note allocation");
+        }
+    }
+    else {
+        LOGD("cannot add string %d fret %d to voice %d", note->string, note->fret, voice);
+    }
+}
+
 void TablEdit::VoiceAllocator::addColumn(const vector<const TefNote* const>& column)
 {
+#if 0
     const int C4 { 60 };
     for (const auto note : column) {
         if (note->rest) {
@@ -242,11 +259,137 @@ void TablEdit::VoiceAllocator::addColumn(const vector<const TefNote* const>& col
             LOGD("cannot add string %d fret %d to voice %d", note->string, note->fret, voice);
         }
     }
+#endif
+#if 0
+    for (const auto note : column) {
+        if (note->rest) {
+            continue;   // ignore rests
+        }
+        int voice { -1 };
+        if (note->voice == 3) { // TODO: fix magic constant
+            voice = findFirstPossibleVoice(note, { 0, 2, 3 });
+        }
+        else if (note->voice == 2) { // TODO: fix magic constant
+            voice = findFirstPossibleVoice(note, { 1, 2, 3 });
+        }
+        else {
+            voice = findFirstPossibleVoice(note, { 0, 1, 2 /* TODO , 3 */ });
+        }
+        LOGD("string %d fret %d voice %d", note->string, note->fret, voice);
+        if (voice >= 0) {
+            if (allocations.count(note) == 0) {
+                allocations[note] = voice;
+                notesPlaying[voice] = note;
+            }
+            else {
+                LOGD("duplicate note allocation");
+            }
+        }
+        else {
+            LOGD("cannot add string %d fret %d to voice %d", note->string, note->fret, voice);
+        }
+    }
+#endif
+    const TefNote* note {nullptr};
+    int voice { -1 };
+    if (column.size() == 1) {
+        LOGD("size 1");
+        note = column.at(0);
+        voice = -1;
+        LOGD("note position %d voice %d", note->position, note->voice);
+        if (note->voice == 2) { // TODO: fix magic constant
+            voice = findFirstPossibleVoice(note, { 0, 2, 3 });
+        }
+        else if (note->voice == 3) { // TODO: fix magic constant
+            voice = findFirstPossibleVoice(note, { 1, 2, 3 });
+        }
+        else {
+            voice = findFirstPossibleVoice(note, { 0, 1, 2 /* TODO , 3 */ });
+        }
+        allocateVoice(note, voice);
+    }
+    else if (column.size() == 2) {
+        LOGD("size 2 at(0)");
+        note = column.at(0);
+        voice = -1;
+        LOGD("note position %d voice %d", note->position, note->voice);
+        if (note->voice == 2) { // TODO: fix magic constant
+            voice = findFirstPossibleVoice(note, { 0, 2, 3 });
+        }
+        else if (note->voice == 3) { // TODO: fix magic constant
+            voice = findFirstPossibleVoice(note, { 1, 2, 3 });
+        }
+        else {
+            voice = findFirstPossibleVoice(note, { 0, 1, 2 /* TODO , 3 */ });
+        }
+        allocateVoice(note, voice);
+        LOGD("size 2 at(1)");
+        note = column.at(1);
+        voice = -1;
+        LOGD("note position %d voice %d", note->position, note->voice);
+        if (note->voice == 2) { // TODO: fix magic constant
+            voice = findFirstPossibleVoice(note, { 0, 2, 3 });
+        }
+        else if (note->voice == 3) { // TODO: fix magic constant
+            voice = findFirstPossibleVoice(note, { 1, 2, 3 });
+        }
+        else {
+            voice = findFirstPossibleVoice(note, { 1, 0, 2 /* TODO , 3 */ });
+        }
+        allocateVoice(note, voice);
+    }
+    else if (column.size() > 2) {
+        LOGD("size >2 at(0)");
+        note = column.at(0);
+        voice = -1;
+        LOGD("note position %d voice %d", note->position, note->voice);
+        if (note->voice == 2) { // TODO: fix magic constant
+            voice = findFirstPossibleVoice(note, { 0, 2, 3 });
+        }
+        else if (note->voice == 3) { // TODO: fix magic constant
+            voice = findFirstPossibleVoice(note, { 1, 2, 3 });
+        }
+        else {
+            voice = findFirstPossibleVoice(note, { 0, 1, 2 /* TODO , 3 */ });
+        }
+        allocateVoice(note, voice);
+        LOGD("size >2 at(last)");
+        note = column.at(column.size() - 1);
+        voice = -1;
+        LOGD("note position %d voice %d", note->position, note->voice);
+        if (note->voice == 2) { // TODO: fix magic constant
+            voice = findFirstPossibleVoice(note, { 0, 2, 3 });
+        }
+        else if (note->voice == 3) { // TODO: fix magic constant
+            voice = findFirstPossibleVoice(note, { 1, 2, 3 });
+        }
+        else {
+            voice = findFirstPossibleVoice(note, { 1, 0, 2 /* TODO , 3 */ });
+        }
+        allocateVoice(note, voice);
+        for (unsigned int i = 1; i < column.size() - 1; ++i) {
+            LOGD("size %zu at(%d)", column.size(), i);
+            note = column.at(i);
+            voice = -1;
+            LOGD("note position %d voice %d", note->position, note->voice);
+            if (note->voice == 2) { // TODO: fix magic constant
+                voice = findFirstPossibleVoice(note, { 0, 2, 3 });
+            }
+            else if (note->voice == 3) { // TODO: fix magic constant
+                voice = findFirstPossibleVoice(note, { 1, 2, 3 });
+            }
+            else {
+                voice = findFirstPossibleVoice(note, { 0, 1, 2 /* TODO , 3 */ });
+            }
+            allocateVoice(note, voice);
+        }
+    }
 }
+
 
 int TablEdit::VoiceAllocator::voice(const TefNote* const note)
 {
-    int res { 0 }; // TODO -1 ?
+    int res { -1 }; // TODO -1 ?
     if (allocations.count(note) > 0) {
         res = allocations[note];
     }
