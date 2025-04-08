@@ -751,6 +751,7 @@ void TablEdit::createTitleFrame()
  */
 
 // return note length in 64th
+// TODO: check for code duplication
 
 static int duration2length(const int duration) {
     if (0 <= duration && duration <= 18) {
@@ -787,8 +788,13 @@ static int duration2length(const int duration) {
     return 0; // invalid (result is weird layout)
 }
 
+// TODO: check for code duplication
+
 static int duration2dots(const int duration) {
-    if (0 <= duration && duration <= 18 && (duration % 3) == 1) {
+    if (0 <= duration && duration <= 18 && (duration % 3) == 0) {
+        return 0;
+    }
+    else if (0 <= duration && duration <= 18 && (duration % 3) == 1) {
         return 1;
     }
     else if (duration == 19 || duration == 22 || duration == 25 || duration == 28) {
