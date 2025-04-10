@@ -102,6 +102,7 @@ class TablEdit
     {
     public:
         void addColumn(const vector<const TefNote* const>& column);
+        void addNote(const TefNote* const note, const bool preferVoice0);
         void allocateVoice(const TefNote* const note, int voice);
         bool canAddTefNoteToVoice(const TefNote* const note, const int voice);
         int findFirstPossibleVoice(const TefNote* const note, const array<int, 3> voices);
