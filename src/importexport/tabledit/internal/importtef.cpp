@@ -120,18 +120,6 @@ int TablEdit::stringNumberPreviousParts(part_idx_t partIdx) const
 
 }
 
-array<int, 6> standardTuning = { 40, 45, 50, 55, 59, 64 };
-
-int calculatePitch(const int string, const int fret)
-{
-    int res { -1 }; // invalid
-    if (1 <= string && string <= 6 && 0 <= fret) {
-        res = standardTuning.at(6 - string) + fret;
-    }
-    LOGN("string %d fret %d pitch %d", string, fret, res);
-    return res;
-}
-
 bool TablEdit::VoiceAllocator::canAddTefNoteToVoice(const TefNote* const note, const int voice)
 {
     // is there room after the previous note ?
@@ -281,9 +269,11 @@ int TablEdit::VoiceAllocator::voice(const TefNote* const note)
 
 static muse::draw::Color toColor(const int voice)
 {
-#if 0
+#if 1
+    // no debug: color notes black
     return muse::draw::Color::BLACK;
 #else
+    // debug: color notes based on voice number
     switch (voice) {
     case 0: return muse::draw::Color::BLUE;
     case 1: return muse::draw::Color::GREEN;
