@@ -113,7 +113,7 @@ class TablEdit
         array<const TefNote*, mu::engraving::VOICES> notesPlaying = { nullptr, nullptr, nullptr, nullptr };
     };
 
-    void allocateVoices(VoiceAllocator& allocator);
+    void allocateVoices(vector<VoiceAllocator>& allocator);
     void createContents();
     void createMeasures();
     void createNotesFrame();
@@ -122,6 +122,7 @@ class TablEdit
     void createScore();
     void createTempo();
     void createTitleFrame();
+    void initializeVoiceAllocators(vector<VoiceAllocator>& allocators);
     engraving::part_idx_t partIdx(size_t stringIdx, bool& ok) const;
     int stringNumberPreviousParts(engraving::part_idx_t partIdx) const;
     void readTefContents();
