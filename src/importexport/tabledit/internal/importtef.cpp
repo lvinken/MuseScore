@@ -83,12 +83,12 @@ string TablEdit::readUtf8Text(uint32_t positionOfPosition)
     return result;
 }
 
-// return the start track for the instrument containing stringIdx
+// return the part index for the instrument containing stringIdx
 
 engraving::part_idx_t TablEdit::partIdx(size_t stringIdx, bool &ok) const
 {
     ok = true;
-    engraving::track_idx_t result { 0 };
+    engraving::part_idx_t result { 0 };
     engraving::track_idx_t lowerBound { 1 };
     engraving::track_idx_t upperBound { 0 };
 
@@ -294,29 +294,48 @@ static muse::draw::Color toColor(const int voice)
 #endif
 }
 
-// TODO: make part-specific
-void TablEdit::allocateVoices(VoiceAllocator& allocator)
+// create a VoiceAllocator for every instrument
+
+void TablEdit::initializeVoiceAllocators(vector<VoiceAllocator>& allocators)
+{
+    for (size_t i = 0; i < tefInstruments.size(); ++i) {
+        VoiceAllocator allocator;
+        allocators.push_back(allocator);
+    }
+}
+
+void TablEdit::allocateVoices(vector<VoiceAllocator>& allocators)
 {
     vector<const TefNote* const> column;
     int currentPosition { -1 };
+    engraving::part_idx_t currentPart { 0 };
     for (const TefNote& tefNote : tefContents) {
-        if (tefNote.position != currentPosition) {
+        // a new column is started when either the postion or the part changes
+        bool ok { true };
+        const auto part = partIdx(tefNote.string, ok);
+        if (!ok) {
+            LOGD("error: invalid string %d", tefNote.string);
+            continue;
+        }
+        if (tefNote.position != currentPosition || part != currentPart) {
             // handle the previous column
-            allocator.addColumn(column);
+            allocators[currentPart].addColumn(column);
             // start a new column
             currentPosition = tefNote.position;
+            currentPart = part;
             column.clear();
         }
         column.push_back(&tefNote);
     }
     // handle the last column
-    allocator.addColumn(column);
+    allocators[currentPart].addColumn(column);
 }
 
 void TablEdit::createContents()
 {
-    VoiceAllocator voiceAllocator;  // TODO: make part-specific
-    allocateVoices(voiceAllocator);
+    vector<VoiceAllocator> voiceAllocators;
+    initializeVoiceAllocators(voiceAllocators);
+    allocateVoices(voiceAllocators);
     for (const auto& tefNote : tefContents) {
         if (tefInstruments.size() == 0) {
             LOGD("error: no instruments");
@@ -341,7 +360,7 @@ void TablEdit::createContents()
             continue;
         }
         const auto stringOffset = stringNumberPreviousParts(part);
-        const auto voice = voiceAllocator.voice(&tefNote);
+        const auto voice = voiceAllocators[part].voice(&tefNote);
         const auto track = part * VOICES + voice;
         LOGD("part %zu stringOffset %d voice %d track %zu", part, stringOffset, voice, track);
 
