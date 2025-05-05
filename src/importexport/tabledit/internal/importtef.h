@@ -109,8 +109,10 @@ class TablEdit
         int stopPosition(const size_t voice);
         int voice(const TefNote* const note);
     private:
+        void appendNoteToVoice(const TefNote* const note, int voice);
         map<const TefNote*, int> allocations;
         array<const TefNote*, mu::engraving::VOICES> notesPlaying = { nullptr, nullptr, nullptr, nullptr };
+        array<vector<vector<const TefNote*>>, mu::engraving::VOICES> voices;
     };
 
     void allocateVoices(vector<VoiceAllocator>& allocator);
