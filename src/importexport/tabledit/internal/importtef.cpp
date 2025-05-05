@@ -196,12 +196,43 @@ int TablEdit::VoiceAllocator::stopPosition(const size_t voice)
     return 0;
 }
 
+void TablEdit::VoiceAllocator::appendNoteToVoice(const TefNote* const note, int voice)
+{
+    LOGD("position %d string %d fret %d voice %d", note->position, note->string, note->fret, voice);
+    const auto nChords {voices[voice].size()};
+    LOGD("voice %d nChords %zu", voice, nChords);
+    if (nChords == 0) {
+        LOGD("create first chord");
+        vector<const TefNote*> chord;
+        chord.push_back(note);
+        voices[voice].push_back(chord);
+    }
+    else {
+        const auto position {voices[voice].at(nChords - 1).at(0)->position};
+        LOGD("chord %zu position %d", nChords - 1, position);
+        if (position == note->position) {
+            LOGD("add to last chord");
+            voices[voice].at(nChords - 1).push_back(note);
+        }
+        else {
+            LOGD("create next chord at position %d", note->position);
+            vector<const TefNote*> chord;
+            chord.push_back(note);
+            voices[voice].push_back(chord);
+        }
+    }
+    LOGD("done");
+}
+
 void TablEdit::VoiceAllocator::allocateVoice(const TefNote* const note, int voice)
 {
     if (voice >= 0) {
+        // do actual allocation
+        // note chord info is lost
         if (allocations.count(note) == 0) {
             allocations[note] = voice;
             notesPlaying[voice] = note;
+            appendNoteToVoice(note, voice);
         }
         else {
             LOGD("duplicate note allocation");
@@ -269,7 +300,7 @@ int TablEdit::VoiceAllocator::voice(const TefNote* const note)
 
 static muse::draw::Color toColor(const int voice)
 {
-#if 1
+#if 0
     // no debug: color notes black
     return muse::draw::Color::BLACK;
 #else
