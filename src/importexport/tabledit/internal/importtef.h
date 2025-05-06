@@ -105,6 +105,7 @@ class TablEdit
         void addNote(const TefNote* const note, const bool preferVoice0);
         void allocateVoice(const TefNote* const note, int voice);
         bool canAddTefNoteToVoice(const TefNote* const note, const int voice);
+        void dump();
         int findFirstPossibleVoice(const TefNote* const note, const array<int, 3> voices);
         int stopPosition(const size_t voice);
         int voice(const TefNote* const note);
