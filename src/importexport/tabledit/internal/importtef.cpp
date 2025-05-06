@@ -224,6 +224,21 @@ void TablEdit::VoiceAllocator::appendNoteToVoice(const TefNote* const note, int 
     LOGD("done");
 }
 
+// debug: dump voices
+
+void TablEdit::VoiceAllocator::dump()
+{
+    for (size_t i = 0; i < mu::engraving::VOICES; ++i) {
+        LOGD("- voice %zu", i);
+        for (size_t j = 0; j < voices.at(i).size(); ++j) {
+            LOGD("  - chord %zu", j);
+            for (const auto note : voices.at(i).at(j)) {
+                LOGD("    - position %d string %d fret %d", note->position, note->string, note->fret);
+            }
+        }
+    }
+}
+
 void TablEdit::VoiceAllocator::allocateVoice(const TefNote* const note, int voice)
 {
     if (voice >= 0) {
@@ -357,6 +372,10 @@ void TablEdit::createContents()
     vector<VoiceAllocator> voiceAllocators;
     initializeVoiceAllocators(voiceAllocators);
     allocateVoices(voiceAllocators);
+    for (size_t i = 0; i < voiceAllocators.size(); ++i) {
+        LOGD("voiceAllocator %zu", i);
+        voiceAllocators.at(i).dump();
+    }
     for (const auto& tefNote : tefContents) {
         if (tefInstruments.size() == 0) {
             LOGD("error: no instruments");
