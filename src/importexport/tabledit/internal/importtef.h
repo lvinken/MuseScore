@@ -109,6 +109,8 @@ class TablEdit
         int findFirstPossibleVoice(const TefNote* const note, const array<int, 3> voices);
         int stopPosition(const size_t voice);
         int voice(const TefNote* const note);
+        const vector<vector<const TefNote*>>& voice(int voice) const { return voices.at(voice); }
+
     private:
         void appendNoteToVoice(const TefNote* const note, int voice);
         map<const TefNote*, int> allocations;
