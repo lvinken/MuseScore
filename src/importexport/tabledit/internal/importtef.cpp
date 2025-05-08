@@ -372,9 +372,24 @@ void TablEdit::createContents()
     vector<VoiceAllocator> voiceAllocators;
     initializeVoiceAllocators(voiceAllocators);
     allocateVoices(voiceAllocators);
+#if 0
     for (size_t i = 0; i < voiceAllocators.size(); ++i) {
         LOGD("voiceAllocator %zu", i);
         voiceAllocators.at(i).dump();
+    }
+#endif
+    for (size_t i = 0; i < tefInstruments.size(); ++i) {
+        LOGD("voiceAllocator %zu", i);
+        for (size_t j = 0; j < mu::engraving::VOICES; ++j) {
+            LOGD("- voice %zu", j);
+            auto& voice {voiceAllocators.at(i).voice(j)};
+            for (size_t k = 0; k < voice.size(); ++k) {
+                LOGD("  - chord %zu", k);
+                for (const auto note : voice.at(k)) {
+                    LOGD("    - position %d string %d fret %d", note->position, note->string, note->fret);
+                }
+            }
+        }
     }
     for (const auto& tefNote : tefContents) {
         if (tefInstruments.size() == 0) {
