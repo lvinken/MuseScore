@@ -199,26 +199,26 @@ int TablEdit::VoiceAllocator::stopPosition(const size_t voice)
 void TablEdit::VoiceAllocator::appendNoteToVoice(const TefNote* const note, int voice)
 {
     LOGD("position %d string %d fret %d voice %d", note->position, note->string, note->fret, voice);
-    const auto nChords {voices[voice].size()};
+    const auto nChords {voiceContents[voice].size()};
     LOGD("voice %d nChords %zu", voice, nChords);
     if (nChords == 0) {
         LOGD("create first chord");
         vector<const TefNote*> chord;
         chord.push_back(note);
-        voices[voice].push_back(chord);
+        voiceContents[voice].push_back(chord);
     }
     else {
-        const auto position {voices[voice].at(nChords - 1).at(0)->position};
+        const auto position {voiceContents[voice].at(nChords - 1).at(0)->position};
         LOGD("chord %zu position %d", nChords - 1, position);
         if (position == note->position) {
             LOGD("add to last chord");
-            voices[voice].at(nChords - 1).push_back(note);
+            voiceContents[voice].at(nChords - 1).push_back(note);
         }
         else {
             LOGD("create next chord at position %d", note->position);
             vector<const TefNote*> chord;
             chord.push_back(note);
-            voices[voice].push_back(chord);
+            voiceContents[voice].push_back(chord);
         }
     }
     LOGD("done");
@@ -230,9 +230,9 @@ void TablEdit::VoiceAllocator::dump()
 {
     for (size_t i = 0; i < mu::engraving::VOICES; ++i) {
         LOGD("- voice %zu", i);
-        for (size_t j = 0; j < voices.at(i).size(); ++j) {
+        for (size_t j = 0; j < voiceContents.at(i).size(); ++j) {
             LOGD("  - chord %zu", j);
-            for (const auto note : voices.at(i).at(j)) {
+            for (const auto note : voiceContents.at(i).at(j)) {
                 LOGD("    - position %d string %d fret %d", note->position, note->string, note->fret);
             }
         }
@@ -387,10 +387,10 @@ void TablEdit::createContents()
         LOGD("voiceAllocator %zu", i);
         for (size_t j = 0; j < mu::engraving::VOICES; ++j) {
             LOGD("- voice %zu", j);
-            auto& voice {voiceAllocators.at(i).voice(j)};
-            for (size_t k = 0; k < voice.size(); ++k) {
+            auto& voiceContent {voiceAllocators.at(i).voiceContent(j)};
+            for (size_t k = 0; k < voiceContent.size(); ++k) {
                 LOGD("  - chord %zu", k);
-                for (const auto note : voice.at(k)) {
+                for (const auto note : voiceContent.at(k)) {
                     LOGD("    - position %d string %d fret %d", note->position, note->string, note->fret);
                 }
             }
@@ -399,12 +399,12 @@ void TablEdit::createContents()
     //
     for (size_t part = 0; part < tefInstruments.size(); ++part) {
         //LOGD("voiceAllocator %zu", i);
-        for (size_t j = 0; j < mu::engraving::VOICES; ++j) {
-            //LOGD("- voice %zu", j);
-            auto& voice {voiceAllocators.at(part).voice(j)};
-            for (size_t k = 0; k < voice.size(); ++k) {
+        for (size_t voice = 0; voice < mu::engraving::VOICES; ++voice) {
+            //LOGD("- voice %zu", voice);
+            auto& voiceContent {voiceAllocators.at(part).voiceContent(voice)};
+            for (size_t k = 0; k < voiceContent.size(); ++k) {
                 //LOGD("  - chord %zu", k);
-                for (const auto note : voice.at(k)) {
+                for (const auto note : voiceContent.at(k)) {
                     //LOGD("    - position %d string %d fret %d", note->position, note->string, note->fret);
                     const TefNote tefNote { *note }; // todo avoid copy
                     //for (const auto& tefNote : tefContents) {
@@ -426,7 +426,7 @@ void TablEdit::createContents()
                         continue;
                     }
                     const auto stringOffset = stringNumberPreviousParts(part);
-                    const auto voice = j; // todo fix voice name conflict (used twice) and int vs size_t
+                    //const auto voice = j; // todo fix voice name conflict (used twice) and int vs size_t
                     const auto track = part * VOICES + voice;
                     LOGD("part %zu stringOffset %d voice %zu track %zu", part, stringOffset, voice, track);
 

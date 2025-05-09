@@ -109,13 +109,13 @@ class TablEdit
         int findFirstPossibleVoice(const TefNote* const note, const array<int, 3> voices);
         int stopPosition(const size_t voice);
         int voice(const TefNote* const note);
-        const vector<vector<const TefNote*>>& voice(int voice) const { return voices.at(voice); }
+        const vector<vector<const TefNote*>>& voiceContent(int voice) const { return voiceContents.at(voice); }
 
     private:
         void appendNoteToVoice(const TefNote* const note, int voice);
         map<const TefNote*, int> allocations;
         array<const TefNote*, mu::engraving::VOICES> notesPlaying = { nullptr, nullptr, nullptr, nullptr };
-        array<vector<vector<const TefNote*>>, mu::engraving::VOICES> voices;
+        array<vector<vector<const TefNote*>>, mu::engraving::VOICES> voiceContents;
     };
 
     void allocateVoices(vector<VoiceAllocator>& allocator);
