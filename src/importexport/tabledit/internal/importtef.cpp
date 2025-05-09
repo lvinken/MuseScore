@@ -367,6 +367,29 @@ void TablEdit::allocateVoices(vector<VoiceAllocator>& allocators)
     allocators[currentPart].addColumn(column);
 }
 
+static void addNoteToChord(mu::engraving::Chord* chord, track_idx_t track, int pitch, int fret, int string, muse::draw::Color color)
+{
+    mu::engraving::Note* note = Factory::createNote(chord);
+    note->setTrack(track);
+    note->setPitch(pitch);
+    note->setTpcFromPitch(Prefer::NEAREST);
+    note->setFret(fret);
+    note->setString(string);
+    note->setColor(color);
+    chord->add(note);
+}
+
+static void addRest(Segment* segment, track_idx_t track, TDuration tDuration, Fraction length, muse::draw::Color color)
+{
+    mu::engraving::Rest* rest = Factory::createRest(segment);
+    rest->setTrack(track);
+    rest->setDurationType(tDuration);
+    rest->setTicks(length);
+    rest->setColor(color);
+    segment->add(rest);
+    LOGD("-> rest");
+}
+
 void TablEdit::createContents()
 {
     if (tefInstruments.size() == 0) {
@@ -426,7 +449,6 @@ void TablEdit::createContents()
                         continue;
                     }
                     const auto stringOffset = stringNumberPreviousParts(part);
-                    //const auto voice = j; // todo fix voice name conflict (used twice) and int vs size_t
                     const auto track = part * VOICES + voice;
                     LOGD("part %zu stringOffset %d voice %zu track %zu", part, stringOffset, voice, track);
 
@@ -467,14 +489,7 @@ void TablEdit::createContents()
                             LOGD("-> error: ignoring rest: segment not empty");
                         }
                         else {
-                            mu::engraving::Rest* rest = Factory::createRest(segment);
-                            cr = rest;
-                            rest->setColor(toColor(voice));
-                            rest->setTrack(track);
-                            rest->setDurationType(tDuration);
-                            rest->setTicks(length);
-                            segment->add(cr);
-                            LOGD("-> rest");
+                            addRest(segment, track, tDuration, length, toColor(voice));
                         }
                     }
                     else {
@@ -499,17 +514,10 @@ void TablEdit::createContents()
                             chord->setTrack(track);
                             chord->setDurationType(tDuration);
                             chord->setTicks(length);
-                            // add note to chord
-                            mu::engraving::Note* note = Factory::createNote(chord);
-                            note->setColor(toColor(voice));
-                            note->setTrack(part * VOICES + tefNote.voice);
                             int pitch = 96 - instrument.tuning.at(tefNote.string - stringOffset - 1)  + tefNote.fret;  // todo fix magical constant 96 and code duplication
                             LOGD("-> string %d fret %d pitch %d", tefNote.string, tefNote.fret, pitch);
-                            note->setPitch(pitch);
-                            note->setTpcFromPitch(Prefer::NEAREST);
-                            note->setFret(tefNote.fret);
-                            note->setString(tefNote.string - 1); // TableEdit's strings start at 1, MuseScore's at 0
-                            chord->add(note);
+                            // note TableEdit's strings start at 1, MuseScore's at 0
+                            addNoteToChord(chord, track, pitch, tefNote.fret, tefNote.string - 1, toColor(voice));
                             if (!element) {
                                 // create chord
                                 //chord = Factory::createChord(segment);
