@@ -370,24 +370,27 @@ void TablEdit::allocateVoices(vector<VoiceAllocator>& allocators)
 static void addNoteToChord(mu::engraving::Chord* chord, track_idx_t track, int pitch, int fret, int string, muse::draw::Color color)
 {
     mu::engraving::Note* note = Factory::createNote(chord);
-    note->setTrack(track);
-    note->setPitch(pitch);
-    note->setTpcFromPitch(Prefer::NEAREST);
-    note->setFret(fret);
-    note->setString(string);
-    note->setColor(color);
-    chord->add(note);
+    if (note) {
+        note->setTrack(track);
+        note->setPitch(pitch);
+        note->setTpcFromPitch(Prefer::NEAREST);
+        note->setFret(fret);
+        note->setString(string);
+        note->setColor(color);
+        chord->add(note);
+    }
 }
 
 static void addRest(Segment* segment, track_idx_t track, TDuration tDuration, Fraction length, muse::draw::Color color)
 {
     mu::engraving::Rest* rest = Factory::createRest(segment);
-    rest->setTrack(track);
-    rest->setDurationType(tDuration);
-    rest->setTicks(length);
-    rest->setColor(color);
-    segment->add(rest);
-    LOGD("-> rest");
+    if (rest) {
+        rest->setTrack(track);
+        rest->setDurationType(tDuration);
+        rest->setTicks(length);
+        rest->setColor(color);
+        segment->add(rest);
+    }
 }
 
 void TablEdit::createContents()
@@ -400,131 +403,88 @@ void TablEdit::createContents()
     vector<VoiceAllocator> voiceAllocators;
     initializeVoiceAllocators(voiceAllocators);
     allocateVoices(voiceAllocators);
-#if 0
-    for (size_t i = 0; i < voiceAllocators.size(); ++i) {
-        LOGD("voiceAllocator %zu", i);
-        voiceAllocators.at(i).dump();
-    }
-#endif
-    for (size_t i = 0; i < tefInstruments.size(); ++i) {
-        LOGD("voiceAllocator %zu", i);
-        for (size_t j = 0; j < mu::engraving::VOICES; ++j) {
-            LOGD("- voice %zu", j);
-            auto& voiceContent {voiceAllocators.at(i).voiceContent(j)};
-            for (size_t k = 0; k < voiceContent.size(); ++k) {
-                LOGD("  - chord %zu", k);
-                for (const auto note : voiceContent.at(k)) {
-                    LOGD("    - position %d string %d fret %d", note->position, note->string, note->fret);
-                }
-            }
-        }
-    }
-    //
+
     for (size_t part = 0; part < tefInstruments.size(); ++part) {
-        //LOGD("voiceAllocator %zu", i);
+
+        LOGD("part %zu", part);
         for (size_t voice = 0; voice < mu::engraving::VOICES; ++voice) {
-            //LOGD("- voice %zu", voice);
+
+            LOGD("- voice %zu", voice);
             auto& voiceContent {voiceAllocators.at(part).voiceContent(voice)};
             for (size_t k = 0; k < voiceContent.size(); ++k) {
-                //LOGD("  - chord %zu", k);
-                for (const auto note : voiceContent.at(k)) {
-                    //LOGD("    - position %d string %d fret %d", note->position, note->string, note->fret);
-                    const TefNote tefNote { *note }; // todo avoid copy
-                    //for (const auto& tefNote : tefContents) {
-                    bool ok { true };
-                    //const auto part = partIdx(tefNote.string, ok);
-                    if (!ok) {
-                        LOGD("error: invalid string %d", tefNote.string);
-                        continue;
-                    }
 
-                    const TefInstrument& instrument { tefInstruments.at(part) };
-                    if (instrument.stringNumber < 1 || 12 < instrument.stringNumber) {
-                        LOGD("error: invalid instrument.stringNumber %d", instrument.stringNumber);
-                        continue;
-                    }
+                LOGD("  - chord %zu", k);
+                // tefNotes is either a rest or a chord of one or more notes
+                const vector<const TefNote*>& tefNotes {voiceContent.at(k)};
 
-                    if (tefNote.voice < 0 || 3 < tefNote.voice) {
-                        LOGD("error: invalid voice %d", tefNote.voice);
-                        continue;
-                    }
-                    const auto stringOffset = stringNumberPreviousParts(part);
-                    const auto track = part * VOICES + voice;
-                    LOGD("part %zu stringOffset %d voice %zu track %zu", part, stringOffset, voice, track);
+                if (tefNotes.size() == 0) {
+                    continue; // shouldn't happen
+                }
 
-                    ChordRest* cr { nullptr };
-                    Fraction length { tefNote.length, 64 }; // length is in 64th
-                    if (tefNote.dots == 1) {
-                        length *= Fraction{ 3, 2 };
-                    }
-                    else if (tefNote.dots == 2) {
-                        length *= Fraction{ 7, 4 };
-                    }
-                    // TODO: triplets
-                    LOGD("length %d/%d", length.numerator(), length.denominator());
-                    TDuration tDuration(length);
-                    if (tefNote.dots) {
-                        tDuration.setDots(tefNote.dots);
-                    }
+                const TefNote* const firstNote {tefNotes.at(0)};
+                Fraction length { firstNote->length, 64 }; // length is in 64th
+                if (firstNote->dots == 1) {
+                    length *= Fraction{ 3, 2 };
+                }
+                else if (firstNote->dots == 2) {
+                    length *= Fraction{ 7, 4 };
+                }
+                // TODO: triplets
+                TDuration tDuration(length);
+                if (firstNote->dots) {
+                    tDuration.setDots(firstNote->dots);
+                }
 
-                    Fraction tick { tefNote.position, 64 }; // position is in 64th
-                    LOGD("tick %d/%d", tick.numerator(), tick.denominator());
-                    Measure* measure { score->tick2measure(tick) };
-                    if (!measure) {
-                        LOGD("error: no measure");
-                        continue;
-                    }
-                    Segment* segment { measure->getSegment(mu::engraving::SegmentType::ChordRest, tick) };
-                    if (!segment) {
-                        LOGD("error: no segment");
-                        continue;
-                    }
+                Fraction tick { firstNote->position, 64 }; // position is in 64th
+                LOGD("    tick %d/%d length %d/%d",
+                     tick.numerator(), tick.denominator(),
+                     length.numerator(), length.denominator()
+                     );
 
-                    if (segment->element(track)) {
-                        //LOGD("segment not empty");
-                    }
+                Measure* measure { score->tick2measure(tick) };
+                if (!measure) {
+                    LOGD("error: no measure");
+                    continue;
+                }
+                Segment* segment { measure->getSegment(mu::engraving::SegmentType::ChordRest, tick) };
+                if (!segment) {
+                    LOGD("error: no segment");
+                    continue;
+                }
 
-                    if (tefNote.rest) {
-                        if (segment->element(track)) {
-                            LOGD("-> error: ignoring rest: segment not empty");
-                        }
-                        else {
-                            addRest(segment, track, tDuration, length, toColor(voice));
-                        }
-                    }
-                    else {
-                        // handle note
-                        mu::engraving::Chord* chord { nullptr };
-                        mu::engraving::EngravingItem* element { segment->element(track) };
-                        if (!element) {
-                            // create chord
-                            chord = Factory::createChord(segment);
-                            cr = chord;
-                            //segment->add(cr);
-                        }
-                        else if (element->isChord()) {
-                            chord = toChord(element);
-                            cr = chord;
-                        }
-                        else {
-                            LOGD("-> error: ignoring note: segment not empty");
+                const auto track = part * VOICES + voice;
+                if (segment->element(track)) {
+                    LOGD("segment not empty");
+                    continue;
+                }
+
+                if (firstNote->rest) {
+                    LOGD("    - rest position %d string %d fret %d", firstNote->position, firstNote->string, firstNote->fret);
+                    addRest(segment, track, tDuration, length, toColor(voice));
+                }
+                else {
+                    LOGD("    - note(s) position %d string %d fret %d", firstNote->position, firstNote->string, firstNote->fret);
+                    mu::engraving::Chord* chord {Factory::createChord(segment)};
+                    if (chord) {
+                        chord->setTrack(track);
+                        chord->setDurationType(tDuration);
+                        chord->setTicks(length);
+
+                        const TefInstrument& instrument { tefInstruments.at(part) };
+                        if (instrument.stringNumber < 1 || 12 < instrument.stringNumber) {
+                            LOGD("error: invalid instrument.stringNumber %d", instrument.stringNumber);
                             continue;
                         }
-                        if (chord) {
-                            chord->setTrack(track);
-                            chord->setDurationType(tDuration);
-                            chord->setTicks(length);
-                            int pitch = 96 - instrument.tuning.at(tefNote.string - stringOffset - 1)  + tefNote.fret;  // todo fix magical constant 96 and code duplication
-                            LOGD("-> string %d fret %d pitch %d", tefNote.string, tefNote.fret, pitch);
+
+                        for (const auto note : tefNotes) {
+                            const auto stringOffset = stringNumberPreviousParts(part);
+                            // todo fix magical constant 96 and code duplication
+                            int pitch = 96 - instrument.tuning.at(note->string - stringOffset - 1)  + note->fret;
+                            LOGD("      -> string %d fret %d pitch %d", note->string, note->fret, pitch);
                             // note TableEdit's strings start at 1, MuseScore's at 0
-                            addNoteToChord(chord, track, pitch, tefNote.fret, tefNote.string - 1, toColor(voice));
-                            if (!element) {
-                                // create chord
-                                //chord = Factory::createChord(segment);
-                                //cr = chord;
-                                segment->add(cr);
-                            }
+                            addNoteToChord(chord, track, pitch, note->fret, note->string - 1, toColor(voice));
                         }
+                        segment->add(chord);
                     }
                 }
             }
