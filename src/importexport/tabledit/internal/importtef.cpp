@@ -393,6 +393,64 @@ static void addRest(Segment* segment, track_idx_t track, TDuration tDuration, Fr
     }
 }
 
+// start/stop tuplet and calculate timing correction
+// for a triplet of quarters, the length of each note is 2/3 * 1/4 = 1/6
+// TablEdit uses 1/8 instead, required next note position correction
+// is 1/6 - 1/8 = 4/24 - 3/24 = 1/24
+
+Fraction TablEdit::TupletHandler::doTuplet(const TefNote* const tefNote)
+{
+    Fraction res {0, 1};
+    Fraction correction {1, 24};
+    LOGD("position %d string %d fret %d triplet %d",
+         tefNote->position, tefNote->string, tefNote->fret, tefNote->triplet);
+    LOGD("before inTuplet %d count %d", inTuplet, count);
+    if (tefNote->triplet) {
+        if (!inTuplet) {
+            LOGD("start triplet");
+        }
+        inTuplet = true;
+        res = Fraction {count, 1} * correction;
+        ++count;
+    }
+    if (!tefNote->triplet || (inTuplet && count == 3)) {
+        if (inTuplet) {
+            LOGD("stop triplet");
+        }
+        inTuplet = false;
+        count = 0;
+    }
+    LOGD("after inTuplet %d count %d res %d/%d", inTuplet, count, res.numerator(), res.denominator());
+    return res;
+}
+
+// add ChordRest to tuplet
+// needs measure, track and ratio (take from CR ?)
+// baselen TBD
+
+void TablEdit::TupletHandler::addCr(Measure* measure, ChordRest* cr)
+{
+    if (inTuplet && !tuplet) {
+        tuplet = Factory::createTuplet(measure);
+        LOGD("new tuplet %p", tuplet);
+        tuplet->setParent(measure); // may not be required
+        tuplet->setTrack(cr->track());
+        const Fraction l {1, 4}; // todo: calculate
+        tuplet->setBaseLen(l);
+        tuplet->setRatio({3, 2});
+        //tuplet->setTicks(l * tuple->ratio().denominator()); // may not be required
+    }
+    if (tuplet) {
+        LOGD("add cr to tuplet %p", tuplet);
+        cr->setTuplet(tuplet);
+        tuplet->add(cr);
+    }
+    if (!inTuplet) {
+        tuplet = nullptr;
+    }
+    LOGD("tuplet %p", tuplet);
+}
+
 void TablEdit::createContents()
 {
     if (tefInstruments.size() == 0) {
@@ -411,6 +469,7 @@ void TablEdit::createContents()
 
             LOGD("- voice %zu", voice);
             auto& voiceContent {voiceAllocators.at(part).voiceContent(voice)};
+            TupletHandler tupletHandler;
             for (size_t k = 0; k < voiceContent.size(); ++k) {
 
                 LOGD("  - chord %zu", k);
@@ -434,9 +493,12 @@ void TablEdit::createContents()
                 if (firstNote->dots) {
                     tDuration.setDots(firstNote->dots);
                 }
+                const auto positionCorrection = tupletHandler.doTuplet(firstNote);
 
                 Fraction tick { firstNote->position, 64 }; // position is in 64th
-                LOGD("    tick %d/%d length %d/%d",
+                tick += positionCorrection;
+                LOGD("    positionCorrection %d/%d tick %d/%d length %d/%d",
+                     positionCorrection.numerator(), positionCorrection.denominator(),
                      tick.numerator(), tick.denominator(),
                      length.numerator(), length.denominator()
                      );
@@ -445,6 +507,9 @@ void TablEdit::createContents()
                 if (!measure) {
                     LOGD("error: no measure");
                     continue;
+                }
+                else {
+                    LOGD("measure %p", measure);
                 }
                 Segment* segment { measure->getSegment(mu::engraving::SegmentType::ChordRest, tick) };
                 if (!segment) {
@@ -485,6 +550,7 @@ void TablEdit::createContents()
                             addNoteToChord(chord, track, pitch, note->fret, note->string - 1, toColor(voice));
                         }
                         segment->add(chord);
+                        tupletHandler.addCr(measure, chord);
                     }
                 }
             }
@@ -693,7 +759,7 @@ static int duration2length(const int duration) {
         switch (dotOrTriplet) {
         case 0: noteType = duration / 3; break;
         case 1: noteType = (duration + 2) / 3; break;
-        case 2: noteType = (duration + 1) / 3; break;
+        case 2: noteType = (duration - 2) / 3; break;
         default: LOGD("impossible value %d", dotOrTriplet);
         }
         switch (noteType) {
