@@ -23,6 +23,7 @@
 #define MU_IMPORTEXPORT_IMPORTTEF_H
 
 #include "engraving/dom/masterscore.h"
+#include "engraving/dom/tuplet.h"
 #include "engraving/engravingerrors.h"
 #include "io/iodevice.h"
 
@@ -116,6 +117,17 @@ class TablEdit
         map<const TefNote*, int> allocations;
         array<const TefNote*, mu::engraving::VOICES> notesPlaying = { nullptr, nullptr, nullptr, nullptr };
         array<vector<vector<const TefNote*>>, mu::engraving::VOICES> voiceContents;
+    };
+
+    class TupletHandler
+    {
+    public:
+        engraving::Fraction doTuplet(const TefNote* const tefNote); // todo rename
+        void addCr(engraving::Measure* measure, engraving::ChordRest* cr);
+    private:
+        int count {0};  // support overly simple algorithm: simply count notes
+        bool inTuplet {false};
+        engraving::Tuplet* tuplet {nullptr};
     };
 
     void allocateVoices(vector<VoiceAllocator>& allocator);
