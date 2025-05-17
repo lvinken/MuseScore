@@ -313,12 +313,9 @@ int TablEdit::VoiceAllocator::voice(const TefNote* const note)
 
 // debug: use color cr to show voice
 
+#if 0
 static muse::draw::Color toColor(const int voice)
 {
-#if 0
-    // no debug: color notes black
-    return muse::draw::Color::BLACK;
-#else
     // debug: color notes based on voice number
     switch (voice) {
     case 0: return muse::draw::Color::BLUE;
@@ -327,8 +324,14 @@ static muse::draw::Color toColor(const int voice)
     case 3: return { 150, 150, 0, 255 };
     default: return muse::draw::Color::BLACK;
     }
-#endif
 }
+#else
+static muse::draw::Color toColor(const int)
+{
+    // no debug: color notes black
+    return muse::draw::Color::BLACK;
+}
+#endif
 
 // create a VoiceAllocator for every instrument
 
