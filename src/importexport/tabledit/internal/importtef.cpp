@@ -401,9 +401,10 @@ static void addRest(Segment* segment, track_idx_t track, TDuration tDuration, Fr
 Fraction TablEdit::TupletHandler::doTuplet(const TefNote* const tefNote)
 {
     Fraction res {0, 1};
-    Fraction correction {1, 24};
-    LOGD("position %d string %d fret %d triplet %d",
-         tefNote->position, tefNote->string, tefNote->fret, tefNote->triplet);
+    Fraction correction {tefNote->length, 64};
+    correction *= {1, 6};
+    LOGD("position %d string %d fret %d length %d triplet %d",
+         tefNote->position, tefNote->string, tefNote->fret, tefNote->length, tefNote->triplet);
     LOGD("before inTuplet %d count %d", inTuplet, count);
     if (tefNote->triplet) {
         if (!inTuplet) {
@@ -432,10 +433,10 @@ void TablEdit::TupletHandler::addCr(Measure* measure, ChordRest* cr)
 {
     if (inTuplet && !tuplet) {
         tuplet = Factory::createTuplet(measure);
-        LOGD("new tuplet %p", tuplet);
+        LOGD("new tuplet %p cr ticks %d/%d", tuplet, cr->ticks().numerator(), cr->ticks().denominator());
         tuplet->setParent(measure); // may not be required
         tuplet->setTrack(cr->track());
-        const Fraction l {1, 4}; // todo: calculate
+        const Fraction l {cr->ticks()}; // todo: this assumes same length for all tuplet's notes
         tuplet->setBaseLen(l);
         tuplet->setRatio({3, 2});
         //tuplet->setTicks(l * tuple->ratio().denominator()); // may not be required
