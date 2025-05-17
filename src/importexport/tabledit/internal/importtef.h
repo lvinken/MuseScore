@@ -127,6 +127,7 @@ class TablEdit
     private:
         int count {0};  // support overly simple algorithm: simply count notes
         bool inTuplet {false};
+        int totalLength {0}; // sum of note duration in TablEdit units
         engraving::Tuplet* tuplet {nullptr};
     };
 

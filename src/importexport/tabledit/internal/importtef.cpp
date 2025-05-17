@@ -408,41 +408,44 @@ Fraction TablEdit::TupletHandler::doTuplet(const TefNote* const tefNote)
     correction *= {1, 6};
     LOGD("position %d string %d fret %d length %d triplet %d",
          tefNote->position, tefNote->string, tefNote->fret, tefNote->length, tefNote->triplet);
-    LOGD("before inTuplet %d count %d", inTuplet, count);
+    LOGD("before inTuplet %d count %d totalLength %d", inTuplet, count, totalLength);
     if (tefNote->triplet) {
         if (!inTuplet) {
             LOGD("start triplet");
         }
         inTuplet = true;
-        res = Fraction {count, 1} * correction;
+        res = Fraction {totalLength, 2 * 3 * 64};
+        LOGD("res %d/%d", res.numerator(), res.denominator());
         ++count;
+        totalLength += tefNote->length;
+        LOGD("totalLength %d", totalLength);
     }
-    if (!tefNote->triplet || (inTuplet && count == 3)) {
+    if (!tefNote->triplet || (inTuplet && (totalLength % 3) == 0)) {
         if (inTuplet) {
             LOGD("stop triplet");
+            const Fraction l {totalLength, 3 * 64};
+            LOGD("baselen %d/%d", l.numerator(), l.denominator());
+            tuplet->setBaseLen(l);
         }
         inTuplet = false;
         count = 0;
+        totalLength = 0;
     }
-    LOGD("after inTuplet %d count %d res %d/%d", inTuplet, count, res.numerator(), res.denominator());
+    LOGD("after inTuplet %d count %d totalLength %d res %d/%d", inTuplet, count, totalLength, res.numerator(), res.denominator());
     return res;
 }
 
 // add ChordRest to tuplet
-// needs measure, track and ratio (take from CR ?)
-// baselen TBD
+// needs measure, track and ratio
 
 void TablEdit::TupletHandler::addCr(Measure* measure, ChordRest* cr)
 {
     if (inTuplet && !tuplet) {
         tuplet = Factory::createTuplet(measure);
         LOGD("new tuplet %p cr ticks %d/%d", tuplet, cr->ticks().numerator(), cr->ticks().denominator());
-        tuplet->setParent(measure); // may not be required
+        tuplet->setParent(measure);
         tuplet->setTrack(cr->track());
-        const Fraction l {cr->ticks()}; // todo: this assumes same length for all tuplet's notes
-        tuplet->setBaseLen(l);
         tuplet->setRatio({3, 2});
-        //tuplet->setTicks(l * tuple->ratio().denominator()); // may not be required
     }
     if (tuplet) {
         LOGD("add cr to tuplet %p", tuplet);
