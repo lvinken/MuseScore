@@ -974,6 +974,9 @@ void TablEdit::readTefHeader()
 
 //---------------------------------------------------------
 //   import
+//
+//   see src/importexport/guitarpro/internal/importgtp.cpp createLinkedTabs()
+//   for linked staves
 //---------------------------------------------------------
 
 Err TablEdit::import()
