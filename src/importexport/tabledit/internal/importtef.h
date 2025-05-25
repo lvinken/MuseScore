@@ -91,6 +91,7 @@ class TablEdit
         int position { 0 };
         int string { 0 };
         int fret { 0 };
+        bool tie { false };
         bool rest { false };    // this is a bit of a hack
         int duration { 0 };
         int length { 0 };

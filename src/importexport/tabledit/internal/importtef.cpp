@@ -370,7 +370,32 @@ void TablEdit::allocateVoices(vector<VoiceAllocator>& allocators)
     allocators[currentPart].addColumn(column);
 }
 
-static void addNoteToChord(mu::engraving::Chord* chord, track_idx_t track, int pitch, int fret, int string, muse::draw::Color color)
+static void connectTie(mu::engraving::Chord* chord, Note* note)
+{
+    Segment* segment {chord->segment()};
+    LOGD("segment %p tick %d string %d", segment, segment->tick().ticks(), note->string());
+    //Segment* firstSegment {segment->prev1()};
+    //while ()
+    for (Segment* seg = segment->prev1(); seg; seg = seg->prev1()) {
+        EngravingItem* el = seg->element(chord->track());
+        if (el && el->isChord()) {
+            Chord* firstChord = toChord(el);
+            LOGD("firstChord %p tick %d", firstChord, firstChord->tick().ticks());
+            for (Note* firstNote : firstChord->notes()) {
+                LOGD("- string %d", firstNote->string());
+                if (firstNote->string() == note->string()) {
+                    Tie* tie = Factory::createTie(firstNote);
+                    tie->setEndNote(note);
+                    firstNote->add(tie);
+                    LOGD(" -> tie %p", tie);
+                    return;
+                }
+            }
+        }
+    }
+}
+
+static void addNoteToChord(mu::engraving::Chord* chord, track_idx_t track, int pitch, int fret, int string, bool tie, muse::draw::Color color)
 {
     mu::engraving::Note* note = Factory::createNote(chord);
     if (note) {
@@ -380,6 +405,9 @@ static void addNoteToChord(mu::engraving::Chord* chord, track_idx_t track, int p
         note->setFret(fret);
         note->setString(string);
         note->setColor(color);
+        if (tie) {
+            connectTie(chord, note);
+        }
         chord->add(note);
     }
 }
@@ -541,6 +569,7 @@ void TablEdit::createContents()
                         chord->setTrack(track);
                         chord->setDurationType(tDuration);
                         chord->setTicks(length);
+                        segment->add(chord);
 
                         const TefInstrument& instrument { tefInstruments.at(part) };
                         if (instrument.stringNumber < 1 || 12 < instrument.stringNumber) {
@@ -554,9 +583,8 @@ void TablEdit::createContents()
                             int pitch = 96 - instrument.tuning.at(note->string - stringOffset - 1)  + note->fret;
                             LOGD("      -> string %d fret %d pitch %d", note->string, note->fret, pitch);
                             // note TableEdit's strings start at 1, MuseScore's at 0
-                            addNoteToChord(chord, track, pitch, note->fret, note->string - 1, toColor(voice));
+                            addNoteToChord(chord, track, pitch, note->fret, note->string - 1, note->tie, toColor(voice));
                         }
-                        segment->add(chord);
                         tupletHandler.addCr(measure, chord);
                     }
                 }
@@ -868,6 +896,7 @@ void TablEdit::readTefContents()
             note.dots = duration2dots(note.duration);
             note.triplet = duration2triplet(note.duration);
             note.voice = (byte3 & 0x30) / 0x10;
+            note.tie = byte2 & 0x80;
             tefContents.push_back(note);
         }
         offset = readUInt32();
@@ -1015,8 +1044,10 @@ Err TablEdit::import()
     }
     readTefContents();
     for (const auto& note : tefContents) {
-        LOGD("position %d rest %d string %d fret %d duration %d length %d dots %d triplet %d voice %d",
-             note.position, note.rest, note.string, note.fret, note.duration, note.length, note.dots, note.triplet, note.voice);
+        LOGD("position %d rest %d string %d fret %d duration %d length %d dots %d tie %d triplet %d voice %d",
+             note.position, note.rest, note.string, note.fret,
+             note.duration, note.length, note.dots,
+             note.tie, note.triplet, note.voice);
     }
     createScore();
     return Err::NoError;
