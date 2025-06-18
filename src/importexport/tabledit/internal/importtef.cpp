@@ -373,22 +373,26 @@ void TablEdit::allocateVoices(vector<VoiceAllocator>& allocators)
 static void connectTie(mu::engraving::Chord* chord, Note* note)
 {
     Segment* segment {chord->segment()};
-    LOGD("segment %p tick %d string %d", segment, segment->tick().ticks(), note->string());
-    //Segment* firstSegment {segment->prev1()};
-    //while ()
+    auto startTrack {VOICES * (chord->track() / VOICES)};
+    auto endTrack {startTrack + VOICES - 1};
+    LOGD("segment %p tick %d string %d startTrack %zu track %zu endTrack %zu",
+         segment, segment->tick().ticks(), note->string(), startTrack, chord->track(), endTrack);
+
     for (Segment* seg = segment->prev1(); seg; seg = seg->prev1()) {
-        EngravingItem* el = seg->element(chord->track());
-        if (el && el->isChord()) {
-            Chord* firstChord = toChord(el);
-            LOGD("firstChord %p tick %d", firstChord, firstChord->tick().ticks());
-            for (Note* firstNote : firstChord->notes()) {
-                LOGD("- string %d", firstNote->string());
-                if (firstNote->string() == note->string()) {
-                    Tie* tie = Factory::createTie(firstNote);
-                    tie->setEndNote(note);
-                    firstNote->add(tie);
-                    LOGD(" -> tie %p", tie);
-                    return;
+        for (auto track = startTrack; track <= endTrack; ++track) {
+            EngravingItem* el = seg->element(track);
+            if (el && el->isChord()) {
+                Chord* firstChord = toChord(el);
+                LOGD("firstChord %p tick %d track %zu", firstChord, firstChord->tick().ticks(), track);
+                for (Note* firstNote : firstChord->notes()) {
+                    LOGD("- string %d", firstNote->string());
+                    if (firstNote->string() == note->string()) {
+                        Tie* tie = Factory::createTie(firstNote);
+                        tie->setEndNote(note);
+                        firstNote->add(tie);
+                        LOGD(" -> tie %p", tie);
+                        return;
+                    }
                 }
             }
         }
@@ -397,6 +401,7 @@ static void connectTie(mu::engraving::Chord* chord, Note* note)
 
 static void addNoteToChord(mu::engraving::Chord* chord, track_idx_t track, int pitch, int fret, int string, bool tie, muse::draw::Color color)
 {
+    LOGD("pitch %d", pitch);
     mu::engraving::Note* note = Factory::createNote(chord);
     if (note) {
         note->setTrack(track);
@@ -410,6 +415,28 @@ static void addNoteToChord(mu::engraving::Chord* chord, track_idx_t track, int p
         }
         chord->add(note);
     }
+}
+
+static void addGraceNotesToChord(mu::engraving::Chord* chord, int pitch, int fret, int string, muse::draw::Color color)
+{
+    mu::engraving::TDuration durationType(mu::engraving::DurationType::V_INVALID);
+    const int ticks {240};
+    durationType.setVal(ticks);
+    mu::engraving::Chord* cr = Factory::createChord(chord->score()->dummy()->segment());
+    cr->setTrack(chord->track());
+    cr->setNoteType(mu::engraving::NoteType::APPOGGIATURA);
+    cr->setDurationType(mu::engraving::DurationType::V_EIGHTH);
+    cr->setTicks(durationType.fraction());
+    mu::engraving::Note* note = Factory::createNote(cr);
+    note->setTrack(chord->track());
+    //xmlSetPitch(note, sao.s.toLatin1(), sao.a, sao.o);
+    note->setPitch(pitch);
+    note->setTpcFromPitch(Prefer::NEAREST);
+    note->setFret(fret);
+    note->setString(string);
+    note->setColor(color);
+    cr->add(note);
+    chord->add(cr);
 }
 
 static void addRest(Segment* segment, track_idx_t track, TDuration tDuration, Fraction length, muse::draw::Color color)
@@ -584,6 +611,11 @@ void TablEdit::createContents()
                             LOGD("      -> string %d fret %d pitch %d", note->string, note->fret, pitch);
                             // note TableEdit's strings start at 1, MuseScore's at 0
                             addNoteToChord(chord, track, pitch, note->fret, note->string - 1, note->tie, toColor(voice));
+                            if (note->hasGrace) {
+                                // todo fix magical constant 96 and code duplication
+                                int gracePitch = 96 - instrument.tuning.at(/* todo */ note->string - stringOffset - 1)  + note->graceFret;
+                                addGraceNotesToChord(chord, gracePitch, note->graceFret, /* todo */ note->string - 1, toColor(voice));
+                            }
                         }
                         tupletHandler.addCr(measure, chord);
                     }
@@ -870,7 +902,7 @@ void TablEdit::readTefContents()
         uint8_t byte1 = readUInt8();
         uint8_t byte2 = readUInt8();
         uint8_t byte3 = readUInt8();
-        /* uint8_t byte4 = */ readUInt8();
+        uint8_t byte4 = readUInt8();
         /* uint8_t byte5 = */ readUInt8();
         /* uint8_t byte6 = */ readUInt8();
         /* uint8_t byte7 = */ readUInt8();
@@ -897,6 +929,12 @@ void TablEdit::readTefContents()
             note.triplet = duration2triplet(note.duration);
             note.voice = (byte3 & 0x30) / 0x10;
             note.tie = byte2 & 0x80;
+            if (byte1 & 0x40) {
+                note.graceEffect = byte4 / 0x20;
+                note.graceFret = byte4 & 0x1F;
+                note.hasGrace = true;
+                //LOGD("graceEffect %d graceFret %d", note.graceEffect, note.graceFret);
+            }
             tefContents.push_back(note);
         }
         offset = readUInt32();

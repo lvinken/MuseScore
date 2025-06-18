@@ -98,6 +98,9 @@ class TablEdit
         int dots { 0 };
         bool triplet { false };
         int voice { 0 };        // 0: default, 2: upper, 3: lower
+        bool hasGrace { false };
+        int graceEffect{ -1 }; // invalid
+        int graceFret { -1 }; // invalid
     };
 
     class VoiceAllocator
