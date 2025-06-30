@@ -39,7 +39,8 @@ class TablEdit
     uint8_t readUInt8();
     uint16_t readUInt16();
     uint32_t readUInt32();
-    string readUtf8Text(uint32_t positionOfPosition);
+    string readUtf8Text();
+    string readUtf8TextIndirect(uint32_t positionOfPosition);
 
     struct TefHeader {
         int version { 0 };
@@ -151,12 +152,14 @@ class TablEdit
     void readTefHeader();
     void readTefInstruments();
     void readTefMeasures();
+    void readTefTexts();
 
 
     TefHeader tefHeader;
     vector<TefNote> tefContents;
     vector<TefInstrument> tefInstruments;
     vector<TefMeasure> tefMeasures;
+    vector<string> tefTexts;
 
 public:
     TablEdit(muse::io::IODevice* f, mu::engraving::MasterScore* s)

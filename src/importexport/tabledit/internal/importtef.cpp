@@ -66,21 +66,30 @@ uint32_t TablEdit::readUInt32()
     return result;
 }
 
-// read sized utf8 text
-// input is the position where the text's position in the file is stored
+// read sized and null-terminated utf8 text from the current position
 
-string TablEdit::readUtf8Text(uint32_t positionOfPosition)
+string TablEdit::readUtf8Text()
 {
     string result;
-    _file->seek(positionOfPosition);
-    uint32_t position = readUInt32();
-    _file->seek(position);
     uint16_t size = readUInt16();
-    LOGD("position %d size %d", position, size);
     for (uint16_t i = 0; i < size - 1; ++i) {
         result += readUInt8();
     }
+    readUInt8(); // skip null
+    LOGD("size %d result '%s'", size, result.c_str());
     return result;
+}
+
+// read sized and null-terminated utf8 text
+// input is the position where the text's position in the file is stored
+
+string TablEdit::readUtf8TextIndirect(uint32_t positionOfPosition)
+{
+    _file->seek(positionOfPosition);
+    uint32_t position = readUInt32();
+    _file->seek(position);
+    LOGD("position %d", position);
+    return readUtf8Text();
 }
 
 // return the part index for the instrument containing stringIdx
@@ -1010,6 +1019,23 @@ void TablEdit::readTefMeasures()
     }
 }
 
+void TablEdit::readTefTexts()
+{
+    _file->seek(0x54);
+    uint32_t position = readUInt32();
+    if (!position) {
+        return;
+    }
+
+    _file->seek(position);
+    uint16_t numberOfTexts = readUInt16();
+    for (uint16_t i = 0; i < numberOfTexts; ++i) {
+        string text { readUtf8Text() };
+        LOGD("i %d text '%s'", i, text.c_str());
+        tefTexts.push_back(text);
+    }
+}
+
 void TablEdit::readTefHeader()
 {
     readUInt16(); // skip private01
@@ -1028,12 +1054,12 @@ void TablEdit::readTefHeader()
     auto titlePtr = readUInt32();
     LOGD("titlePtr %d", titlePtr);
     _file->seek(titlePtr);
-    tefHeader.title = readUtf8Text(0x40);
-    tefHeader.subTitle = readUtf8Text(0x44);
-    tefHeader.comment = readUtf8Text(0x48);
-    tefHeader.notes = readUtf8Text(0x4c);
-    tefHeader.internetLink = readUtf8Text(0x84);
-    tefHeader.copyright = readUtf8Text(0x8c);
+    tefHeader.title = readUtf8TextIndirect(0x40);
+    tefHeader.subTitle = readUtf8TextIndirect(0x44);
+    tefHeader.comment = readUtf8TextIndirect(0x48);
+    tefHeader.notes = readUtf8TextIndirect(0x4c);
+    tefHeader.internetLink = readUtf8TextIndirect(0x84);
+    tefHeader.copyright = readUtf8TextIndirect(0x8c);
     _file->seek(202);
     tefHeader.wOldNum = readUInt16();
     tefHeader.wFormat = readUInt16();
@@ -1069,6 +1095,10 @@ Err TablEdit::import()
     }
     if (tefHeader.securityCode != 0) {
         return Err::FileBadFormat; // todo "file is protected" message ?
+    }
+    readTefTexts();
+    for (const auto& text : tefTexts) {
+        LOGD("text: '%s'", text.c_str());
     }
     readTefMeasures();
     for (const auto& measure : tefMeasures) {
