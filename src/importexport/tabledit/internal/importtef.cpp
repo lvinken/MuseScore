@@ -946,6 +946,14 @@ void TablEdit::readTefContents()
             }
             tefContents.push_back(note);
         }
+        else if (noteRestMarker == 0x39) {
+            TefTextMarker tefTextMarker;
+            tefTextMarker.position = (offset >> 3) / totalNumberOfStrings;
+            tefTextMarker.string = ((offset >> 3) % totalNumberOfStrings) + 1;
+            tefTextMarker.index = static_cast<int>((byte3 << 8) + byte2);
+            LOGD("text marker %d", tefTextMarker.index);
+            tefTextMarkers.push_back(tefTextMarker);
+        }
         offset = readUInt32();
     }
 }
@@ -1116,6 +1124,9 @@ Err TablEdit::import()
              note.position, note.rest, note.string, note.fret,
              note.duration, note.length, note.dots,
              note.tie, note.triplet, note.voice);
+    }
+    for (const auto& textMarker : tefTextMarkers) {
+        LOGD("position %d string %d text marker %d", textMarker.position, textMarker.string, textMarker.index);
     }
     createScore();
     return Err::NoError;
