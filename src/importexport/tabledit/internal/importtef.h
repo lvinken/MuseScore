@@ -104,6 +104,12 @@ class TablEdit
         int graceFret { -1 }; // invalid
     };
 
+    struct TefTextMarker {
+        int position { 0 };
+        int string { 0 };
+        int index { 0 };
+    };
+
     class VoiceAllocator
     {
     public:
@@ -156,7 +162,8 @@ class TablEdit
 
 
     TefHeader tefHeader;
-    vector<TefNote> tefContents;
+    vector<TefTextMarker> tefTextMarkers;
+    vector<TefNote> tefContents; // notes (and rests) only
     vector<TefInstrument> tefInstruments;
     vector<TefMeasure> tefMeasures;
     vector<string> tefTexts;
