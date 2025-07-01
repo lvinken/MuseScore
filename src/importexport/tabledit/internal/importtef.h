@@ -150,6 +150,7 @@ class TablEdit
     void createProperties();
     void createScore();
     void createTempo();
+    void createTexts();
     void createTitleFrame();
     void initializeVoiceAllocators(vector<VoiceAllocator>& allocators);
     engraving::part_idx_t partIdx(size_t stringIdx, bool& ok) const;

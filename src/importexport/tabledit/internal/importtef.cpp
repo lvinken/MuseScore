@@ -29,6 +29,7 @@
 #include "engraving/dom/note.h"
 #include "engraving/dom/part.h"
 #include "engraving/dom/rest.h"
+#include "engraving/dom/stafftext.h"
 #include "engraving/dom/tempotext.h"
 #include "engraving/dom/text.h"
 #include "engraving/dom/timesig.h"
@@ -771,6 +772,7 @@ void TablEdit::createScore()
     createMeasures();
     createNotesFrame();
     createContents();
+    createTexts();
 }
 
 void TablEdit::createTempo()
@@ -786,6 +788,42 @@ void TablEdit::createTempo()
     tempoText += muse::String::number(tefHeader.tempo);
     tt->setXmlText(tempoText);
     segment->add(tt);
+}
+
+void TablEdit::createTexts()
+{
+    for (const auto& textMarker : tefTextMarkers) {
+        LOGD("position %d string %d text marker %d", textMarker.position, textMarker.string, textMarker.index);
+        bool ok { true };
+        const auto part = partIdx(textMarker.string, ok);
+        if (!ok) {
+            LOGD("error: invalid string %d", textMarker.string);
+            continue;
+        }
+        const auto track = part * VOICES;
+        LOGD("part %zu track %zu", part, track);
+
+        Fraction tick { textMarker.position, 64 }; // position is in 64th
+        Measure* measure { score->tick2measure(tick) };
+        if (!measure) {
+            LOGD("error: no measure");
+            continue;
+        }
+        else {
+            LOGD("measure %p", measure);
+        }
+        Segment* segment { measure->getSegment(mu::engraving::SegmentType::ChordRest, tick) };
+        if (!segment) {
+            LOGD("error: no segment");
+            continue;
+        }
+
+        StaffText* staffText = Factory::createStaffText(segment);
+        muse::String text { tefTexts.at(textMarker.index).c_str() };
+        staffText->setPlainText(text);
+        staffText->setTrack(track);
+        segment->add(staffText);
+    }
 }
 
 void TablEdit::createTitleFrame()
