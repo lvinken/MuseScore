@@ -22,8 +22,8 @@
 #ifndef MU_IMPORTEXPORT_IMPORTTEF_H
 #define MU_IMPORTEXPORT_IMPORTTEF_H
 
+#include "voiceallocator.h"
 #include "engraving/dom/masterscore.h"
-#include "engraving/dom/tuplet.h"
 #include "engraving/engravingerrors.h"
 #include "io/iodevice.h"
 
@@ -65,38 +65,6 @@ struct TefNote {
     bool hasGrace { false };
     int graceEffect{ -1 }; // invalid
     int graceFret { -1 }; // invalid
-};
-
-class VoiceAllocator
-{
-public:
-    void addColumn(const vector<const TefNote* const>& column);
-    void addNote(const TefNote* const note, const bool preferVoice0);
-    void allocateVoice(const TefNote* const note, int voice);
-    bool canAddTefNoteToVoice(const TefNote* const note, const int voice);
-    void dump();
-    int findFirstPossibleVoice(const TefNote* const note, const array<int, 3> voices);
-    int stopPosition(const size_t voice);
-    int voice(const TefNote* const note);
-    const vector<vector<const TefNote*>>& voiceContent(int voice) const { return voiceContents.at(voice); }
-
-private:
-    void appendNoteToVoice(const TefNote* const note, int voice);
-    map<const TefNote*, int> allocations;
-    array<const TefNote*, mu::engraving::VOICES> notesPlaying = { nullptr, nullptr, nullptr, nullptr };
-    array<vector<vector<const TefNote*>>, mu::engraving::VOICES> voiceContents;
-};
-
-class TupletHandler
-{
-public:
-    engraving::Fraction doTuplet(const TefNote* const tefNote); // todo rename
-    void addCr(engraving::Measure* measure, engraving::ChordRest* cr);
-private:
-    int count {0};  // support overly simple algorithm: simply count notes
-    bool inTuplet {false};
-    int totalLength {0}; // sum of note duration in TablEdit units
-    engraving::Tuplet* tuplet {nullptr};
 };
 
 class TablEdit
