@@ -130,7 +130,7 @@ int TablEdit::stringNumberPreviousParts(part_idx_t partIdx) const
 
 }
 
-bool TablEdit::VoiceAllocator::canAddTefNoteToVoice(const TefNote* const note, const int voice)
+bool VoiceAllocator::canAddTefNoteToVoice(const TefNote* const note, const int voice)
 {
     // is there room after the previous note ?
     if (stopPosition(voice) <= note->position) {
@@ -150,7 +150,7 @@ bool TablEdit::VoiceAllocator::canAddTefNoteToVoice(const TefNote* const note, c
     return false;
 }
 
-int TablEdit::VoiceAllocator::findFirstPossibleVoice(const TefNote* const note, const array<int, 3> voices)
+int VoiceAllocator::findFirstPossibleVoice(const TefNote* const note, const array<int, 3> voices)
 {
     for (const auto v : voices) {
         if (canAddTefNoteToVoice(note, v)) {
@@ -192,7 +192,7 @@ int durationToInt(uint8_t duration)
     return 0; //"undefined";
 }
 
-int TablEdit::VoiceAllocator::stopPosition(const size_t voice)
+int VoiceAllocator::stopPosition(const size_t voice)
 {
     if (VOICES <= voice) {
         LOGD("incorrect voice %zu", voice);
@@ -206,7 +206,7 @@ int TablEdit::VoiceAllocator::stopPosition(const size_t voice)
     return 0;
 }
 
-void TablEdit::VoiceAllocator::appendNoteToVoice(const TefNote* const note, int voice)
+void VoiceAllocator::appendNoteToVoice(const TefNote* const note, int voice)
 {
     LOGD("position %d string %d fret %d voice %d", note->position, note->string, note->fret, voice);
     const auto nChords {voiceContents[voice].size()};
@@ -236,7 +236,7 @@ void TablEdit::VoiceAllocator::appendNoteToVoice(const TefNote* const note, int 
 
 // debug: dump voices
 
-void TablEdit::VoiceAllocator::dump()
+void VoiceAllocator::dump()
 {
     for (size_t i = 0; i < mu::engraving::VOICES; ++i) {
         LOGD("- voice %zu", i);
@@ -249,7 +249,7 @@ void TablEdit::VoiceAllocator::dump()
     }
 }
 
-void TablEdit::VoiceAllocator::allocateVoice(const TefNote* const note, int voice)
+void VoiceAllocator::allocateVoice(const TefNote* const note, int voice)
 {
     if (voice >= 0) {
         // do actual allocation
@@ -268,7 +268,7 @@ void TablEdit::VoiceAllocator::allocateVoice(const TefNote* const note, int voic
     }
 }
 
-void TablEdit::VoiceAllocator::addColumn(const vector<const TefNote* const>& column)
+void VoiceAllocator::addColumn(const vector<const TefNote* const>& column)
 {
     if (column.empty()) {
         return;
@@ -286,7 +286,7 @@ void TablEdit::VoiceAllocator::addColumn(const vector<const TefNote* const>& col
     }
 }
 
-void TablEdit::VoiceAllocator::addNote(const TefNote* const note, const bool preferVoice0)
+void VoiceAllocator::addNote(const TefNote* const note, const bool preferVoice0)
 {
     int voice { -1 };
     LOGD("note position %d voice %d", note->position, static_cast<int>(note->voice));
@@ -307,7 +307,7 @@ void TablEdit::VoiceAllocator::addNote(const TefNote* const note, const bool pre
     allocateVoice(note, voice);
 }
 
-int TablEdit::VoiceAllocator::voice(const TefNote* const note)
+int VoiceAllocator::voice(const TefNote* const note)
 {
     int res { -1 }; // TODO -1 ?
     if (allocations.count(note) > 0) {
@@ -466,7 +466,7 @@ static void addRest(Segment* segment, track_idx_t track, TDuration tDuration, Fr
 // TablEdit uses 1/8 instead, required next note position correction
 // is 1/6 - 1/8 = 4/24 - 3/24 = 1/24
 
-Fraction TablEdit::TupletHandler::doTuplet(const TefNote* const tefNote)
+Fraction TupletHandler::doTuplet(const TefNote* const tefNote)
 {
     Fraction res {0, 1};
     Fraction correction {tefNote->length, 64};
@@ -503,7 +503,7 @@ Fraction TablEdit::TupletHandler::doTuplet(const TefNote* const tefNote)
 // add ChordRest to tuplet
 // needs measure, track and ratio
 
-void TablEdit::TupletHandler::addCr(Measure* measure, ChordRest* cr)
+void TupletHandler::addCr(Measure* measure, ChordRest* cr)
 {
     if (inTuplet && !tuplet) {
         tuplet = Factory::createTuplet(measure);
