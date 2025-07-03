@@ -30,6 +30,20 @@
 using namespace std;
 namespace mu::iex::tabledit {
 
+// offsets into the file header
+static const uint8_t OFFSET_TBED = 0x38;
+static const uint8_t OFFSET_CONTENTS = 0x3C;
+static const uint8_t OFFSET_TITLE = 0x40;
+static const uint8_t OFFSET_SUBTITLE = 0x44;
+static const uint8_t OFFSET_COMMENT = 0x48;
+static const uint8_t OFFSET_NOTES = 0x4C;
+static const uint8_t OFFSET_TEXTS = 0x54;
+static const uint8_t OFFSET_MEASURES = 0x5C;
+static const uint8_t OFFSET_INSTRUMENTS = 0x60;
+static const uint8_t OFFSET_INTERNETLINK = 0x84;
+static const uint8_t OFFSET_COPYRIGHT = 0x8C;
+static const uint8_t OFFSET_OLDNUM = 0xCA;
+
 // note attribute voice
 enum class Voice : uint8_t {
     DEFAULT = 0,    // default: none set
