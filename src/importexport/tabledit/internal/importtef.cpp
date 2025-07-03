@@ -950,7 +950,7 @@ void TablEdit::readTefContents()
     }
     LOGD("totalNumberOfStrings %d", totalNumberOfStrings);
 
-    _file->seek(0x3c);
+    _file->seek(OFFSET_CONTENTS);
     uint32_t position = readUInt32();
     _file->seek(position);
     uint32_t offset = readUInt32();
@@ -1012,7 +1012,7 @@ void TablEdit::readTefContents()
 
 void TablEdit::readTefInstruments()
 {
-    _file->seek(0x60);
+    _file->seek(OFFSET_INSTRUMENTS);
     uint32_t position = readUInt32();
     _file->seek(position);
     uint16_t structSize = readUInt16();
@@ -1056,7 +1056,7 @@ void TablEdit::readTefInstruments()
 
 void TablEdit::readTefMeasures()
 {
-    _file->seek(0x5c);
+    _file->seek(OFFSET_MEASURES);
     uint32_t position = readUInt32();
     _file->seek(position);
     /* uint16_t structSize = */ readUInt16();
@@ -1077,7 +1077,7 @@ void TablEdit::readTefMeasures()
 
 void TablEdit::readTefTexts()
 {
-    _file->seek(0x54);
+    _file->seek(OFFSET_TEXTS);
     uint32_t position = readUInt32();
     if (!position) {
         return;
@@ -1104,19 +1104,19 @@ void TablEdit::readTefHeader()
     readUInt16(); // skip private02
     tefHeader.securityCode = readUInt32();
     tefHeader.securityFlags = readUInt32();
-    _file->seek(0x38);
+    _file->seek(OFFSET_TBED);
     tefHeader.tbed = readUInt32();
     readUInt32(); // skip contents
     auto titlePtr = readUInt32();
     LOGD("titlePtr %d", titlePtr);
     _file->seek(titlePtr);
-    tefHeader.title = readUtf8TextIndirect(0x40);
-    tefHeader.subTitle = readUtf8TextIndirect(0x44);
-    tefHeader.comment = readUtf8TextIndirect(0x48);
-    tefHeader.notes = readUtf8TextIndirect(0x4c);
-    tefHeader.internetLink = readUtf8TextIndirect(0x84);
-    tefHeader.copyright = readUtf8TextIndirect(0x8c);
-    _file->seek(202);
+    tefHeader.title = readUtf8TextIndirect(OFFSET_TITLE);
+    tefHeader.subTitle = readUtf8TextIndirect(OFFSET_SUBTITLE);
+    tefHeader.comment = readUtf8TextIndirect(OFFSET_COMMENT);
+    tefHeader.notes = readUtf8TextIndirect(OFFSET_NOTES);
+    tefHeader.internetLink = readUtf8TextIndirect(OFFSET_INTERNETLINK);
+    tefHeader.copyright = readUtf8TextIndirect(OFFSET_COPYRIGHT);
+    _file->seek(OFFSET_OLDNUM);
     tefHeader.wOldNum = readUInt16();
     tefHeader.wFormat = readUInt16();
 }
