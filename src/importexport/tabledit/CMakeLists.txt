@@ -28,6 +28,10 @@ set(MODULE_SRC
 
     ${CMAKE_CURRENT_LIST_DIR}/internal/importtef.cpp
     ${CMAKE_CURRENT_LIST_DIR}/internal/importtef.h
+    ${CMAKE_CURRENT_LIST_DIR}/internal/tuplethandler.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/internal/tuplethandler.h
+    ${CMAKE_CURRENT_LIST_DIR}/internal/voiceallocator.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/internal/voiceallocator.h
     )
 
 setup_module()
