@@ -289,11 +289,11 @@ void TablEdit::VoiceAllocator::addColumn(const vector<const TefNote* const>& col
 void TablEdit::VoiceAllocator::addNote(const TefNote* const note, const bool preferVoice0)
 {
     int voice { -1 };
-    LOGD("note position %d voice %d", note->position, note->voice);
-    if (note->voice == 2) { // TODO: fix magic constant
+    LOGD("note position %d voice %d", note->position, static_cast<int>(note->voice));
+    if (note->voice == Voice::UPPER) {
         voice = findFirstPossibleVoice(note, { 0, 2, 3 });
     }
-    else if (note->voice == 3) { // TODO: fix magic constant
+    else if (note->voice == Voice::LOWER) {
         voice = findFirstPossibleVoice(note, { 1, 2, 3 });
     }
     else {
@@ -317,7 +317,7 @@ int TablEdit::VoiceAllocator::voice(const TefNote* const note)
         LOGD("no voice allocated for note %p", note);
     }
 
-    LOGD("note %p voice %d res %d", note, note->voice, res);
+    LOGD("note %p voice %d res %d", note, static_cast<int>(note->voice), res);
     return res;
 }
 
@@ -926,6 +926,16 @@ static bool duration2triplet(const int duration) {
     }
 }
 
+Voice extractVoice(const uint8_t byte3)
+{
+    switch ((byte3 & 0x30) / 0x10) {
+    case 0: return Voice::DEFAULT;
+    case 2: return Voice::UPPER;
+    case 3: return Voice::LOWER;
+    default: LOGE("unknown voice"); return Voice::DEFAULT;
+    }
+}
+
 void TablEdit::readTefContents()
 {
     // calculate the total number of strings
@@ -974,7 +984,7 @@ void TablEdit::readTefContents()
             note.length = duration2length(note.duration);
             note.dots = duration2dots(note.duration);
             note.triplet = duration2triplet(note.duration);
-            note.voice = (byte3 & 0x30) / 0x10;
+            note.voice = extractVoice(byte3);
             note.tie = byte2 & 0x80;
             if (byte1 & 0x40) {
                 note.graceEffect = byte4 / 0x20;
@@ -1161,7 +1171,7 @@ Err TablEdit::import()
         LOGD("position %d rest %d string %d fret %d duration %d length %d dots %d tie %d triplet %d voice %d",
              note.position, note.rest, note.string, note.fret,
              note.duration, note.length, note.dots,
-             note.tie, note.triplet, note.voice);
+             note.tie, note.triplet, static_cast<int>(note.voice));
     }
     for (const auto& textMarker : tefTextMarkers) {
         LOGD("position %d string %d text marker %d", textMarker.position, textMarker.string, textMarker.index);

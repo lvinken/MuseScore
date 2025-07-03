@@ -30,6 +30,13 @@
 using namespace std;
 namespace mu::iex::tabledit {
 
+// note attribute voice
+enum class Voice : uint8_t {
+    DEFAULT = 0,    // default: none set
+    UPPER = 2,      // upper set
+    LOWER = 3       // lower set
+};
+
 class TablEdit
 {
     muse::io::IODevice* _file = nullptr;
@@ -98,7 +105,7 @@ class TablEdit
         int length { 0 };
         int dots { 0 };
         bool triplet { false };
-        int voice { 0 };        // 0: default, 2: upper, 3: lower
+        Voice voice { 0 };
         bool hasGrace { false };
         int graceEffect{ -1 }; // invalid
         int graceFret { -1 }; // invalid
