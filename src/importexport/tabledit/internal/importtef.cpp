@@ -308,7 +308,7 @@ void TablEdit::createContents()
                 else if (firstNote->dots == 2) {
                     length *= Fraction{ 7, 4 };
                 }
-                // TODO: triplets
+
                 TDuration tDuration(length);
                 if (firstNote->dots) {
                     tDuration.setDots(firstNote->dots);
@@ -610,8 +610,9 @@ void TablEdit::createTitleFrame()
  * 28 16th double dotted
  */
 
-// return note length in 64th
-// TODO: check for code duplication
+// return TablEdit note length in 64th
+// (including triplets rounded down to nearest note length)
+// TODO: remove code duplication with voiceallocator.cpp durationToInt()
 
 static int duration2length(const int duration) {
     if (0 <= duration && duration <= 18) {
@@ -632,6 +633,7 @@ static int duration2length(const int duration) {
         case 4: return  4; // 1/16
         case 5: return  2; // 1/32
         case 6: return  1; // 1/64
+        // as long as the if statement above is correct, this cannot actually happen
         default: LOGD("impossible value %d", dotOrTriplet);
         }
     }
@@ -648,7 +650,8 @@ static int duration2length(const int duration) {
     return 0; // invalid (result is weird layout)
 }
 
-// TODO: check for code duplication
+// return the number of dots
+// TODO: remove code duplication with voiceallocator.cpp durationToInt()
 
 static int duration2dots(const int duration) {
     if (0 <= duration && duration <= 18 && (duration % 3) == 0) {
@@ -663,6 +666,8 @@ static int duration2dots(const int duration) {
     LOGD("invalid note duration %d", duration);
     return 0; // invalid
 }
+
+// check if 3:2 tuplet
 
 static bool duration2triplet(const int duration) {
     if (0 <= duration && duration <= 18) {

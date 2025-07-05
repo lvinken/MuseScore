@@ -57,7 +57,10 @@ int VoiceAllocator::findFirstPossibleVoice(const TefNote* const note, const arra
     return -1;
 }
 
-int durationToInt(uint8_t duration) // TODO duplicated code ?
+// return TablEdit note length in 64th (including triplets rounded down to nearest note length)
+// TODO: remove code duplication with importtef.cpp duration2length()
+
+static int durationToInt(uint8_t duration) // TODO duplicated code ?
 {
     switch(duration) {
     case  0: return 64; //"whole";
