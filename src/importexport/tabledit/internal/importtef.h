@@ -57,14 +57,14 @@ struct TefNote {
     int fret { 0 };
     bool tie { false };
     bool rest { false };    // this is a bit of a hack
-    int duration { 0 };
+    int duration { 0 };     // this is the duration as encoded in the .tef file
     int length { 0 };
     int dots { 0 };
     bool triplet { false };
     Voice voice { 0 };
     bool hasGrace { false };
-    int graceEffect{ -1 }; // invalid
-    int graceFret { -1 }; // invalid
+    int graceEffect{ -1 };  // invalid
+    int graceFret { -1 };   // invalid
 };
 
 class TablEdit
