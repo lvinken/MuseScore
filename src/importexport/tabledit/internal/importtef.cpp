@@ -512,6 +512,33 @@ void TablEdit::createProperties()
     }
 }
 
+// convert the reading list into repeat and (todo) codas, segnos and voltas
+
+void TablEdit::createRepeats()
+{
+    LOGD("reading list size %zu number of measures %zu", tefReadingList.size(), tefMeasures.size());
+    // proof of concept: add repeat to whole score if
+    // - reading list contains two items
+    // - both spanning the entire score
+    if (tefReadingList.size() == 2
+        && tefReadingList.at(0).firstMeasure == 1 && tefReadingList.at(0).lastMeasure == static_cast<int>(tefMeasures.size())
+        && tefReadingList.at(1).firstMeasure == 1 && tefReadingList.at(1).lastMeasure == static_cast<int>(tefMeasures.size())
+        ) {
+        LOGD("do it");
+        if (score->measures()->empty()) {
+            LOGE("no measures in score");
+            return;
+        }
+        Measure* first { score->firstMeasure() };
+        Measure* last { score->lastMeasure() };
+        first->setRepeatStart(true);
+        last->setRepeatEnd(true);
+    }
+    else {
+        LOGD("no score repeat");
+    }
+}
+
 void TablEdit::createScore()
 {
     createProperties();
@@ -520,6 +547,7 @@ void TablEdit::createScore()
     createMeasures();
     createNotesFrame();
     createContents();
+    createRepeats();
     createTexts();
 }
 
