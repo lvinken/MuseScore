@@ -143,6 +143,7 @@ class TablEdit
     void createNotesFrame();
     void createParts();
     void createProperties();
+    void createRepeats();
     void createScore();
     void createTempo();
     void createTexts();
