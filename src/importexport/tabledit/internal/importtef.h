@@ -40,6 +40,7 @@ static const uint8_t OFFSET_NOTES = 0x4C;
 static const uint8_t OFFSET_TEXTS = 0x54;
 static const uint8_t OFFSET_MEASURES = 0x5C;
 static const uint8_t OFFSET_INSTRUMENTS = 0x60;
+static const uint8_t OFFSET_READINGLIST = 0x80;
 static const uint8_t OFFSET_INTERNETLINK = 0x84;
 static const uint8_t OFFSET_COPYRIGHT = 0x8C;
 static const uint8_t OFFSET_OLDNUM = 0xCA;
@@ -125,6 +126,11 @@ class TablEdit
         int denominator { 0 };
     };
 
+    struct TefReadingListItem {
+        int firstMeasure { 0 };
+        int lastMeasure { 0 };
+    };
+
     struct TefTextMarker {
         int position { 0 };
         int string { 0 };
@@ -148,6 +154,7 @@ class TablEdit
     void readTefHeader();
     void readTefInstruments();
     void readTefMeasures();
+    void readTefReadingList();
     void readTefTexts();
 
 
@@ -156,6 +163,7 @@ class TablEdit
     vector<TefNote> tefContents; // notes (and rests) only
     vector<TefInstrument> tefInstruments;
     vector<TefMeasure> tefMeasures;
+    vector<TefReadingListItem> tefReadingList;
     vector<string> tefTexts;
 
 public:
