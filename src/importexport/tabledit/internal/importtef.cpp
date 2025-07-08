@@ -828,6 +828,29 @@ void TablEdit::readTefMeasures()
     }
 }
 
+void TablEdit::readTefReadingList()
+{
+    _file->seek(OFFSET_READINGLIST);
+    uint32_t position = readUInt32();
+    if (!position) {
+        return;
+    }
+
+    _file->seek(position);
+    uint16_t structSize = readUInt16();
+    uint16_t numberOfItems = readUInt16();
+    for (uint16_t i = 0; i < numberOfItems; ++i) {
+        TefReadingListItem item;
+        item.firstMeasure = readUInt16();
+        item.lastMeasure = readUInt16();
+        // skip the label
+        for (uint16_t j = 4; j < structSize; ++j) {
+            readUInt8();
+        }
+        tefReadingList.push_back(item);
+    }
+}
+
 void TablEdit::readTefTexts()
 {
     _file->seek(OFFSET_TEXTS);
@@ -918,6 +941,10 @@ Err TablEdit::import()
     for (const auto& instrument : tefInstruments) {
         LOGD("stringNumber %d firstString %d midiVoice %d midiBank %d",
              instrument.stringNumber, instrument.firstString, instrument.midiVoice, instrument.midiBank);
+    }
+    readTefReadingList();
+    for (const auto& item : tefReadingList) {
+        LOGD("firstMeasure %d lastMeasure %d", item.firstMeasure, item.lastMeasure);
     }
     readTefContents();
     for (const auto& note : tefContents) {
