@@ -18,24 +18,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-declare_module(iex_tabledit)
+set(MODULE_TEST iex_tabledit_tests)
 
-set(MODULE_SRC
-    ${CMAKE_CURRENT_LIST_DIR}/tableditmodule.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/tableditmodule.h
-    ${CMAKE_CURRENT_LIST_DIR}/internal/tableditreader.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/internal/tableditreader.h
+set(MODULE_TEST_SRC
+    ${PROJECT_SOURCE_DIR}/src/engraving/tests/utils/scorerw.cpp
+    ${PROJECT_SOURCE_DIR}/src/engraving/tests/utils/scorerw.h
+    ${PROJECT_SOURCE_DIR}/src/engraving/tests/utils/scorecomp.cpp
+    ${PROJECT_SOURCE_DIR}/src/engraving/tests/utils/scorecomp.h
 
-    ${CMAKE_CURRENT_LIST_DIR}/internal/importtef.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/internal/importtef.h
-    ${CMAKE_CURRENT_LIST_DIR}/internal/tuplethandler.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/internal/tuplethandler.h
-    ${CMAKE_CURRENT_LIST_DIR}/internal/voiceallocator.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/internal/voiceallocator.h
-    )
+    ${CMAKE_CURRENT_LIST_DIR}/environment.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/tabledit_tests.cpp
+)
 
-setup_module()
+set(MODULE_TEST_LINK
+    engraving
+    iex_tabledit
+)
 
-if (MUE_BUILD_IMPORTEXPORT_TESTS)
-    add_subdirectory(tests)
-endif()
+set(MODULE_TEST_DATA_ROOT ${CMAKE_CURRENT_LIST_DIR})
+
+include(SetupGTest)
