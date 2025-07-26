@@ -29,7 +29,6 @@
 #include "importexport/tabledit/tableditmodule.h"
 
 #include "engraving/dom/instrtemplate.h"
-#include "engraving/dom/mscore.h"
 
 #include "log.h"
 

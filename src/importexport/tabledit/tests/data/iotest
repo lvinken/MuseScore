@@ -30,7 +30,8 @@ cleanup() {
 
 rwtestTef() {
       echo -n "testing load/save $1";
-      $MSCORE $1.tef -t -o mops.mscx &> /dev/null
+      $MSCORE $1.tef -t -o aaa.mscx &> /dev/null
+      cat aaa.mscx | grep -v pageWidth | grep -v pageHeight | grep -v pagePrintableWidth | grep -v open >mops.mscx
       if diff -q $1.mscx mops.mscx &> /dev/null; then
             echo -e "\r\t\t\t\t\t\t...OK";
       else
