@@ -3,16 +3,12 @@
   <Score>
     <Division>480</Division>
     <Style>
-      <pageWidth>8.27</pageWidth>
-      <pageHeight>11.69</pageHeight>
-      <pagePrintableWidth>7.0889</pagePrintableWidth>
       <spatium>1.74978</spatium>
       </Style>
     <showInvisible>1</showInvisible>
     <showUnprintable>1</showUnprintable>
     <showFrames>1</showFrames>
     <showMargins>0</showMargins>
-    <open>1</open>
     <metaTag name="arranger"></metaTag>
     <metaTag name="comment">TablEdited by </metaTag>
     <metaTag name="composer"></metaTag>
@@ -24,7 +20,7 @@
     <metaTag name="source"></metaTag>
     <metaTag name="translator"></metaTag>
     <metaTag name="workNumber"></metaTag>
-    <metaTag name="workTitle">Notes (normal)</metaTag>
+    <metaTag name="workTitle">Rests (normal)</metaTag>
     <Part id="1">
       <Staff id="1">
         <StaffType group="pitched">
@@ -54,7 +50,7 @@
         <height>10</height>
         <Text>
           <style>title</style>
-          <text>Notes (normal)</text>
+          <text>Rests (normal)</text>
           </Text>
         </VBox>
       <Measure>
@@ -76,88 +72,36 @@
             <followText>1</followText>
             <text><sym>metNoteQuarterUp</sym> = 120</text>
             </Tempo>
-          <Chord>
+          <Rest>
             <durationType>whole</durationType>
-            <Note>
-              <pitch>55</pitch>
-              <tpc>15</tpc>
-              <fret>0</fret>
-              <string>2</string>
-              </Note>
-            </Chord>
+            </Rest>
           <BarLine>
             </BarLine>
           </voice>
         </Measure>
       <Measure>
         <voice>
-          <Chord>
+          <Rest>
             <durationType>half</durationType>
-            <Note>
-              <pitch>55</pitch>
-              <tpc>15</tpc>
-              <fret>0</fret>
-              <string>2</string>
-              </Note>
-            </Chord>
-          <Chord>
+            </Rest>
+          <Rest>
             <durationType>quarter</durationType>
-            <Note>
-              <pitch>55</pitch>
-              <tpc>15</tpc>
-              <fret>0</fret>
-              <string>2</string>
-              </Note>
-            </Chord>
-          <Beam>
-            <l1>-12</l1>
-            <l2>-12</l2>
-            </Beam>
-          <Chord>
+            </Rest>
+          <Rest>
             <durationType>eighth</durationType>
-            <Note>
-              <pitch>55</pitch>
-              <tpc>15</tpc>
-              <fret>0</fret>
-              <string>2</string>
-              </Note>
-            </Chord>
-          <Chord>
+            </Rest>
+          <Rest>
             <durationType>16th</durationType>
-            <Note>
-              <pitch>55</pitch>
-              <tpc>15</tpc>
-              <fret>0</fret>
-              <string>2</string>
-              </Note>
-            </Chord>
-          <Chord>
+            </Rest>
+          <Rest>
             <durationType>32nd</durationType>
-            <Note>
-              <pitch>55</pitch>
-              <tpc>15</tpc>
-              <fret>0</fret>
-              <string>2</string>
-              </Note>
-            </Chord>
-          <Chord>
+            </Rest>
+          <Rest>
             <durationType>64th</durationType>
-            <Note>
-              <pitch>55</pitch>
-              <tpc>15</tpc>
-              <fret>0</fret>
-              <string>2</string>
-              </Note>
-            </Chord>
-          <Chord>
+            </Rest>
+          <Rest>
             <durationType>64th</durationType>
-            <Note>
-              <pitch>55</pitch>
-              <tpc>15</tpc>
-              <fret>0</fret>
-              <string>2</string>
-              </Note>
-            </Chord>
+            </Rest>
           <BarLine>
             </BarLine>
           </voice>

@@ -19,7 +19,8 @@ cleanup() {
 
 generateMscx() {
       echo "generating reference for $1";
-      $MSCORE $1.tef -t -o $1.mscx &>/dev/null
+      $MSCORE $1.tef -t -o aaa.mscx &>/dev/null
+      cat aaa.mscx | grep -v pageWidth | grep -v pageHeight | grep -v pagePrintableWidth | grep -v open >$1.mscx
       }
 
 generateAllMscx() {
