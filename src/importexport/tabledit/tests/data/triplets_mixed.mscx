@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<museScore version="4.50">
+<museScore version="4.60">
   <Score>
+    <eid>B_B</eid>
     <Division>480</Division>
     <Style>
       <spatium>1.74978</spatium>
@@ -21,7 +22,8 @@
     <metaTag name="workNumber"></metaTag>
     <metaTag name="workTitle">Triplets (mixed)</metaTag>
     <Part id="1">
-      <Staff id="1">
+      <Staff>
+        <eid>C_C</eid>
         <StaffType group="pitched">
           <name>stdNormal</name>
           </StaffType>
@@ -47,31 +49,39 @@
     <Staff id="1">
       <VBox>
         <height>10</height>
+        <eid>D_D</eid>
         <Text>
+          <eid>E_E</eid>
           <style>title</style>
           <text>Triplets (mixed)</text>
           </Text>
         </VBox>
       <Measure>
+        <eid>F_F</eid>
         <voice>
           <Clef>
             <concertClefType>G8vb</concertClefType>
             <transposingClefType>G8vb</transposingClefType>
             <isHeader>1</isHeader>
+            <eid>G_G</eid>
             </Clef>
           <KeySig>
+            <eid>H_H</eid>
             <concertKey>0</concertKey>
             </KeySig>
           <TimeSig>
+            <eid>I_I</eid>
             <sigN>4</sigN>
             <sigD>4</sigD>
             </TimeSig>
           <Tempo>
             <tempo>2</tempo>
             <followText>1</followText>
+            <eid>J_J</eid>
             <text><sym>metNoteQuarterUp</sym> = 120</text>
             </Tempo>
           <Tuplet>
+            <eid>K_K</eid>
             <normalNotes>2</normalNotes>
             <actualNotes>3</actualNotes>
             <baseNote>eighth</baseNote>
@@ -81,8 +91,10 @@
               </Number>
             </Tuplet>
           <Chord>
+            <eid>L_L</eid>
             <durationType>quarter</durationType>
             <Note>
+              <eid>M_M</eid>
               <pitch>50</pitch>
               <tpc>16</tpc>
               <fret>0</fret>
@@ -90,8 +102,10 @@
               </Note>
             </Chord>
           <Chord>
+            <eid>N_N</eid>
             <durationType>eighth</durationType>
             <Note>
+              <eid>O_O</eid>
               <pitch>50</pitch>
               <tpc>16</tpc>
               <fret>0</fret>
@@ -100,8 +114,10 @@
             </Chord>
           <endTuplet/>
           <Chord>
+            <eid>P_P</eid>
             <durationType>quarter</durationType>
             <Note>
+              <eid>Q_Q</eid>
               <pitch>50</pitch>
               <tpc>16</tpc>
               <fret>0</fret>
@@ -109,6 +125,7 @@
               </Note>
             </Chord>
           <Tuplet>
+            <eid>R_R</eid>
             <normalNotes>2</normalNotes>
             <actualNotes>3</actualNotes>
             <baseNote>eighth</baseNote>
@@ -118,8 +135,10 @@
               </Number>
             </Tuplet>
           <Chord>
+            <eid>S_S</eid>
             <durationType>eighth</durationType>
             <Note>
+              <eid>T_T</eid>
               <pitch>50</pitch>
               <tpc>16</tpc>
               <fret>0</fret>
@@ -127,8 +146,10 @@
               </Note>
             </Chord>
           <Chord>
+            <eid>U_U</eid>
             <durationType>quarter</durationType>
             <Note>
+              <eid>V_V</eid>
               <pitch>50</pitch>
               <tpc>16</tpc>
               <fret>0</fret>
@@ -137,8 +158,10 @@
             </Chord>
           <endTuplet/>
           <Chord>
+            <eid>W_W</eid>
             <durationType>quarter</durationType>
             <Note>
+              <eid>X_X</eid>
               <pitch>50</pitch>
               <tpc>16</tpc>
               <fret>0</fret>
@@ -146,6 +169,7 @@
               </Note>
             </Chord>
           <BarLine>
+            <eid>Y_Y</eid>
             </BarLine>
           </voice>
         </Measure>

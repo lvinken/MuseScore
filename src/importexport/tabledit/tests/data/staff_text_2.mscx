@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<museScore version="4.50">
+<museScore version="4.60">
   <Score>
+    <eid>B_B</eid>
     <Division>480</Division>
     <Style>
       <spatium>1.74978</spatium>
@@ -22,7 +23,8 @@
     <metaTag name="workNumber"></metaTag>
     <metaTag name="workTitle"></metaTag>
     <Part id="1">
-      <Staff id="1">
+      <Staff>
+        <eid>C_C</eid>
         <StaffType group="pitched">
           <name>stdNormal</name>
           </StaffType>
@@ -48,7 +50,8 @@
         </Instrument>
       </Part>
     <Part id="2">
-      <Staff id="2">
+      <Staff>
+        <eid>D_D</eid>
         <StaffType group="pitched">
           <name>stdNormal</name>
           </StaffType>
@@ -74,32 +77,41 @@
     <Staff id="1">
       <VBox>
         <height>10</height>
+        <eid>E_E</eid>
         </VBox>
       <Measure>
+        <eid>F_F</eid>
         <voice>
           <Clef>
             <concertClefType>G8vb</concertClefType>
             <transposingClefType>G8vb</transposingClefType>
             <isHeader>1</isHeader>
+            <eid>G_G</eid>
             </Clef>
           <KeySig>
+            <eid>H_H</eid>
             <concertKey>0</concertKey>
             </KeySig>
           <TimeSig>
+            <eid>I_I</eid>
             <sigN>4</sigN>
             <sigD>4</sigD>
             </TimeSig>
           <Tempo>
             <tempo>2</tempo>
             <followText>1</followText>
+            <eid>J_J</eid>
             <text><sym>metNoteQuarterUp</sym> = 120</text>
             </Tempo>
           <StaffText>
+            <eid>K_K</eid>
             <text>Part 1</text>
             </StaffText>
           <Chord>
+            <eid>L_L</eid>
             <durationType>whole</durationType>
             <Note>
+              <eid>M_M</eid>
               <pitch>64</pitch>
               <tpc>18</tpc>
               <fret>0</fret>
@@ -107,17 +119,22 @@
               </Note>
             </Chord>
           <BarLine>
+            <eid>N_N</eid>
             </BarLine>
           </voice>
         </Measure>
       <Measure>
+        <eid>O_O</eid>
         <voice>
           <StaffText>
+            <eid>P_P</eid>
             <text>P1 M2</text>
             </StaffText>
           <Chord>
+            <eid>Q_Q</eid>
             <durationType>whole</durationType>
             <Note>
+              <eid>R_R</eid>
               <pitch>64</pitch>
               <tpc>18</tpc>
               <fret>0</fret>
@@ -125,6 +142,7 @@
               </Note>
             </Chord>
           <BarLine>
+            <eid>S_S</eid>
             </BarLine>
           </voice>
         </Measure>
@@ -136,20 +154,26 @@
             <concertClefType>G8vb</concertClefType>
             <transposingClefType>G8vb</transposingClefType>
             <isHeader>1</isHeader>
+            <eid>T_T</eid>
             </Clef>
           <KeySig>
+            <eid>U_U</eid>
             <concertKey>0</concertKey>
             </KeySig>
           <TimeSig>
+            <eid>V_V</eid>
             <sigN>4</sigN>
             <sigD>4</sigD>
             </TimeSig>
           <StaffText>
+            <eid>W_W</eid>
             <text>Part 2</text>
             </StaffText>
           <Chord>
+            <eid>X_X</eid>
             <durationType>whole</durationType>
             <Note>
+              <eid>Y_Y</eid>
               <pitch>64</pitch>
               <tpc>18</tpc>
               <fret>0</fret>
@@ -161,11 +185,14 @@
       <Measure>
         <voice>
           <StaffText>
+            <eid>Z_Z</eid>
             <text>P2 M2</text>
             </StaffText>
           <Chord>
+            <eid>a_a</eid>
             <durationType>whole</durationType>
             <Note>
+              <eid>b_b</eid>
               <pitch>64</pitch>
               <tpc>18</tpc>
               <fret>0</fret>
