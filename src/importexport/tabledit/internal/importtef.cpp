@@ -40,6 +40,34 @@ using namespace mu::engraving;
 
 namespace mu::iex::tabledit {
 
+// local copy of older version of Score::tick2measure(),
+// as commit f2b2de9 of Apr 7 2025 broke the import
+
+static Measure* tick2measure(const Score* const score, const Fraction& tick)
+{
+    if (tick == Fraction(-1, 1)) {   // special number
+        return score->lastMeasure();
+    }
+    if (tick <= Fraction(0, 1)) {
+        return score->firstMeasure();
+    }
+
+    Measure* lm = 0;
+    for (Measure* m = score->firstMeasure(); m; m = m->nextMeasure()) {
+        if (tick < m->tick()) {
+            assert(lm);
+            return lm;
+        }
+        lm = m;
+    }
+    // check last measure
+    if (lm && (tick >= lm->tick()) && (tick <= lm->endTick())) {
+        return lm;
+    }
+    LOGD("tick2measure %d (max %d) not found", tick.ticks(), lm ? lm->tick().ticks() : -1);
+    return 0;
+}
+
 int8_t TablEdit::readInt8()
 {
     int8_t result;
@@ -323,7 +351,7 @@ void TablEdit::createContents()
                      length.numerator(), length.denominator()
                      );
 
-                Measure* measure { score->tick2measure(tick) };
+                Measure* measure { tick2measure(score, tick) };
                 if (!measure) {
                     LOGD("error: no measure");
                     continue;
@@ -580,7 +608,7 @@ void TablEdit::createTexts()
         LOGD("part %zu track %zu", part, track);
 
         Fraction tick { textMarker.position, 64 }; // position is in 64th
-        Measure* measure { score->tick2measure(tick) };
+        Measure* measure { tick2measure(score, tick) };
         if (!measure) {
             LOGD("error: no measure");
             continue;
