@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<museScore version="4.50">
+<museScore version="4.60">
   <Score>
+    <eid>B_B</eid>
     <Division>480</Division>
     <Style>
       <spatium>1.74978</spatium>
@@ -22,7 +23,8 @@
     <metaTag name="workNumber"></metaTag>
     <metaTag name="workTitle">Rests (dotted)</metaTag>
     <Part id="1">
-      <Staff id="1">
+      <Staff>
+        <eid>C_C</eid>
         <StaffType group="pitched">
           <name>stdNormal</name>
           </StaffType>
@@ -48,57 +50,72 @@
     <Staff id="1">
       <VBox>
         <height>10</height>
+        <eid>D_D</eid>
         <Text>
+          <eid>E_E</eid>
           <style>title</style>
           <text>Rests (dotted)</text>
           </Text>
         </VBox>
       <Measure>
+        <eid>F_F</eid>
         <voice>
           <Clef>
             <concertClefType>G8vb</concertClefType>
             <transposingClefType>G8vb</transposingClefType>
             <isHeader>1</isHeader>
+            <eid>G_G</eid>
             </Clef>
           <KeySig>
+            <eid>H_H</eid>
             <concertKey>0</concertKey>
             </KeySig>
           <TimeSig>
+            <eid>I_I</eid>
             <sigN>3</sigN>
             <sigD>4</sigD>
             </TimeSig>
           <Tempo>
             <tempo>2</tempo>
             <followText>1</followText>
+            <eid>J_J</eid>
             <text><sym>metNoteQuarterUp</sym> = 120</text>
             </Tempo>
           <Rest>
+            <eid>K_K</eid>
             <dots>1</dots>
             <durationType>half</durationType>
             </Rest>
           <BarLine>
+            <eid>L_L</eid>
             </BarLine>
           </voice>
         </Measure>
       <Measure>
+        <eid>M_M</eid>
         <voice>
           <Rest>
+            <eid>N_N</eid>
             <dots>1</dots>
             <durationType>quarter</durationType>
             </Rest>
           <Rest>
+            <eid>O_O</eid>
             <dots>1</dots>
             <durationType>eighth</durationType>
             </Rest>
           <Rest>
+            <eid>P_P</eid>
             <dots>1</dots>
             <durationType>16th</durationType>
             </Rest>
           <Rest>
+            <eid>Q_Q</eid>
             <dots>1</dots>
             <durationType>32nd</durationType>
             </Rest>
           <Rest>
+            <eid>R_R</eid>
             <dots>1</dots>
             <durationType>64th</durationType>
             </Rest>
@@ -106,6 +123,7 @@
             <fractions>-1/128</fractions>
             </location>
           <Rest>
+            <eid>S_S</eid>
             <dots>1</dots>
             <durationType>64th</durationType>
             </Rest>
@@ -113,6 +131,7 @@
             <fractions>1/128</fractions>
             </location>
           <BarLine>
+            <eid>T_T</eid>
             </BarLine>
           </voice>
         </Measure>
