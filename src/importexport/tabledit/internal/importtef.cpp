@@ -24,6 +24,7 @@
 
 #include "engraving/dom/box.h"
 #include "engraving/dom/chord.h"
+#include "engraving/dom/excerpt.h"
 #include "engraving/dom/factory.h"
 #include "engraving/dom/keysig.h"
 #include "engraving/dom/measurebase.h"
@@ -411,6 +412,36 @@ void TablEdit::createContents()
     }
 }
 
+void TablEdit::createLinkedTabs()
+{
+    constexpr size_t stavesInPart = 2;
+
+    for (Part* part : score->parts()) {
+        part->setStaves(static_cast<int>(stavesInPart));
+
+        Staff* srcStaff = part->staff(0);
+        Staff* dstStaff = part->staff(1);
+        Excerpt::cloneStaff(srcStaff, dstStaff, false);
+
+        static const std::vector<StaffTypes> types {
+            StaffTypes::TAB_4SIMPLE,
+            StaffTypes::TAB_5SIMPLE,
+            StaffTypes::TAB_6SIMPLE,
+            StaffTypes::TAB_7SIMPLE,
+            StaffTypes::TAB_8SIMPLE,
+            StaffTypes::TAB_9SIMPLE,
+            StaffTypes::TAB_10SIMPLE,
+        };
+
+        Fraction fr = Fraction(0, 1);
+        size_t lines = part->instrument()->stringData()->strings();
+        size_t index = (lines >= 4 && lines <= 10) ? lines - 4 : 2;
+
+        dstStaff->setStaffType(fr, *StaffType::preset(types.at(index)));
+        dstStaff->setLines(fr, static_cast<int>(lines));
+    }
+}
+
 void TablEdit::createMeasures()
 {
     int lastKey { 0 };               // safe default
@@ -577,6 +608,7 @@ void TablEdit::createScore()
     createContents();
     createRepeats();
     createTexts();
+    createLinkedTabs();
 }
 
 void TablEdit::createTempo()
