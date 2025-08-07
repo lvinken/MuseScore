@@ -139,6 +139,7 @@ class TablEdit
 
     void allocateVoices(vector<VoiceAllocator>& allocator);
     void createContents();
+    void createLinkedTabs();
     void createMeasures();
     void createNotesFrame();
     void createParts();
