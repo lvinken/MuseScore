@@ -458,52 +458,43 @@ void TablEdit::createMeasures()
         score->measures()->add(measure);
 
         if (tick == Fraction { 0, 1 }) {
-            auto s1 = measure->getSegment(mu::engraving::SegmentType::HeaderClef, tick);
+            auto s1 = measure->getSegment(mu::engraving::SegmentType::KeySig, tick);
             for (size_t i = 0; i < tefInstruments.size(); ++i) {
-                auto clef = Factory::createClef(s1);
-                clef->setTrack(i * VOICES);
-                ClefType clefId { ClefType::G8_VB };
-                clef->setClefType(clefId);
-                s1->add(clef);
-            }
-
-            auto s2 = measure->getSegment(mu::engraving::SegmentType::KeySig, tick);
-            for (size_t i = 0; i < tefInstruments.size(); ++i) {
-                mu::engraving::KeySig* keysig = Factory::createKeySig(s2);
+                mu::engraving::KeySig* keysig = Factory::createKeySig(s1);
                 keysig->setKey(Key(tefMeasure.key));
                 keysig->setTrack(i * VOICES);
-                s2->add(keysig);
+                s1->add(keysig);
             }
             lastKey = tefMeasure.key;
 
-            auto s3 = measure->getSegment(mu::engraving::SegmentType::TimeSig, tick);
+            auto s2 = measure->getSegment(mu::engraving::SegmentType::TimeSig, tick);
             for (size_t i = 0; i < tefInstruments.size(); ++i) {
-                mu::engraving::TimeSig* timesig = Factory::createTimeSig(s3);
+                mu::engraving::TimeSig* timesig = Factory::createTimeSig(s2);
                 timesig->setSig(length);
                 timesig->setTrack(i * VOICES);
-                s3->add(timesig);
+                s2->add(timesig);
             }
             lastTimeSig = length;
             createTempo();
         }
         else {
             if (tefMeasure.key != lastKey) {
-                auto s2 = measure->getSegment(mu::engraving::SegmentType::KeySig, tick);
+                auto s1 = measure->getSegment(mu::engraving::SegmentType::KeySig, tick);
                 for (size_t i = 0; i < tefInstruments.size(); ++i) {
-                    mu::engraving::KeySig* keysig = Factory::createKeySig(s2);
+                    mu::engraving::KeySig* keysig = Factory::createKeySig(s1);
                     keysig->setKey(Key(tefMeasure.key));
                     keysig->setTrack(i * VOICES);
-                    s2->add(keysig);
+                    s1->add(keysig);
                 }
                 lastKey = tefMeasure.key;
             }
             if (length != lastTimeSig) {
-                auto s3 = measure->getSegment(mu::engraving::SegmentType::TimeSig, tick);
+                auto s2 = measure->getSegment(mu::engraving::SegmentType::TimeSig, tick);
                 for (size_t i = 0; i < tefInstruments.size(); ++i) {
-                    mu::engraving::TimeSig* timesig = Factory::createTimeSig(s3);
+                    mu::engraving::TimeSig* timesig = Factory::createTimeSig(s2);
                     timesig->setSig(length);
                     timesig->setTrack(i * VOICES);
-                    s3->add(timesig);
+                    s2->add(timesig);
                 }
                 lastTimeSig = length;
             }
@@ -548,6 +539,9 @@ void TablEdit::createParts()
         part->setMidiChannel(instrument.midiBank);
 
         Staff* staff = Factory::createStaff(part);
+        ClefTypeList clefTypeList { ClefType::G8_VB, ClefType::G8_VB };
+        staff->setDefaultClefType(clefTypeList);
+
         score->appendStaff(staff);
     }
 }

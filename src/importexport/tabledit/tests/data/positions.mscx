@@ -28,6 +28,32 @@
         <StaffType group="pitched">
           <name>stdNormal</name>
           </StaffType>
+        <defaultClef>G8vb</defaultClef>
+        </Staff>
+      <Staff>
+        <eid>D_D</eid>
+        <linkedTo>C_C</linkedTo>
+        <StaffType group="tablature">
+          <name>tab6StrSimple</name>
+          <lines>6</lines>
+          <lineDistance>1.5</lineDistance>
+          <stemless>1</stemless>
+          <timesig>0</timesig>
+          <durations>0</durations>
+          <durationFontName>MuseScore Tab Modern</durationFontName>
+          <durationFontSize>15</durationFontSize>
+          <durationFontY>0</durationFontY>
+          <fretUseTextStyle>1</fretUseTextStyle>
+          <fretTextStyle>tab_fret_number</fretTextStyle>
+          <linesThrough>0</linesThrough>
+          <minimStyle>0</minimStyle>
+          <onLines>1</onLines>
+          <showRests>0</showRests>
+          <stemsDown>1</stemsDown>
+          <stemsThrough>0</stemsThrough>
+          <upsideDown>0</upsideDown>
+          <useNumbers>1</useNumbers>
+          </StaffType>
         </Staff>
       <trackName>Guitar Standard</trackName>
       <Instrument>
@@ -50,22 +76,16 @@
     <Staff id="1">
       <VBox>
         <height>10</height>
-        <eid>D_D</eid>
+        <eid>E_E</eid>
         <Text>
-          <eid>E_E</eid>
+          <eid>F_F</eid>
           <style>title</style>
           <text>Positions</text>
           </Text>
         </VBox>
       <Measure>
-        <eid>F_F</eid>
+        <eid>G_G</eid>
         <voice>
-          <Clef>
-            <concertClefType>G8vb</concertClefType>
-            <transposingClefType>G8vb</transposingClefType>
-            <isHeader>1</isHeader>
-            <eid>G_G</eid>
-            </Clef>
           <KeySig>
             <eid>H_H</eid>
             <concertKey>0</concertKey>
@@ -179,6 +199,133 @@
             </Chord>
           <BarLine>
             <eid>c_c</eid>
+            </BarLine>
+          </voice>
+        </Measure>
+      </Staff>
+    <Staff id="2">
+      <Measure>
+        <voice>
+          <KeySig>
+            <eid>d_d</eid>
+            <linkedTo>H_H</linkedTo>
+            <concertKey>0</concertKey>
+            </KeySig>
+          <Chord>
+            <eid>e_e</eid>
+            <linkedTo>K_K</linkedTo>
+            <durationType>quarter</durationType>
+            <Note>
+              <eid>f_f</eid>
+              <linkedTo>L_L</linkedTo>
+              <pitch>64</pitch>
+              <tpc>18</tpc>
+              <fret>0</fret>
+              <string>0</string>
+              </Note>
+            </Chord>
+          <Chord>
+            <eid>g_g</eid>
+            <linkedTo>M_M</linkedTo>
+            <durationType>quarter</durationType>
+            <Note>
+              <eid>h_h</eid>
+              <linkedTo>N_N</linkedTo>
+              <pitch>64</pitch>
+              <tpc>18</tpc>
+              <fret>5</fret>
+              <string>1</string>
+              </Note>
+            </Chord>
+          <Chord>
+            <eid>i_i</eid>
+            <linkedTo>O_O</linkedTo>
+            <durationType>quarter</durationType>
+            <Note>
+              <eid>j_j</eid>
+              <linkedTo>P_P</linkedTo>
+              <pitch>64</pitch>
+              <tpc>18</tpc>
+              <fret>9</fret>
+              <string>2</string>
+              </Note>
+            </Chord>
+          <Chord>
+            <eid>k_k</eid>
+            <linkedTo>Q_Q</linkedTo>
+            <durationType>quarter</durationType>
+            <Note>
+              <eid>l_l</eid>
+              <linkedTo>R_R</linkedTo>
+              <pitch>64</pitch>
+              <tpc>18</tpc>
+              <fret>14</fret>
+              <string>3</string>
+              </Note>
+            </Chord>
+          <BarLine>
+            <eid>m_m</eid>
+            <linkedTo>S_S</linkedTo>
+            </BarLine>
+          </voice>
+        </Measure>
+      <Measure>
+        <voice>
+          <Chord>
+            <eid>n_n</eid>
+            <linkedTo>U_U</linkedTo>
+            <durationType>quarter</durationType>
+            <Note>
+              <eid>o_o</eid>
+              <linkedTo>V_V</linkedTo>
+              <pitch>60</pitch>
+              <tpc>14</tpc>
+              <fret>1</fret>
+              <string>1</string>
+              </Note>
+            </Chord>
+          <Chord>
+            <eid>p_p</eid>
+            <linkedTo>W_W</linkedTo>
+            <durationType>quarter</durationType>
+            <Note>
+              <eid>q_q</eid>
+              <linkedTo>X_X</linkedTo>
+              <pitch>60</pitch>
+              <tpc>14</tpc>
+              <fret>5</fret>
+              <string>2</string>
+              </Note>
+            </Chord>
+          <Chord>
+            <eid>r_r</eid>
+            <linkedTo>Y_Y</linkedTo>
+            <durationType>quarter</durationType>
+            <Note>
+              <eid>s_s</eid>
+              <linkedTo>Z_Z</linkedTo>
+              <pitch>60</pitch>
+              <tpc>14</tpc>
+              <fret>10</fret>
+              <string>3</string>
+              </Note>
+            </Chord>
+          <Chord>
+            <eid>t_t</eid>
+            <linkedTo>a_a</linkedTo>
+            <durationType>quarter</durationType>
+            <Note>
+              <eid>u_u</eid>
+              <linkedTo>b_b</linkedTo>
+              <pitch>60</pitch>
+              <tpc>14</tpc>
+              <fret>15</fret>
+              <string>4</string>
+              </Note>
+            </Chord>
+          <BarLine>
+            <eid>v_v</eid>
+            <linkedTo>c_c</linkedTo>
             </BarLine>
           </voice>
         </Measure>
