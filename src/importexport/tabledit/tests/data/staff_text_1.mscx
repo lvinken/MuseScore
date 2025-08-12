@@ -28,6 +28,32 @@
         <StaffType group="pitched">
           <name>stdNormal</name>
           </StaffType>
+        <defaultClef>G8vb</defaultClef>
+        </Staff>
+      <Staff>
+        <eid>D_D</eid>
+        <linkedTo>C_C</linkedTo>
+        <StaffType group="tablature">
+          <name>tab6StrSimple</name>
+          <lines>6</lines>
+          <lineDistance>1.5</lineDistance>
+          <stemless>1</stemless>
+          <timesig>0</timesig>
+          <durations>0</durations>
+          <durationFontName>MuseScore Tab Modern</durationFontName>
+          <durationFontSize>15</durationFontSize>
+          <durationFontY>0</durationFontY>
+          <fretUseTextStyle>1</fretUseTextStyle>
+          <fretTextStyle>tab_fret_number</fretTextStyle>
+          <linesThrough>0</linesThrough>
+          <minimStyle>0</minimStyle>
+          <onLines>1</onLines>
+          <showRests>0</showRests>
+          <stemsDown>1</stemsDown>
+          <stemsThrough>0</stemsThrough>
+          <upsideDown>0</upsideDown>
+          <useNumbers>1</useNumbers>
+          </StaffType>
         </Staff>
       <trackName>Acoustic Guitar (steel)</trackName>
       <Instrument>
@@ -50,17 +76,11 @@
     <Staff id="1">
       <VBox>
         <height>10</height>
-        <eid>D_D</eid>
+        <eid>E_E</eid>
         </VBox>
       <Measure>
-        <eid>E_E</eid>
+        <eid>F_F</eid>
         <voice>
-          <Clef>
-            <concertClefType>G8vb</concertClefType>
-            <transposingClefType>G8vb</transposingClefType>
-            <isHeader>1</isHeader>
-            <eid>F_F</eid>
-            </Clef>
           <KeySig>
             <eid>G_G</eid>
             <concertKey>0</concertKey>
@@ -93,6 +113,34 @@
             </Chord>
           <BarLine>
             <eid>M_M</eid>
+            </BarLine>
+          </voice>
+        </Measure>
+      </Staff>
+    <Staff id="2">
+      <Measure>
+        <voice>
+          <KeySig>
+            <eid>N_N</eid>
+            <linkedTo>G_G</linkedTo>
+            <concertKey>0</concertKey>
+            </KeySig>
+          <Chord>
+            <eid>O_O</eid>
+            <linkedTo>K_K</linkedTo>
+            <durationType>whole</durationType>
+            <Note>
+              <eid>P_P</eid>
+              <linkedTo>L_L</linkedTo>
+              <pitch>64</pitch>
+              <tpc>18</tpc>
+              <fret>0</fret>
+              <string>0</string>
+              </Note>
+            </Chord>
+          <BarLine>
+            <eid>Q_Q</eid>
+            <linkedTo>M_M</linkedTo>
             </BarLine>
           </voice>
         </Measure>
