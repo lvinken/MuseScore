@@ -224,8 +224,16 @@ static void connectTie(mu::engraving::Chord* chord, Note* note)
     }
 }
 
+static void connectAllTies(const std::vector<Note*>& tiedNotes)
+{
+    for (Note* note : tiedNotes) {
+        LOGN("tied note %p parent %p", note, note->chord());
+        connectTie(note->chord(), note);
+    }
+}
+
 static void addNoteToChord(mu::engraving::Chord* chord, track_idx_t track, int pitch, int fret, int string, bool tie,
-                           muse::draw::Color color)
+                           std::vector<Note*>& tiedNotes, muse::draw::Color color)
 {
     LOGN("pitch %d", pitch);
     mu::engraving::Note* note = Factory::createNote(chord);
@@ -236,10 +244,12 @@ static void addNoteToChord(mu::engraving::Chord* chord, track_idx_t track, int p
         note->setFret(fret);
         note->setString(string);
         note->setColor(color);
-        if (tie) {
-            connectTie(chord, note);
-        }
         chord->add(note);
+        LOGN("note %p parent %p chord %p", note, note->chord(), chord);
+        if (tie) {
+            LOGN("tied note %p", note);
+            tiedNotes.push_back(note);
+        }
     }
 }
 
@@ -287,6 +297,10 @@ void TablEdit::createContents()
     std::vector<VoiceAllocator> voiceAllocators;
     initializeVoiceAllocators(voiceAllocators);
     allocateVoices(voiceAllocators);
+
+    // remember notes to be tied until after all voices have been filled with notes
+    // to enable ties crossing voices
+    std::vector<Note*> tiedNotes;
 
     for (size_t part = 0; part < tefInstruments.size(); ++part) {
         LOGN("part %zu", part);
@@ -368,7 +382,7 @@ void TablEdit::createContents()
                             int pitch = 96 - instrument.tuning.at(note->string - stringOffset - 1) + note->fret;
                             LOGN("      -> string %d fret %d pitch %d", note->string, note->fret, pitch);
                             // note TableEdit's strings start at 1, MuseScore's at 0
-                            addNoteToChord(chord, track, pitch, note->fret, note->string - 1, note->tie, toColor(voice));
+                            addNoteToChord(chord, track, pitch, note->fret, note->string - 1, note->tie, tiedNotes, toColor(voice));
                             if (note->hasGrace) {
                                 // todo fix magical constant 96 and code duplication
                                 int gracePitch = 96 - instrument.tuning.at(/* todo */ note->string - stringOffset - 1) + note->graceFret;
@@ -381,6 +395,10 @@ void TablEdit::createContents()
             }
         }
     }
+    for (Note* note : tiedNotes) {
+        LOGN("tied note %p parent %p", note, note->chord());
+    }
+    connectAllTies(tiedNotes);
 }
 
 void TablEdit::createLinkedTabs()
