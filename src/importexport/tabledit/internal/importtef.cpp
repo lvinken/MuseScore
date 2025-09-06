@@ -195,13 +195,14 @@ void TablEdit::allocateVoices(std::vector<VoiceAllocator>& allocators)
     allocators[currentPart].addColumn(column);
 }
 
-static void connectTie(mu::engraving::Chord* chord, Note* note)
+static void connectTie(mu::engraving::Chord* chord, Note* lastNote)
 {
+    LOGN("chord %p lastNote %p", chord, lastNote);
     Segment* segment { chord->segment() };
     auto startTrack { VOICES* (chord->track() / VOICES) };
     auto endTrack { startTrack + VOICES - 1 };
     LOGN("segment %p tick %d string %d startTrack %zu track %zu endTrack %zu",
-         segment, segment->tick().ticks(), note->string(), startTrack, chord->track(), endTrack);
+         segment, segment->tick().ticks(), lastNote->string(), startTrack, chord->track(), endTrack);
 
     for (Segment* seg = segment->prev1(); seg; seg = seg->prev1()) {
         for (auto track = startTrack; track <= endTrack; ++track) {
@@ -210,10 +211,10 @@ static void connectTie(mu::engraving::Chord* chord, Note* note)
                 Chord* firstChord = toChord(el);
                 LOGN("firstChord %p tick %d track %zu", firstChord, firstChord->tick().ticks(), track);
                 for (Note* firstNote : firstChord->notes()) {
-                    LOGN("- string %d", firstNote->string());
-                    if (firstNote->string() == note->string()) {
+                    LOGN("- firstNote %p string %d", firstNote, firstNote->string());
+                    if (firstNote->string() == lastNote->string()) {
                         Tie* tie = Factory::createTie(firstNote);
-                        tie->setEndNote(note);
+                        tie->setEndNote(lastNote);
                         firstNote->add(tie);
                         LOGN(" -> tie %p", tie);
                         return;
@@ -395,9 +396,11 @@ void TablEdit::createContents()
             }
         }
     }
+#if 0
     for (Note* note : tiedNotes) {
-        LOGN("tied note %p parent %p", note, note->chord());
+        LOGD("tied note %p parent %p", note, note->chord());
     }
+#endif
     connectAllTies(tiedNotes);
 }
 
