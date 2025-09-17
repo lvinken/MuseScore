@@ -592,6 +592,12 @@ void TablEdit::createScore()
     createRepeats();
     createTexts();
     createLinkedTabs();
+
+    for (Part* part : score->parts()) {
+        for (const auto& pair : part->instruments()) {
+            pair.second->updateInstrumentId();
+        }
+    }
 }
 
 void TablEdit::createTempo()
