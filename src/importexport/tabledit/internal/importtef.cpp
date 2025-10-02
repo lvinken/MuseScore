@@ -20,6 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "importtef.h"
+#include "measurehandler.h"
 #include "tuplethandler.h"
 
 #include "engraving/dom/box.h"
@@ -571,6 +572,8 @@ static void setInstrumentIDs(const std::vector<Part*>& parts)
 
 void TablEdit::createScore()
 {
+    MeasureHandler measureHandler;
+    measureHandler.calculateMeasureStarts(tefMeasures);
     createProperties();
     createParts();
     createTitleFrame();

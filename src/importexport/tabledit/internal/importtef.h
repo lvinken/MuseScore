@@ -54,6 +54,14 @@ enum class Voice : uint8_t {
     LOWER = 3       // lower set
 };
 
+struct TefMeasure {
+    int flag { 0 };
+    int key { 0 };
+    int size { 0 };
+    int numerator { 0 };
+    int denominator { 0 };
+};
+
 struct TefNote {
     int position { 0 };
     int string { 0 };
@@ -118,14 +126,6 @@ class TablEdit
         int options { 0 };
         std::array<int, 12> tuning = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
         std::string name;
-    };
-
-    struct TefMeasure {
-        int flag { 0 };
-        int key { 0 };
-        int size { 0 };
-        int numerator { 0 };
-        int denominator { 0 };
     };
 
     struct TefReadingListItem {
