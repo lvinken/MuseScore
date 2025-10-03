@@ -21,19 +21,24 @@
  */
 #pragma once
 
-#include <string>
 #include <vector>
 
 #include "importtef.h"
 
-using namespace std;
 namespace mu::iex::tabledit {
 class MeasureHandler
 {
 public:
     MeasureHandler();
     void calculateMeasureStarts(const std::vector<TefMeasure>& tefMeasures);
+    void updateGaps(const std::vector<TefNote>& tefContents, const std::vector<TefMeasure>& tefMeasures);
 private:
+    int measureIndex(int tstart, const std::vector<TefMeasure>& tefMeasures);
+    int offsetInMeasure(int tstart, const std::vector<TefMeasure>& tefMeasures);
+    void updateGapLeft(std::vector<int>& gapLeft, const int position, const std::vector<TefMeasure>& tefMeasures);
+    void updateGapRight(std::vector<int>& gapRight, const TefNote& note, const std::vector<TefMeasure>& tefMeasures);
+    std::vector<int> gapsLeft;
+    std::vector<int> gapsRight;
     std::vector<int> measureStarts;
 };
 } // namespace mu::iex::tabledit

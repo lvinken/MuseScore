@@ -574,6 +574,7 @@ void TablEdit::createScore()
 {
     MeasureHandler measureHandler;
     measureHandler.calculateMeasureStarts(tefMeasures);
+    measureHandler.updateGaps(tefContents, tefMeasures);
     createProperties();
     createParts();
     createTitleFrame();
