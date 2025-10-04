@@ -172,5 +172,19 @@ void MeasureHandler::updateGaps(const std::vector<TefNote>& tefContents, const s
         s += std::to_string(gapRight);
     }
     LOGD("gapsRight %s", s.c_str());
+    s.clear();
+    for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
+        auto size { 64 * tefMeasures.at(i).numerator / tefMeasures.at(i).denominator };
+        s += ' ';
+        s += std::to_string(size);
+    }
+    LOGD("nominal %s", s.c_str());
+    s.clear();
+    for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
+        auto size { 64 * tefMeasures.at(i).numerator / tefMeasures.at(i).denominator };
+        s += ' ';
+        s += std::to_string(size - gapsLeft.at(i) - gapsRight.at(i));
+    }
+    LOGD("actual %s", s.c_str());
 }
 } // namespace mu::iex::tabledit
