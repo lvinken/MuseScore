@@ -31,6 +31,16 @@ MeasureHandler::MeasureHandler()
     LOGD("construcor");
 }
 
+// return the actual size of measure idx
+
+int MeasureHandler::actualSize(const std::vector<TefMeasure>& tefMeasures, const size_t idx) const
+{
+    int size { 64 * tefMeasures.at(idx).numerator / tefMeasures.at(idx).denominator };
+    size -= gapsLeft.at(idx) + gapsRight.at(idx);
+    LOGD("idx %zu size %d", idx, size);
+    return size;
+}
+
 void MeasureHandler::calculateMeasureStarts(const std::vector<TefMeasure>& tefMeasures)
 {
     int measureStart { 0 };

@@ -32,6 +32,8 @@
 #include "voiceallocator.h"
 
 namespace mu::iex::tabledit {
+class MeasureHandler;
+
 // offsets into the file header
 static const uint8_t OFFSET_TBED = 0x38;
 static const uint8_t OFFSET_CONTENTS = 0x3C;
@@ -142,7 +144,7 @@ class TablEdit
     void allocateVoices(std::vector<VoiceAllocator>& allocator);
     void createContents();
     void createLinkedTabs();
-    void createMeasures();
+    void createMeasures(const MeasureHandler& measureHandler);
     void createNotesFrame();
     void createParts();
     void createProperties();

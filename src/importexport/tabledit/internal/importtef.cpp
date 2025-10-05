@@ -414,19 +414,28 @@ void TablEdit::createLinkedTabs()
     }
 }
 
-void TablEdit::createMeasures()
+void TablEdit::createMeasures(const MeasureHandler& measureHandler)
 {
     int lastKey { 0 };               // safe default
     Fraction lastTimeSig { -1, -1 }; // impossible value
     Fraction tick { 0, 1 };
-    for (const auto& tefMeasure : tefMeasures) {
+    //for (const auto& tefMeasure : tefMeasures) {
+    for (size_t idx = 0; idx < tefMeasures.size(); ++idx) {
+        TefMeasure& tefMeasure { tefMeasures.at(idx) };
         // create measure
         auto measure = Factory::createMeasure(score->dummy()->system());
         measure->setTick(tick);
-        Fraction length{ tefMeasure.numerator, tefMeasure.denominator };
-        measure->setTimesig(length);
-        measure->setTicks(length);
+        Fraction nominalLength{ tefMeasure.numerator, tefMeasure.denominator };
+        Fraction actualLength{ measureHandler.actualSize(tefMeasures, idx), 64 };
+        measure->setTimesig(nominalLength);
+        measure->setTicks(actualLength);
         measure->setEndBarLineType(BarLineType::NORMAL, 0);
+        LOGD("measure %p tick %d/%d nominalLength %d/%d actualLength %d/%d",
+             measure,
+             tick.numerator(), tick.denominator(),
+             nominalLength.numerator(), nominalLength.denominator(),
+             actualLength.numerator(), actualLength.denominator()
+             );
         score->measures()->add(measure);
 
         if (tick == Fraction { 0, 1 }) {
@@ -442,11 +451,11 @@ void TablEdit::createMeasures()
             auto s2 = measure->getSegment(mu::engraving::SegmentType::TimeSig, tick);
             for (size_t i = 0; i < tefInstruments.size(); ++i) {
                 mu::engraving::TimeSig* timesig = Factory::createTimeSig(s2);
-                timesig->setSig(length);
+                timesig->setSig(nominalLength);
                 timesig->setTrack(i * VOICES);
                 s2->add(timesig);
             }
-            lastTimeSig = length;
+            lastTimeSig = nominalLength;
             createTempo();
         } else {
             if (tefMeasure.key != lastKey) {
@@ -459,19 +468,19 @@ void TablEdit::createMeasures()
                 }
                 lastKey = tefMeasure.key;
             }
-            if (length != lastTimeSig) {
+            if (nominalLength != lastTimeSig) {
                 auto s2 = measure->getSegment(mu::engraving::SegmentType::TimeSig, tick);
                 for (size_t i = 0; i < tefInstruments.size(); ++i) {
                     mu::engraving::TimeSig* timesig = Factory::createTimeSig(s2);
-                    timesig->setSig(length);
+                    timesig->setSig(nominalLength);
                     timesig->setTrack(i * VOICES);
                     s2->add(timesig);
                 }
-                lastTimeSig = length;
+                lastTimeSig = nominalLength;
             }
         }
 
-        tick += length;
+        tick += actualLength;
     }
     score->setUpTempoMap();
 }
@@ -578,7 +587,7 @@ void TablEdit::createScore()
     createProperties();
     createParts();
     createTitleFrame();
-    createMeasures();
+    createMeasures(measureHandler);
     createNotesFrame();
     createContents();
     createRepeats();

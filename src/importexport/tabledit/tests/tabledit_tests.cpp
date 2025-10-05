@@ -114,6 +114,10 @@ TEST_F(TablEdit_Tests, tef_notes_normal) {
     tefReadTest("notes_normal");
 }
 
+TEST_F(TablEdit_Tests, tef_pickup_measure) {
+    tefReadTest("pickup_measure");
+}
+
 TEST_F(TablEdit_Tests, tef_positions) {
     tefReadTest("positions");
 }

@@ -32,6 +32,7 @@ public:
     MeasureHandler();
     void calculateMeasureStarts(const std::vector<TefMeasure>& tefMeasures);
     void updateGaps(const std::vector<TefNote>& tefContents, const std::vector<TefMeasure>& tefMeasures);
+    int actualSize(const std::vector<TefMeasure>& tefMeasures, const size_t idx) const;
 private:
     int measureIndex(int tstart, const std::vector<TefMeasure>& tefMeasures);
     int offsetInMeasure(int tstart, const std::vector<TefMeasure>& tefMeasures);
