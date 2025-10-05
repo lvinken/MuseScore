@@ -278,7 +278,7 @@ static void addRest(Segment* segment, track_idx_t track, TDuration tDuration, Fr
     }
 }
 
-void TablEdit::createContents()
+void TablEdit::createContents(const MeasureHandler& measureHandler)
 {
     if (tefInstruments.size() == 0) {
         LOGD("error: no instruments");
@@ -316,10 +316,14 @@ void TablEdit::createContents()
                 if (firstNote->dots) {
                     tDuration.setDots(firstNote->dots);
                 }
+
+                const auto idx { measureHandler.measureIndex(firstNote->position, tefMeasures) };
+                const Fraction gapCorrection { measureHandler.sumPreviousGaps(idx), 64 };
                 const auto positionCorrection = tupletHandler.doTuplet(firstNote);
 
                 Fraction tick { firstNote->position, 64 }; // position is in 64th
                 tick += positionCorrection;
+                tick -= gapCorrection;
                 LOGN("    positionCorrection %d/%d tick %d/%d length %d/%d",
                      positionCorrection.numerator(), positionCorrection.denominator(),
                      tick.numerator(), tick.denominator(),
@@ -589,7 +593,7 @@ void TablEdit::createScore()
     createTitleFrame();
     createMeasures(measureHandler);
     createNotesFrame();
-    createContents();
+    createContents(measureHandler);
     createRepeats();
     createTexts();
     createLinkedTabs();

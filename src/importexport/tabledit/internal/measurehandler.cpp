@@ -76,7 +76,7 @@ void MeasureHandler::calculateMeasureStarts(const std::vector<TefMeasure>& tefMe
 
 // return the index of the measure containing tstart
 // note O2 behaviour in score size
-int MeasureHandler::measureIndex(int tstart, const std::vector<TefMeasure>& tefMeasures)
+int MeasureHandler::measureIndex(int tstart, const std::vector<TefMeasure>& tefMeasures) const
 {
     for (size_t i = 0; i < tefMeasures.size(); ++i) {
         auto start { measureStarts.at(i) };
@@ -162,6 +162,20 @@ void MeasureHandler::updateGapRight(std::vector<int>& gapRight, const TefNote& n
         }
     }
     return;
+}
+
+// start time correction to be subtracted from note position due to gaps:
+// sum of gaps in previous measure(s) plus left gap in current measure
+
+int MeasureHandler::sumPreviousGaps(const size_t idx) const
+{
+    auto corr { 0 };
+    for (unsigned int j = 0; j < idx; ++j) {
+        corr += gapsLeft.at(j) + gapsRight.at(j);
+    }
+    corr += gapsLeft.at(idx);
+    LOGD("idx %zu corr %d", idx, corr);
+    return corr;
 }
 
 void MeasureHandler::updateGaps(const std::vector<TefNote>& tefContents, const std::vector<TefMeasure>& tefMeasures)

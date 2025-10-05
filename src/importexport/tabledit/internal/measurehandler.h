@@ -33,8 +33,9 @@ public:
     void calculateMeasureStarts(const std::vector<TefMeasure>& tefMeasures);
     void updateGaps(const std::vector<TefNote>& tefContents, const std::vector<TefMeasure>& tefMeasures);
     int actualSize(const std::vector<TefMeasure>& tefMeasures, const size_t idx) const;
+    int sumPreviousGaps(const size_t idx) const;
+    int measureIndex(int tstart, const std::vector<TefMeasure>& tefMeasures) const;
 private:
-    int measureIndex(int tstart, const std::vector<TefMeasure>& tefMeasures);
     int offsetInMeasure(int tstart, const std::vector<TefMeasure>& tefMeasures);
     void updateGapLeft(std::vector<int>& gapLeft, const int position, const std::vector<TefMeasure>& tefMeasures);
     void updateGapRight(std::vector<int>& gapRight, const TefNote& note, const std::vector<TefMeasure>& tefMeasures);
