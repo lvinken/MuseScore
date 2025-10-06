@@ -78,7 +78,7 @@
         <height>10</height>
         <eid>E_E</eid>
         </VBox>
-      <Measure>
+      <Measure len="1/4">
         <eid>F_F</eid>
         <voice>
           <KeySig>
@@ -96,9 +96,6 @@
             <eid>I_I</eid>
             <text><sym>metNoteQuarterUp</sym> = 120</text>
             </Tempo>
-          <location>
-            <fractions>3/4</fractions>
-            </location>
           <Chord>
             <eid>J_J</eid>
             <durationType>quarter</durationType>
@@ -134,7 +131,7 @@
             </BarLine>
           </voice>
         </Measure>
-      <Measure>
+      <Measure len="3/4">
         <eid>Q_Q</eid>
         <voice>
           <Chord>
@@ -149,9 +146,6 @@
               <string>4</string>
               </Note>
             </Chord>
-          <location>
-            <fractions>1/4</fractions>
-            </location>
           <BarLine>
             <eid>T_T</eid>
             </BarLine>
@@ -159,16 +153,13 @@
         </Measure>
       </Staff>
     <Staff id="2">
-      <Measure>
+      <Measure len="1/4">
         <voice>
           <KeySig>
             <eid>U_U</eid>
             <linkedTo>G_G</linkedTo>
             <concertKey>0</concertKey>
             </KeySig>
-          <location>
-            <fractions>3/4</fractions>
-            </location>
           <Chord>
             <eid>V_V</eid>
             <linkedTo>J_J</linkedTo>
@@ -209,7 +200,7 @@
             </BarLine>
           </voice>
         </Measure>
-      <Measure>
+      <Measure len="3/4">
         <voice>
           <Chord>
             <eid>b_b</eid>
@@ -225,9 +216,6 @@
               <string>4</string>
               </Note>
             </Chord>
-          <location>
-            <fractions>1/4</fractions>
-            </location>
           <BarLine>
             <eid>d_d</eid>
             <linkedTo>T_T</linkedTo>

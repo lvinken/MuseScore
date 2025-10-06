@@ -418,6 +418,17 @@ void TablEdit::createLinkedTabs()
     }
 }
 
+static Fraction reducedActualLength(const int actual, const int nominalDenominator)
+{
+    Fraction res { actual, 64 };
+    while (res.denominator() >= 2 * nominalDenominator) {
+        res.setNumerator(res.numerator() / 2);
+        res.setDenominator(res.denominator() / 2);
+    }
+    LOGD("actual %d nominalDenominator %d res %d/%d", actual, nominalDenominator, res.numerator(), res.denominator());
+    return res;
+}
+
 void TablEdit::createMeasures(const MeasureHandler& measureHandler)
 {
     int lastKey { 0 };               // safe default
@@ -430,7 +441,7 @@ void TablEdit::createMeasures(const MeasureHandler& measureHandler)
         auto measure = Factory::createMeasure(score->dummy()->system());
         measure->setTick(tick);
         Fraction nominalLength{ tefMeasure.numerator, tefMeasure.denominator };
-        Fraction actualLength{ measureHandler.actualSize(tefMeasures, idx), 64 };
+        Fraction actualLength{ reducedActualLength(measureHandler.actualSize(tefMeasures, idx), tefMeasure.denominator) };
         measure->setTimesig(nominalLength);
         measure->setTicks(actualLength);
         measure->setEndBarLineType(BarLineType::NORMAL, 0);
