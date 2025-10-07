@@ -421,7 +421,7 @@ void TablEdit::createLinkedTabs()
 static Fraction reducedActualLength(const int actual, const int nominalDenominator)
 {
     Fraction res { actual, 64 };
-    while (res.denominator() >= 2 * nominalDenominator) {
+    while (res.denominator() >= 2 * nominalDenominator && res.numerator() % 2 == 0) {
         res.setNumerator(res.numerator() / 2);
         res.setDenominator(res.denominator() / 2);
     }
