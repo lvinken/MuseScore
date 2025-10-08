@@ -58,6 +58,7 @@ enum class Voice : uint8_t {
 
 struct TefMeasure {
     int flag { 0 };
+    bool isPickup { false };
     int key { 0 };
     int size { 0 };
     int numerator { 0 };

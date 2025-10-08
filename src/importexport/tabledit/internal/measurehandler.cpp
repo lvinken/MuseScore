@@ -209,6 +209,14 @@ void MeasureHandler::updateGaps(const std::vector<TefNote>& tefContents, const s
 
     s.clear();
     for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
+        int pickup { tefMeasures.at(i).isPickup ? 1 : 0 };
+        s += ' ';
+        s += std::to_string(pickup);
+    }
+    LOGD("isPickup %s", s.c_str());
+
+    s.clear();
+    for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
         auto size { 64 * tefMeasures.at(i).numerator / tefMeasures.at(i).denominator };
         s += ' ';
         s += std::to_string(size - gapsLeft.at(i) - gapsRight.at(i));

@@ -905,6 +905,7 @@ void TablEdit::readTefMeasures()
     for (uint16_t i = 0; i < numberOfMeasures; ++i) {
         TefMeasure measure;
         measure.flag = readUInt8();
+        measure.isPickup = measure.flag & 0x08;
         /* uint8_t uTmp = */ readUInt8();
         measure.key = readInt8();
         measure.size = readUInt8();
