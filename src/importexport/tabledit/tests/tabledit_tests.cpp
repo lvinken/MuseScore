@@ -70,6 +70,10 @@ TEST_F(TablEdit_Tests, tef_dynamic) {
     tefReadTest("dynamic");
 }
 
+TEST_F(TablEdit_Tests, tef_gaps_1) {
+    tefReadTest("gaps_1");
+}
+
 TEST_F(TablEdit_Tests, tef_grace_1) {
     tefReadTest("grace_1");
 }
