@@ -41,6 +41,6 @@ private:
     void updateGapRight(std::vector<int>& gapRight, const TefNote& note, const std::vector<TefMeasure>& tefMeasures);
     std::vector<int> gapsLeft;
     std::vector<int> gapsRight;
-    std::vector<int> measureStarts;
+    std::vector<int> nominalMeasureStarts;
 };
 } // namespace mu::iex::tabledit

@@ -32,11 +32,15 @@ MeasureHandler::MeasureHandler()
 }
 
 // return the actual size of measure idx
+// normal measure: based on time signature
+// pickup measure: based on time signature and left and right gaps
 
 int MeasureHandler::actualSize(const std::vector<TefMeasure>& tefMeasures, const size_t idx) const
 {
     int size { 64 * tefMeasures.at(idx).numerator / tefMeasures.at(idx).denominator };
-    size -= gapsLeft.at(idx) + gapsRight.at(idx);
+    if (tefMeasures.at(idx).isPickup) {
+        size -= gapsLeft.at(idx) + gapsRight.at(idx);
+    }
     LOGD("idx %zu size %d", idx, size);
     return size;
 }
@@ -45,21 +49,25 @@ void MeasureHandler::calculateMeasureStarts(const std::vector<TefMeasure>& tefMe
 {
     int measureStart { 0 };
     for (size_t i = 0; i < tefMeasures.size(); ++i) {
-        measureStarts.push_back(measureStart);
+        nominalMeasureStarts.push_back(measureStart);
         int measureSize { 64 * tefMeasures.at(i).numerator / tefMeasures.at(i).denominator };
         measureStart += measureSize;
-        gapsLeft.push_back(measureSize);
-        gapsRight.push_back(measureSize);
+        // also initialize the gaps
+        // normal measure: set to 0 to ignore gaps
+        // pickup measure: set to the measure size (to be corrected later when a smaller gap is found)
+        const int gap { tefMeasures.at(i).isPickup ? measureSize : 0 };
+        gapsLeft.push_back(gap);
+        gapsRight.push_back(gap);
     }
 
     for (size_t i = 0; i < tefMeasures.size(); ++i) {
     }
     std::string s;
-    for (const auto start : measureStarts) {
+    for (const auto start : nominalMeasureStarts) {
         s += ' ';
         s += std::to_string(start);
     }
-    LOGD("measureStarts (nominal) %s", s.c_str());
+    LOGD("nominalMeasureStarts %s", s.c_str());
     s.clear();
     for (const auto gapLeft : gapsLeft) {
         s += ' ';
@@ -79,7 +87,7 @@ void MeasureHandler::calculateMeasureStarts(const std::vector<TefMeasure>& tefMe
 int MeasureHandler::measureIndex(int tstart, const std::vector<TefMeasure>& tefMeasures) const
 {
     for (size_t i = 0; i < tefMeasures.size(); ++i) {
-        auto start { measureStarts.at(i) };
+        auto start { nominalMeasureStarts.at(i) };
         auto size { 64 * tefMeasures.at(i).numerator / tefMeasures.at(i).denominator };
         if (start <= tstart && tstart < start + size) {
             return i;
@@ -93,7 +101,7 @@ int MeasureHandler::offsetInMeasure(int tstart, const std::vector<TefMeasure>& t
 {
     auto index { measureIndex(tstart, tefMeasures) };
     if (0 <= index) {
-        return tstart - measureStarts.at(index);
+        return tstart - nominalMeasureStarts.at(index);
     }
     return -1; // not found
 }
@@ -101,10 +109,12 @@ int MeasureHandler::offsetInMeasure(int tstart, const std::vector<TefMeasure>& t
 void MeasureHandler::updateGapLeft(std::vector<int>& gapLeft, const int position, const std::vector<TefMeasure>& tefMeasures)
 {
     auto index { measureIndex(position, tefMeasures) };
-    auto offset { offsetInMeasure(position, tefMeasures) };
-    if (0 <= index && 0 <= offset) {
-        if (offset < gapLeft[index]) {
-            gapLeft[index] = offset;
+    if (tefMeasures.at(index).isPickup) {
+        auto offset { offsetInMeasure(position, tefMeasures) };
+        if (0 <= index && 0 <= offset) {
+            if (offset < gapLeft[index]) {
+                gapLeft[index] = offset;
+            }
         }
     }
     return;
@@ -149,16 +159,18 @@ void MeasureHandler::updateGapRight(std::vector<int>& gapRight, const TefNote& n
 {
     auto pos { note.position };
     auto index { measureIndex(pos, tefMeasures) };
-    auto offset { offsetInMeasure(pos, tefMeasures) };
-    LOGN("pos %d index %d offset %d", pos, index, offset);
-    if (0 <= index && 0 <= offset) {
-        auto dur { durationToInt2(note.duration) };
-        auto end { offset + dur };
-        auto size { 64 * tefMeasures.at(index).numerator / tefMeasures.at(index).denominator };
-        auto gap { size - end };
-        LOGN("dur %d end %d size %d gap %d", dur, end, size, gap);
-        if (gap < gapRight[index]) {
-            gapRight[index] = gap;
+    if (tefMeasures.at(index).isPickup) {
+        auto offset { offsetInMeasure(pos, tefMeasures) };
+        LOGN("pos %d index %d offset %d", pos, index, offset);
+        if (0 <= index && 0 <= offset) {
+            auto dur { durationToInt2(note.duration) };
+            auto end { offset + dur };
+            auto size { 64 * tefMeasures.at(index).numerator / tefMeasures.at(index).denominator };
+            auto gap { size - end };
+            LOGN("dur %d end %d size %d gap %d", dur, end, size, gap);
+            if (gap < gapRight[index]) {
+                gapRight[index] = gap;
+            }
         }
     }
     return;
@@ -166,6 +178,7 @@ void MeasureHandler::updateGapRight(std::vector<int>& gapRight, const TefNote& n
 
 // start time correction to be subtracted from note position due to gaps:
 // sum of gaps in previous measure(s) plus left gap in current measure
+// note only pickup measures count, regular measures always have gaps set to 0
 
 int MeasureHandler::sumPreviousGaps(const size_t idx) const
 {
