@@ -41,7 +41,7 @@ int MeasureHandler::actualSize(const std::vector<TefMeasure>& tefMeasures, const
     if (tefMeasures.at(idx).isPickup) {
         size -= gapsLeft.at(idx) + gapsRight.at(idx);
     }
-    LOGD("idx %zu size %d", idx, size);
+    LOGN("idx %zu size %d", idx, size);
     return size;
 }
 
@@ -187,7 +187,7 @@ int MeasureHandler::sumPreviousGaps(const size_t idx) const
         corr += gapsLeft.at(j) + gapsRight.at(j);
     }
     corr += gapsLeft.at(idx);
-    LOGD("idx %zu corr %d", idx, corr);
+    LOGN("idx %zu corr %d", idx, corr);
     return corr;
 }
 

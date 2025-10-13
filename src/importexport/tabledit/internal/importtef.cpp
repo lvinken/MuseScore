@@ -425,7 +425,7 @@ static Fraction reducedActualLength(const int actual, const int nominalDenominat
         res.setNumerator(res.numerator() / 2);
         res.setDenominator(res.denominator() / 2);
     }
-    LOGD("actual %d nominalDenominator %d res %d/%d", actual, nominalDenominator, res.numerator(), res.denominator());
+    LOGN("actual %d nominalDenominator %d res %d/%d", actual, nominalDenominator, res.numerator(), res.denominator());
     return res;
 }
 
@@ -445,7 +445,7 @@ void TablEdit::createMeasures(const MeasureHandler& measureHandler)
         measure->setTimesig(nominalLength);
         measure->setTicks(actualLength);
         measure->setEndBarLineType(BarLineType::NORMAL, 0);
-        LOGD("measure %p tick %d/%d nominalLength %d/%d actualLength %d/%d",
+        LOGN("measure %p tick %d/%d nominalLength %d/%d actualLength %d/%d",
              measure,
              tick.numerator(), tick.denominator(),
              nominalLength.numerator(), nominalLength.denominator(),
