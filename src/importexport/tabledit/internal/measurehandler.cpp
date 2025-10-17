@@ -26,9 +26,38 @@
 
 using namespace mu::engraving;
 namespace mu::iex::tabledit {
+// debug functions
+
+static void dumpStarts(const std::vector<int>& nominalMeasureStarts)
+{
+    std::string s;
+    for (const auto start : nominalMeasureStarts) {
+        s += ' ';
+        s += std::to_string(start);
+    }
+    LOGD("nominalMeasureStarts %s", s.c_str());
+}
+
+static void dumpGaps(const char* name, const std::vector<int>& gaps)
+{
+    std::string s { name };
+    for (const auto gap : gaps) {
+        s += ' ';
+        s += std::to_string(gap);
+    }
+    LOGD("%s", s.c_str());
+}
+
 MeasureHandler::MeasureHandler()
 {
     LOGD("construcor");
+}
+
+// return the nominal size of measure idx, based on time signature
+
+static int nominalSize(const std::vector<TefMeasure>& tefMeasures, const size_t idx)
+{
+    return 64 * tefMeasures.at(idx).numerator / tefMeasures.at(idx).denominator;
 }
 
 // return the actual size of measure idx
@@ -37,7 +66,7 @@ MeasureHandler::MeasureHandler()
 
 int MeasureHandler::actualSize(const std::vector<TefMeasure>& tefMeasures, const size_t idx) const
 {
-    int size { 64 * tefMeasures.at(idx).numerator / tefMeasures.at(idx).denominator };
+    int size { nominalSize(tefMeasures, idx) };
     if (tefMeasures.at(idx).isPickup) {
         size -= gapsLeft.at(idx) + gapsRight.at(idx);
     }
@@ -50,7 +79,7 @@ void MeasureHandler::calculateMeasureStarts(const std::vector<TefMeasure>& tefMe
     int measureStart { 0 };
     for (size_t i = 0; i < tefMeasures.size(); ++i) {
         nominalMeasureStarts.push_back(measureStart);
-        int measureSize { 64 * tefMeasures.at(i).numerator / tefMeasures.at(i).denominator };
+        int measureSize { nominalSize(tefMeasures, i) };
         measureStart += measureSize;
         // also initialize the gaps
         // normal measure: set to 0 to ignore gaps
@@ -60,26 +89,7 @@ void MeasureHandler::calculateMeasureStarts(const std::vector<TefMeasure>& tefMe
         gapsRight.push_back(gap);
     }
 
-    for (size_t i = 0; i < tefMeasures.size(); ++i) {
-    }
-    std::string s;
-    for (const auto start : nominalMeasureStarts) {
-        s += ' ';
-        s += std::to_string(start);
-    }
-    LOGD("nominalMeasureStarts %s", s.c_str());
-    s.clear();
-    for (const auto gapLeft : gapsLeft) {
-        s += ' ';
-        s += std::to_string(gapLeft);
-    }
-    LOGN("gapsLeft %s", s.c_str());
-    s.clear();
-    for (const auto gapRight : gapsRight) {
-        s += ' ';
-        s += std::to_string(gapRight);
-    }
-    LOGN("gapsRight %s", s.c_str());
+    dumpStarts(nominalMeasureStarts);
 }
 
 // return the index of the measure containing tstart
@@ -198,23 +208,12 @@ void MeasureHandler::updateGaps(const std::vector<TefNote>& tefContents, const s
         updateGapRight(gapsRight, note, tefMeasures);
     }
 
+    dumpGaps("gapsLeft", gapsLeft);
+    dumpGaps("gapsRight", gapsRight);
+
     std::string s;
-    for (const auto gapLeft : gapsLeft) {
-        s += ' ';
-        s += std::to_string(gapLeft);
-    }
-    LOGD("gapsLeft %s", s.c_str());
-
-    s.clear();
-    for (const auto gapRight : gapsRight) {
-        s += ' ';
-        s += std::to_string(gapRight);
-    }
-    LOGD("gapsRight %s", s.c_str());
-
-    s.clear();
     for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
-        auto size { 64 * tefMeasures.at(i).numerator / tefMeasures.at(i).denominator };
+        auto size { nominalSize(tefMeasures, i) };
         s += ' ';
         s += std::to_string(size);
     }
@@ -230,7 +229,7 @@ void MeasureHandler::updateGaps(const std::vector<TefNote>& tefContents, const s
 
     s.clear();
     for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
-        auto size { 64 * tefMeasures.at(i).numerator / tefMeasures.at(i).denominator };
+        auto size { nominalSize(tefMeasures, i) };
         s += ' ';
         s += std::to_string(size - gapsLeft.at(i) - gapsRight.at(i));
     }
@@ -240,7 +239,7 @@ void MeasureHandler::updateGaps(const std::vector<TefNote>& tefContents, const s
     {
         int measureStart { 0 };
         for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
-            int measureSize { 64 * tefMeasures.at(i).numerator / tefMeasures.at(i).denominator };
+            int measureSize { nominalSize(tefMeasures, i) };
             s += ' ';
             s += std::to_string(measureStart);
             measureStart += measureSize;
