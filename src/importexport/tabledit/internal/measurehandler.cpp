@@ -38,7 +38,7 @@ static void dumpStarts(const std::vector<int>& nominalMeasureStarts)
     LOGD("nominalMeasureStarts %s", s.c_str());
 }
 
-static void dumpGaps(const char* name, const std::vector<int>& gaps)
+static void dumpIntVec(const char* name, const std::vector<int>& gaps)
 {
     std::string s { name };
     for (const auto gap : gaps) {
@@ -208,32 +208,28 @@ void MeasureHandler::updateGaps(const std::vector<TefNote>& tefContents, const s
         updateGapRight(gapsRight, note, tefMeasures);
     }
 
-    dumpGaps("gapsLeft", gapsLeft);
-    dumpGaps("gapsRight", gapsRight);
+    dumpIntVec("gapsLeft", gapsLeft);
+    dumpIntVec("gapsRight", gapsRight);
 
     std::string s;
-    for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
-        auto size { nominalSize(tefMeasures, i) };
-        s += ' ';
-        s += std::to_string(size);
-    }
-    LOGD("nominal measure size %s", s.c_str());
 
-    s.clear();
+    std::vector<int> nominals;
     for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
-        int pickup { tefMeasures.at(i).isPickup ? 1 : 0 };
-        s += ' ';
-        s += std::to_string(pickup);
+        nominals.push_back(nominalSize(tefMeasures, i));
     }
-    LOGD("isPickup %s", s.c_str());
+    dumpIntVec("nominals", nominals);
 
-    s.clear();
+    std::vector<int> pickups;
     for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
-        auto size { nominalSize(tefMeasures, i) };
-        s += ' ';
-        s += std::to_string(size - gapsLeft.at(i) - gapsRight.at(i));
+        pickups.push_back(tefMeasures.at(i).isPickup ? 1 : 0);
     }
-    LOGD("actual measure size %s", s.c_str());
+    dumpIntVec("pickups", pickups);
+
+    std::vector<int> actuals;
+    for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
+        actuals.push_back(actualSize(tefMeasures, i));
+    }
+    dumpIntVec("actuals", actuals);
 
     s.clear();
     {
