@@ -597,8 +597,7 @@ static void setInstrumentIDs(const std::vector<Part*>& parts)
 void TablEdit::createScore()
 {
     MeasureHandler measureHandler;
-    measureHandler.calculateMeasureStarts(tefMeasures);
-    measureHandler.updateGaps(tefContents, tefMeasures);
+    measureHandler.calculate(tefContents, tefMeasures);
     createProperties();
     createParts();
     createTitleFrame();

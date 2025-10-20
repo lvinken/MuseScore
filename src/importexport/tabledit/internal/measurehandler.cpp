@@ -26,17 +26,9 @@
 
 using namespace mu::engraving;
 namespace mu::iex::tabledit {
-// debug functions
+static int nominalSize(const std::vector<TefMeasure>& tefMeasures, const size_t idx);
 
-static void dumpStarts(const std::vector<int>& nominalMeasureStarts)
-{
-    std::string s;
-    for (const auto start : nominalMeasureStarts) {
-        s += ' ';
-        s += std::to_string(start);
-    }
-    LOGD("nominalMeasureStarts %s", s.c_str());
-}
+// debug support
 
 static void dumpIntVec(const char* name, const std::vector<int>& gaps)
 {
@@ -48,9 +40,37 @@ static void dumpIntVec(const char* name, const std::vector<int>& gaps)
     LOGD("%s", s.c_str());
 }
 
-MeasureHandler::MeasureHandler()
+void MeasureHandler::dumpActualsAndSumGaps(const std::vector<TefMeasure>& tefMeasures) const
 {
-    LOGD("construcor");
+    std::vector<int> actuals;
+    for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
+        actuals.push_back(actualSize(tefMeasures, i));
+    }
+    dumpIntVec("actuals", actuals);
+
+    std::vector<int> sumGaps;
+    for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
+        sumGaps.push_back(sumPreviousGaps(i));
+    }
+    dumpIntVec("sumGaps", sumGaps);
+}
+
+static void dumpNominals(const std::vector<TefMeasure>& tefMeasures)
+{
+    std::vector<int> nominals;
+    for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
+        nominals.push_back(nominalSize(tefMeasures, i));
+    }
+    dumpIntVec("nominals", nominals);
+}
+
+static void dumpPickups(const std::vector<TefMeasure>& tefMeasures)
+{
+    std::vector<int> pickups;
+    for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
+        pickups.push_back(tefMeasures.at(i).isPickup ? 1 : 0);
+    }
+    dumpIntVec("pickups", pickups);
 }
 
 // return the nominal size of measure idx, based on time signature
@@ -74,7 +94,7 @@ int MeasureHandler::actualSize(const std::vector<TefMeasure>& tefMeasures, const
     return size;
 }
 
-void MeasureHandler::calculateMeasureStarts(const std::vector<TefMeasure>& tefMeasures)
+void MeasureHandler::initializeMeasureStartsAndGaps(const std::vector<TefMeasure>& tefMeasures)
 {
     int measureStart { 0 };
     for (size_t i = 0; i < tefMeasures.size(); ++i) {
@@ -88,12 +108,11 @@ void MeasureHandler::calculateMeasureStarts(const std::vector<TefMeasure>& tefMe
         gapsLeft.push_back(gap);
         gapsRight.push_back(gap);
     }
-
-    dumpStarts(nominalMeasureStarts);
 }
 
 // return the index of the measure containing tstart
 // note O2 behaviour in score size
+
 int MeasureHandler::measureIndex(int tstart, const std::vector<TefMeasure>& tefMeasures) const
 {
     for (size_t i = 0; i < tefMeasures.size(); ++i) {
@@ -107,6 +126,7 @@ int MeasureHandler::measureIndex(int tstart, const std::vector<TefMeasure>& tefM
 }
 
 // return the offset of tstart (distance from its measure's start)
+
 int MeasureHandler::offsetInMeasure(int tstart, const std::vector<TefMeasure>& tefMeasures)
 {
     auto index { measureIndex(tstart, tefMeasures) };
@@ -115,6 +135,8 @@ int MeasureHandler::offsetInMeasure(int tstart, const std::vector<TefMeasure>& t
     }
     return -1; // not found
 }
+
+// find the smallest offset of any note in a pickup measure
 
 void MeasureHandler::updateGapLeft(std::vector<int>& gapLeft, const int position, const std::vector<TefMeasure>& tefMeasures)
 {
@@ -134,6 +156,7 @@ void MeasureHandler::updateGapLeft(std::vector<int>& gapLeft, const int position
 // TODO: remove code duplication with importtef.cpp duration2length()
 
 //static int durationToInt(uint8_t duration) // todo fix conflict: duplicated code with voiceallocator.cpp
+
 static int durationToInt2(uint8_t duration)
 {
     switch (duration) {
@@ -164,6 +187,8 @@ static int durationToInt2(uint8_t duration)
     default: return 0; //"undefined";
     }
 }
+
+// find the largest end time of any note in a pickup measure
 
 void MeasureHandler::updateGapRight(std::vector<int>& gapRight, const TefNote& note, const std::vector<TefMeasure>& tefMeasures)
 {
@@ -207,54 +232,19 @@ void MeasureHandler::updateGaps(const std::vector<TefNote>& tefContents, const s
         updateGapLeft(gapsLeft, note.position, tefMeasures);
         updateGapRight(gapsRight, note, tefMeasures);
     }
+}
 
+void MeasureHandler::calculate(const std::vector<TefNote>& tefContents, const std::vector<TefMeasure>& tefMeasures)
+{
+    initializeMeasureStartsAndGaps(tefMeasures);
+    updateGaps(tefContents, tefMeasures);
+
+    // debug: dump result
+    dumpIntVec("starts", nominalMeasureStarts);
     dumpIntVec("gapsLeft", gapsLeft);
     dumpIntVec("gapsRight", gapsRight);
-
-    std::string s;
-
-    std::vector<int> nominals;
-    for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
-        nominals.push_back(nominalSize(tefMeasures, i));
-    }
-    dumpIntVec("nominals", nominals);
-
-    std::vector<int> pickups;
-    for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
-        pickups.push_back(tefMeasures.at(i).isPickup ? 1 : 0);
-    }
-    dumpIntVec("pickups", pickups);
-
-    std::vector<int> actuals;
-    for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
-        actuals.push_back(actualSize(tefMeasures, i));
-    }
-    dumpIntVec("actuals", actuals);
-
-    s.clear();
-    {
-        int measureStart { 0 };
-        for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
-            int measureSize { nominalSize(tefMeasures, i) };
-            s += ' ';
-            s += std::to_string(measureStart);
-            measureStart += measureSize;
-            measureStart -= gapsLeft.at(i) + gapsRight.at(i);
-        }
-    }
-    LOGD("actual measure start %s", s.c_str());
-
-    s.clear();
-    for (unsigned int i = 0; i < tefMeasures.size(); ++i) {
-        // sum of gaps in previous measure(s) plus left gap in current measure
-        auto corr { 0 };
-        for (unsigned int j = 0; j < i; ++j) {
-            corr += gapsLeft.at(j) + gapsRight.at(j);
-        }
-        corr += gapsLeft.at(i);
-        s += ' ';
-        s += std::to_string(corr);
-    }
-    LOGD("note time correction %s", s.c_str());
+    dumpNominals(tefMeasures);
+    dumpPickups(tefMeasures);
+    dumpActualsAndSumGaps(tefMeasures);
 }
 } // namespace mu::iex::tabledit
