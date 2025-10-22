@@ -22,4 +22,5 @@
 #pragma once
 
 namespace mu::iex::tabledit {
+int durationToInt(uint8_t duration);
 } // namespace mu::iex::tabledit
