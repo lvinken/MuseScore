@@ -27,6 +27,13 @@
 
 using namespace mu::engraving;
 namespace mu::iex::tabledit {
+//---------------------------------------------------------
+//   MeasureHandler
+//   Calculate measure-level timing corrections for pickup measures
+//   A TablEdit pickup measure contains gaps at either the left or right side,
+//   that must be removed. Also the measure's actual size must be calculated.
+//---------------------------------------------------------
+
 static int nominalSize(const std::vector<TefMeasure>& tefMeasures, const size_t idx);
 
 // debug support

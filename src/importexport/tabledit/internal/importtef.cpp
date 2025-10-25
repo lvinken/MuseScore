@@ -434,7 +434,6 @@ void TablEdit::createMeasures(const MeasureHandler& measureHandler)
     int lastKey { 0 };               // safe default
     Fraction lastTimeSig { -1, -1 }; // impossible value
     Fraction tick { 0, 1 };
-    //for (const auto& tefMeasure : tefMeasures) {
     for (size_t idx = 0; idx < tefMeasures.size(); ++idx) {
         TefMeasure& tefMeasure { tefMeasures.at(idx) };
         // create measure
