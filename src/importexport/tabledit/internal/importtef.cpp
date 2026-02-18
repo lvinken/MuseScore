@@ -597,6 +597,10 @@ void TablEdit::createRepeats()
         Measure* m { score->crMeasure(static_cast<int>(i)) };
         m->setRepeatStart(readingList.status().at(i).repeatStart);
         m->setRepeatEnd(readingList.status().at(i).repeatEnd);
+        const auto repeats { readingList.status().at(i).repeats };
+        if (repeats > 2) {
+            m->setRepeatCount(repeats);
+        }
         if (const std::optional<Ending>& ending = readingList.status().at(i).ending) {
             addVolta(score, m, ending.value());
         }

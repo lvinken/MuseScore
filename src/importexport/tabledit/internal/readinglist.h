@@ -39,6 +39,7 @@ struct MeasureStatus
     std::optional<Ending> ending;
     bool repeatEnd { false };
     bool repeatStart { false };
+    int repeats { 0 };
     bool isRegular();
 };
 
