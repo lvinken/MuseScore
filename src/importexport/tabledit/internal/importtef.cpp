@@ -32,6 +32,7 @@
 #include "engraving/dom/measurebase.h"
 #include "engraving/dom/note.h"
 #include "engraving/dom/part.h"
+#include "engraving/dom/playcounttext.h"
 #include "engraving/dom/rest.h"
 #include "engraving/dom/stafftext.h"
 #include "engraving/dom/tempotext.h"
@@ -597,9 +598,14 @@ void TablEdit::createRepeats()
         Measure* m { score->crMeasure(static_cast<int>(i)) };
         m->setRepeatStart(readingList.status().at(i).repeatStart);
         m->setRepeatEnd(readingList.status().at(i).repeatEnd);
-        const auto repeats { readingList.status().at(i).repeats };
-        if (repeats > 2) {
-            m->setRepeatCount(repeats);
+        const auto repeatCount { readingList.status().at(i).repeatCount };
+        if (repeatCount > 2) {
+            m->setRepeatCount(repeatCount);
+            // generate default play count text
+            Segment* segment = m->getSegment(SegmentType::EndBarLine, m->tick() + m->ticks());
+            PlayCountText* playCountText = Factory::createPlayCountText(segment);
+            playCountText->setTrack(0); // todo check multi staff / part handling
+            segment->add(playCountText);
         }
         if (const std::optional<Ending>& ending = readingList.status().at(i).ending) {
             addVolta(score, m, ending.value());
