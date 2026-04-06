@@ -35,6 +35,8 @@
 #include "engraving/dom/part.h"
 #include "engraving/dom/playcounttext.h"
 #include "engraving/dom/rest.h"
+#include "engraving/dom/segment.h"
+#include "engraving/dom/segmentlist.h"
 #include "engraving/dom/stafftext.h"
 #include "engraving/dom/tempotext.h"
 #include "engraving/dom/text.h"
@@ -458,11 +460,34 @@ void TablEdit::createContents(const MeasureHandler& measureHandler)
     }
 }
 
+static void dumpTracks(const Score* const score)
+{
+    for (Measure* measure = score->firstMeasure(); measure; measure = measure->nextMeasure()) {
+        LOGD("measure %p", measure);
+        for (Segment* segment = measure->first(); segment; segment = segment->next()) {
+            LOGD("segment %p type %s tick %d", segment, Segment::subTypeName(segment->segmentType()), segment->tick().ticks());
+            for (size_t track = 0; track < score->staves().size() * VOICES; ++track) {
+                EngravingItem* el = segment->element(track);
+                if (el && el->isChord()) {
+                    Chord* c = toChord(el);
+                    LOGD("track %zu c %p", c->track(), c);
+                    for (Note* n : c->notes()) {
+                        LOGD("n %p fret %d string %d", &n, n->fret(), n->string());
+                    }
+                }
+            }
+        }
+    }
+}
+
 void TablEdit::createLinkedTabs()
 {
+    LOGD("begin");
+    dumpTracks(score);
     constexpr size_t stavesInPart = 2;
 
     for (Part* part : score->parts()) {
+        LOGD("part %p", part);
         part->setStaves(static_cast<int>(stavesInPart));
 
         Staff* srcStaff = part->staff(0);
@@ -486,6 +511,8 @@ void TablEdit::createLinkedTabs()
         dstStaff->setStaffType(fr, *StaffType::preset(types.at(index)));
         dstStaff->setLines(fr, static_cast<int>(lines));
     }
+    dumpTracks(score);
+    LOGD("end");
 }
 
 static Fraction reducedActualLength(const int actual, const int nominalDenominator)

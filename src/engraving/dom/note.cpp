@@ -592,6 +592,7 @@ std::vector<Note*> Note::compoundNotes() const
 Note::Note(const Note& n, bool link)
     : EngravingItem(n, link)
 {
+    LOGD("n %p fret %d string %d", &n, n.m_fret, n.m_string);
     if (link) {
         score()->undo(new Link(this, const_cast<Note*>(&n)));
     }

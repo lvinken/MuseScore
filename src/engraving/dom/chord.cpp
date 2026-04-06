@@ -303,6 +303,7 @@ Chord::Chord(Segment* parent)
 Chord::Chord(const Chord& c, bool link)
     : ChordRest(c, link)
 {
+    LOGD("c %p tick %d track %zu link %d", &c, c.tick().ticks(), c.track(), link);
     if (link) {
         score()->undo(new Link(this, const_cast<Chord*>(&c)));
     }
