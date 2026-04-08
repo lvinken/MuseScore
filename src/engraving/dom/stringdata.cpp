@@ -175,13 +175,17 @@ int StringData::fret(int pitch, int string, const Staff* staff, const Fraction& 
 
 void StringData::fretChords(Chord* chord) const
 {
+    LOGD("chord %p", chord);
+    //LOGD("bFretting %d", bFretting);
     if (bFretting) {
+        LOGD("1");
         return;
     }
     bFretting = true;
     DEFER {
         bFretting = false;
     };
+    LOGD("2");
 
     int strings = static_cast<int>(this->strings());
 
@@ -208,6 +212,7 @@ void StringData::fretChords(Chord* chord) const
 
     for (const auto& p : sortedNotes) {
         Note* note = p.second;
+        LOGD("2a note->string() %d strings %d", note->string(), strings);
         if (note->string() >= strings) {
             note->undoChangeProperty(Pid::STRING, INVALID_STRING_INDEX);
             note->undoChangeProperty(Pid::FRET, INVALID_FRET_INDEX);
@@ -215,6 +220,7 @@ void StringData::fretChords(Chord* chord) const
     }
 
     if (!strings) {
+        LOGD("3");
         return;
     }
 
@@ -239,6 +245,7 @@ void StringData::fretChords(Chord* chord) const
 
     // scan chord notes from highest, matching with strings from the highest
     for (const auto& p : sortedNotes) {
+        LOGD("4");
         Note* note = p.second;
         int nString, nNewString;
         int nFret,   nNewFret,   nTempFret;
@@ -248,6 +255,7 @@ void StringData::fretChords(Chord* chord) const
         note->setFretConflict(false);           // assume no conflicts on this note
         // if no fretting (any invalid fretting has been erased by sortChordNotes() )
         if (nString == INVALID_STRING_INDEX /*|| nFret == INVALID_FRET_INDEX || getPitch(nString, nFret) != note->pitch()*/) {
+            LOGD("5");
             const CapoParams& capo = note->staff()->capo(note->tick());
             // get a new fretting
             if (convertPitch(note->pitch(), pitchOffsetAt(chord->staff(), chord->tick()), &nNewString, &nNewFret,
@@ -292,6 +300,7 @@ void StringData::fretChords(Chord* chord) const
 
         // if fretting did change, store as a fret change
         if (nFret != nNewFret) {
+            LOGD("6");
             note->undoChangeProperty(Pid::FRET, nNewFret);
         }
         if (nString != nNewString) {
@@ -306,6 +315,7 @@ void StringData::fretChords(Chord* chord) const
             note->setFretConflict(true);
         }
     }
+    LOGD("end");
 }
 
 //---------------------------------------------------------

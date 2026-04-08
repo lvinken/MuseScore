@@ -773,6 +773,7 @@ void TablEdit::createScore()
     createTexts();
     createLinkedTabs();
     setInstrumentIDs(score->parts());
+    dumpTracks(score);
 }
 
 void TablEdit::createTempo()

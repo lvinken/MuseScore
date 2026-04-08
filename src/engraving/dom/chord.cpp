@@ -1168,15 +1168,18 @@ void Chord::cmdUpdateNotes(AccidentalState* as, staff_idx_t staffIdx)
 
     const Staff* st = staff();
     StaffGroup staffGroup = st->staffTypeForElement(this)->group();
+    LOGD("1 st %p idx %zu", st, st->idx());
     if (staffGroup == StaffGroup::TAB) {
         Fraction tick = this->tick();
         const StringData* stringData = part()->stringData(tick, st->idx());
         for (Chord* ch : graceNotes()) {
             stringData->fretChords(ch);
         }
+        LOGD("2");
         stringData->fretChords(this);
         return;
     } else {
+        LOGD("3");
         // if not tablature, use instrument->useDrumset to set staffGroup (to allow pitched to unpitched in same staff)
         staffGroup = st->part()->instrument(this->tick())->useDrumset() ? StaffGroup::PERCUSSION : StaffGroup::STANDARD;
     }

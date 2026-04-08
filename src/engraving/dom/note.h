@@ -242,7 +242,7 @@ public:
     void setLine(int n) { m_line = n; }
 
     int fret() const { return m_fret; }
-    void setFret(int val) { m_fret = val; }
+    void setFret(int val); // { m_fret = val; }
     float harmonicFret() const { return m_harmonicFret; }
     void setHarmonicFret(float val) { m_harmonicFret = val; }
     int harmonicPitchOffset() const { return m_harmonicPitchOffset; }

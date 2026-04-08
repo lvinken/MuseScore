@@ -28,6 +28,7 @@
 #include "note.h"
 
 #include <cassert>
+#include <cstdlib>
 
 #include "translation.h"
 
@@ -557,6 +558,16 @@ Note::~Note()
     }
 
     muse::DeleteAll(m_dots);
+}
+
+void Note::setFret(int val)
+{
+    //LOGD("tick %d track %zu val %d", chord()->tick().ticks(), chord()->track(), val);
+    LOGD("chord %p val %d", chord(), val);
+    if (val == -1) {
+        //std::abort();
+    }
+    m_fret = val;
 }
 
 std::vector<Note*> Note::compoundNotes() const
