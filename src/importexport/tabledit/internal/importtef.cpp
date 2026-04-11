@@ -973,6 +973,13 @@ void TablEdit::readTefContents()
             note.fingeringLH = (byte7 & 0x1F) % 6;
             note.fingeringRH = (byte7 & 0x1F) / 6;
             LOGN("fingeringLH %d fingeringRH %d", note.fingeringLH, note.fingeringRH);
+            /*
+             * TODO: handle hammer-on, pull-off and slide:
+             * - store TablEdit and MuseScore note pair in map (which is key ?)
+             * - after all notes are created, add effects found in map
+             *   -> requires second MuseScore note
+             *   -> search for note2 at note1.tick() + note1.ticks with same string
+             */
             note.simpleEffect = byte3 & 0x0F;
             note.complexEffect = byte5;
             LOGD("simpleEffect %d complexEffect %d", note.simpleEffect, note.complexEffect);
