@@ -940,7 +940,7 @@ void TablEdit::readTefContents()
         uint8_t byte2 = readUInt8();
         uint8_t byte3 = readUInt8();
         uint8_t byte4 = readUInt8();
-        /* uint8_t byte5 = */ readUInt8();
+        uint8_t byte5 = readUInt8();
         /* uint8_t byte6 = */ readUInt8();
         uint8_t byte7 = readUInt8();
         /* uint8_t byte8 = */ readUInt8();
@@ -973,6 +973,9 @@ void TablEdit::readTefContents()
             note.fingeringLH = (byte7 & 0x1F) % 6;
             note.fingeringRH = (byte7 & 0x1F) / 6;
             LOGN("fingeringLH %d fingeringRH %d", note.fingeringLH, note.fingeringRH);
+            note.simpleEffect = byte3 & 0x0F;
+            note.complexEffect = byte5;
+            LOGD("simpleEffect %d complexEffect %d", note.simpleEffect, note.complexEffect);
             tefContents.push_back(note);
         } else if (noteRestMarker == 0x39) {
             TefTextMarker tefTextMarker;
