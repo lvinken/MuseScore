@@ -29,6 +29,8 @@
 #include "engraving/dom/excerpt.h"
 #include "engraving/dom/factory.h"
 #include "engraving/dom/fingering.h"
+#include "engraving/dom/glissando.h"
+#include "engraving/dom/hammeronpulloff.h"
 #include "engraving/dom/keysig.h"
 #include "engraving/dom/measurebase.h"
 #include "engraving/dom/note.h"
@@ -253,8 +255,9 @@ static String fingeringTextRH(int rightFinger)
     }
 }
 
-static void addNoteToChord(mu::engraving::Chord* chord, const TefNote* tefNote, int stringOffset, int pitch, muse::draw::Color color,
-                           std::vector<mu::engraving::Note*>& tiedNotes)
+static mu::engraving::Note* addNoteToChord(mu::engraving::Chord* chord, const TefNote* tefNote, int stringOffset, int pitch,
+                                           muse::draw::Color color,
+                                           std::vector<mu::engraving::Note*>& tiedNotes)
 {
     LOGN("pitch %d", pitch);
     mu::engraving::Note* note = Factory::createNote(chord);
@@ -282,6 +285,7 @@ static void addNoteToChord(mu::engraving::Chord* chord, const TefNote* tefNote, 
         }
         chord->add(note);
     }
+    return note;
 }
 
 static void addGraceNotesToChord(mu::engraving::Chord* chord, int pitch, int fret, int string, muse::draw::Color color)
@@ -440,11 +444,14 @@ void TablEdit::createContents(const MeasureHandler& measureHandler)
                             int pitch = 96 - instrument.tuning.at(note->string - stringOffset - 1) + note->fret;
                             LOGN("      -> string %d fret %d pitch %d", note->string, note->fret, pitch);
                             // note TableEdit's strings start at 1, MuseScore's at 0
-                            addNoteToChord(chord, note, stringOffset, pitch, toColor(voice), tiedNotes);
+                            mu::engraving::Note* mn { addNoteToChord(chord, note, stringOffset, pitch, toColor(voice), tiedNotes) };
                             if (note->hasGrace) {
                                 // todo fix magical constant 96 and code duplication
                                 int gracePitch = 96 - instrument.tuning.at(note->string - stringOffset - 1) + note->graceFret;
                                 addGraceNotesToChord(chord, gracePitch, note->graceFret, note->string - stringOffset - 1, toColor(voice));
+                            }
+                            if (note->simpleEffect || note->complexEffect) {
+                                effectMap.insert({ note, mn });
                             }
                         }
                         tupletHandler.addCr(measure, chord);
@@ -458,6 +465,186 @@ void TablEdit::createContents(const MeasureHandler& measureHandler)
     }
 }
 
+// adapted copy of GPConverter::addContinuousSlideHammerOn()
+// features not yet supported disabled using "#if 0"
+
+static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNote* const, mu::engraving::Note*>& _slideHammerOnMap)
+{
+    auto searchEndNote = [] (Note* start) -> Note* {
+        ChordRest* nextCr;
+        if (toChord(start->parent())->ChordRest::isGrace()) {
+            //! this case when start note is a grace note so end note can be next note in grace notes
+            //! or parent note of grace notes
+            Chord* startChord =  toChord(start->parent());
+
+            Chord* parentGrace = toChord(start->parent()->parent());
+
+            auto it = parentGrace->graceNotes().begin();
+            for (; it != parentGrace->graceNotes().end(); ++it) {
+                if (*it == startChord) {
+                    break;
+                }
+            }
+
+            if (it == parentGrace->graceNotes().end()) {
+                nextCr = nullptr;
+            } else if (std::next(it) == parentGrace->graceNotes().end()) {
+                nextCr = parentGrace;
+            } else {
+                nextCr = *(++it);
+            }
+        } else {
+            nextCr = start->chord()->segment()->next1()->nextChordRest(start->track());
+            if (!nextCr) {
+                return nullptr;
+            }
+
+            if (nextCr->isChord() && !toChord(nextCr)->graceNotes().empty()) {
+                nextCr = toChord(nextCr)->graceNotes().front();
+            }
+        }
+
+        if (!nextCr) {
+            return nullptr;
+        }
+
+        if (!nextCr->isChord()) {
+            return nullptr;
+        }
+        auto nextChord = toChord(nextCr);
+        for (auto note : nextChord->notes()) {
+            if (note->string() == start->string() && (note->harmonic() == start->harmonic())) {
+                return note;
+            }
+        }
+
+        return nextChord->upNote();
+    };
+
+    std::unordered_map<Note*, Slur*> legatoSlides;
+    std::unordered_map<Note*, HammerOnPullOff*> hammerOnPullOffs;
+    std::unordered_set<Chord*> hammerOnInChord;
+    for (const auto& slide : _slideHammerOnMap) {
+        const TefNote* const tefNote { slide.first };
+        LOGD("has effect: (tef) note %p (ms) note %p", slide.first, slide.second);
+        if (!((tefNote->simpleEffect == 1 || tefNote->simpleEffect == 2 || tefNote->simpleEffect == 3) && tefNote->complexEffect == 0)) {
+            LOGE("unsupported effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
+            continue;
+        }
+
+        //Note* startNote = slide.first;
+        Note* startNote = slide.second;
+        Note* endNote = searchEndNote(startNote);
+        if (!endNote || startNote->string() == -1 || startNote->fret() == endNote->fret()) {
+            //mistake in GP: such kind od slides shouldn't exist
+            continue;
+        }
+
+#if 0
+        Note* currentStart = nullptr;
+        if (startNote->bendFor()) {
+            Note* bendNote = startNote;
+            GuitarBend* bend = bendNote->bendFor();
+
+            while (bend) {
+                bendNote = bend->endNote();
+                IF_ASSERT_FAILED(bendNote) {
+                    LOGE() << "glissando start note may be incorrect";
+                    break;
+                }
+
+                if (!bendNote->chord()->isGraceAfter()) {
+                    break;
+                }
+
+                currentStart = bendNote;
+                bend = bendNote->bendFor();
+            }
+
+            if (currentStart) {
+                startNote = currentStart;
+            }
+        }
+#endif
+
+        Fraction startTick = startNote->chord()->tick();
+        Fraction endTick = endNote->chord()->tick();
+        track_idx_t track = startNote->track();
+
+        /// Layout info
+        //if (slide.second == SlideHammerOn::LegatoSlide || slide.second == SlideHammerOn::Slide) {
+        if (tefNote->simpleEffect == 3 && tefNote->complexEffect == 0) {
+            Glissando* gl = mu::engraving::Factory::createGlissando(_score->dummy());
+            gl->setAnchor(Spanner::Anchor::NOTE);
+            gl->setStartElement(startNote);
+            gl->setTrack(track);
+            gl->setTick(startTick);
+            gl->setTick2(endNote->chord()->tick());
+            gl->setEndElement(endNote);
+            gl->setParent(startNote);
+            gl->setText(u"");
+            gl->setGlissandoType(GlissandoType::STRAIGHT);
+            //gl->setGlissandoShift(slide.second == SlideHammerOn::Slide);
+            gl->setGlissandoStyle(startNote->part()->instrument(startTick)->glissandoStyle());
+            _score->addElement(gl);
+        }
+
+#if 0
+        if (slide.second == SlideHammerOn::LegatoSlide) {
+            if (legatoSlides.count(startNote) == 0) {
+                Slur* slur = mu::engraving::Factory::createSlur(_score->dummy());
+                if (slide.second == SlideHammerOn::LegatoSlide) {
+                    slur->setConnectedElement(mu::engraving::Slur::ConnectedElement::GLISSANDO);
+                }
+
+                slur->setStartElement(startNote->chord());
+                slur->setTrack(track);
+                slur->setTick(startTick);
+                slur->setTick2(endTick);
+                legatoSlides[endNote] = slur;
+                slur->setEndElement(endNote->chord());
+                _score->addSpanner(slur);
+            } else {
+                Slur* slur = legatoSlides[startNote];
+                slur->setTick2(endTick);
+                slur->setEndElement(endNote->chord());
+                legatoSlides.erase(startNote);
+                legatoSlides[endNote] = slur;
+            }
+        } else if (slide.second == SlideHammerOn::HammerOn) {
+#endif
+        if ((tefNote->simpleEffect == 1 || tefNote->simpleEffect == 2) && tefNote->complexEffect == 0) {
+            Chord* startChord = startNote->chord();
+            if (hammerOnInChord.find(startChord) != hammerOnInChord.end()) {
+                continue;
+            }
+
+            if (hammerOnPullOffs.count(startNote) == 0) {
+                HammerOnPullOff* hammerOnPullOff = Factory::createHammerOnPullOff(_score->dummy());
+                hammerOnPullOff->setTrack(startNote->track());
+                hammerOnPullOff->setTick(startNote->tick());
+                hammerOnPullOff->setTick2(endNote->tick());
+                hammerOnPullOff->setStartElement(startChord);
+                hammerOnPullOff->setEndElement(endNote->chord());
+                _score->addElement(hammerOnPullOff);
+                hammerOnPullOffs[endNote] = hammerOnPullOff;
+                hammerOnInChord.insert(startChord);
+            } else {
+                HammerOnPullOff* hammerOnPullOff = hammerOnPullOffs[startNote];
+                hammerOnPullOff->setTick2(endTick);
+                hammerOnPullOff->setEndElement(endNote->chord());
+                hammerOnPullOffs.erase(startNote);
+                hammerOnPullOffs[endNote] = hammerOnPullOff;
+            }
+        }
+    }
+}
+
+void TablEdit::createEffects()
+{
+    addContinuousSlideHammerOn(score, effectMap);
+}
+
 void TablEdit::createLinkedTabs()
 {
     constexpr size_t stavesInPart = 2;
@@ -467,7 +654,7 @@ void TablEdit::createLinkedTabs()
 
         Staff* srcStaff = part->staff(0);
         Staff* dstStaff = part->staff(1);
-        Excerpt::cloneStaff(srcStaff, dstStaff, false);
+        Excerpt::cloneStaff(srcStaff, dstStaff, true);
 
         static const std::vector<StaffTypes> types {
             StaffTypes::TAB_4SIMPLE,
@@ -741,6 +928,7 @@ void TablEdit::createScore()
     createMeasures(measureHandler);
     createNotesFrame();
     createContents(measureHandler);
+    createEffects();
     fillGapsInFirstVoices(score);
     createRepeats();
     createTexts();
@@ -940,7 +1128,7 @@ void TablEdit::readTefContents()
         uint8_t byte2 = readUInt8();
         uint8_t byte3 = readUInt8();
         uint8_t byte4 = readUInt8();
-        /* uint8_t byte5 = */ readUInt8();
+        uint8_t byte5 = readUInt8();
         /* uint8_t byte6 = */ readUInt8();
         uint8_t byte7 = readUInt8();
         /* uint8_t byte8 = */ readUInt8();
@@ -973,6 +1161,9 @@ void TablEdit::readTefContents()
             note.fingeringLH = (byte7 & 0x1F) % 6;
             note.fingeringRH = (byte7 & 0x1F) / 6;
             LOGN("fingeringLH %d fingeringRH %d", note.fingeringLH, note.fingeringRH);
+            note.simpleEffect = byte3 & 0x0F;
+            note.complexEffect = byte5;
+            LOGN("simpleEffect %d complexEffect %d", note.simpleEffect, note.complexEffect);
             tefContents.push_back(note);
         } else if (noteRestMarker == 0x39) {
             TefTextMarker tefTextMarker;
@@ -981,6 +1172,10 @@ void TablEdit::readTefContents()
             tefTextMarker.index = static_cast<int>((byte3 << 8) + byte2);
             LOGN("text marker %d", tefTextMarker.index);
             tefTextMarkers.push_back(tefTextMarker);
+        } else if (noteRestMarker == 0x3D) {
+            LOGN("connection");
+        } else {
+            LOGN("not supported %d", noteRestMarker);
         }
         offset = readUInt32();
     }
