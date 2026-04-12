@@ -979,6 +979,10 @@ void TablEdit::readTefContents()
              * - after all notes are created, add effects found in map
              *   -> requires second MuseScore note
              *   -> search for note2 at note1.tick() + note1.ticks with same string
+             * previous implementations:
+             * - src/engraving/rw/read460/tread.cpp
+             * - src/importexport/guitarpro/internal/gtp/gpconverter.cpp
+             * - src/importexport/guitarpro/internal/importptb.cpp
              */
             note.simpleEffect = byte3 & 0x0F;
             note.complexEffect = byte5;
