@@ -253,7 +253,7 @@ static String fingeringTextRH(int rightFinger)
     }
 }
 
-static void addNoteToChord(mu::engraving::Chord* chord, const TefNote* tefNote, int stringOffset, int pitch, muse::draw::Color color,
+static mu::engraving::Note* addNoteToChord(mu::engraving::Chord* chord, const TefNote* tefNote, int stringOffset, int pitch, muse::draw::Color color,
                            std::vector<mu::engraving::Note*>& tiedNotes)
 {
     LOGN("pitch %d", pitch);
@@ -282,6 +282,7 @@ static void addNoteToChord(mu::engraving::Chord* chord, const TefNote* tefNote, 
         }
         chord->add(note);
     }
+    return note;
 }
 
 static void addGraceNotesToChord(mu::engraving::Chord* chord, int pitch, int fret, int string, muse::draw::Color color)
@@ -440,15 +441,15 @@ void TablEdit::createContents(const MeasureHandler& measureHandler)
                             int pitch = 96 - instrument.tuning.at(note->string - stringOffset - 1) + note->fret;
                             LOGN("      -> string %d fret %d pitch %d", note->string, note->fret, pitch);
                             // note TableEdit's strings start at 1, MuseScore's at 0
-                            addNoteToChord(chord, note, stringOffset, pitch, toColor(voice), tiedNotes);
+                            mu::engraving::Note* mn { addNoteToChord(chord, note, stringOffset, pitch, toColor(voice), tiedNotes) };
                             if (note->hasGrace) {
                                 // todo fix magical constant 96 and code duplication
                                 int gracePitch = 96 - instrument.tuning.at(note->string - stringOffset - 1) + note->graceFret;
                                 addGraceNotesToChord(chord, gracePitch, note->graceFret, note->string - stringOffset - 1, toColor(voice));
                             }
                             if (note->simpleEffect || note->complexEffect) {
-                                LOGD("has effect: (tef) note %p", note);
-                                effectMap.insert({note, nullptr});
+                                LOGD("has effect: (tef) note %p (ms) note %p", note, mn);
+                                effectMap.insert({note, mn});
                             }
                         }
                         tupletHandler.addCr(measure, chord);
@@ -466,7 +467,7 @@ void TablEdit::createEffects()
 {
     LOGD("begin");
     // todo
-    for (const auto& [note, tefNote] : effectMap)
+    for (const auto& [tefNote, note] : effectMap)
         LOGD("tefNote %p note %p", tefNote, note);
     LOGD("end");
 }
