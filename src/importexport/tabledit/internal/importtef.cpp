@@ -29,6 +29,7 @@
 #include "engraving/dom/excerpt.h"
 #include "engraving/dom/factory.h"
 #include "engraving/dom/fingering.h"
+#include "engraving/dom/glissando.h"
 #include "engraving/dom/hammeronpulloff.h"
 #include "engraving/dom/keysig.h"
 #include "engraving/dom/measurebase.h"
@@ -449,13 +450,7 @@ void TablEdit::createContents(const MeasureHandler& measureHandler)
                                 addGraceNotesToChord(chord, gracePitch, note->graceFret, note->string - stringOffset - 1, toColor(voice));
                             }
                             if (note->simpleEffect || note->complexEffect) {
-                                LOGD("has effect: (tef) note %p (ms) note %p", note, mn);
-                                if ((note->simpleEffect == 1 || note->simpleEffect == 2) && note->complexEffect == 0) {
-                                    effectMap.insert({note, mn});
-                                }
-                                else {
-                                    LOGE("unsupported effect simple %d complex %d", note->simpleEffect, note->complexEffect);
-                                }
+                                effectMap.insert({note, mn});
                             }
                         }
                         tupletHandler.addCr(measure, chord);
@@ -528,6 +523,14 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
     std::unordered_map<Note*, HammerOnPullOff*> hammerOnPullOffs;
     std::unordered_set<Chord*> hammerOnInChord;
     for (const auto& slide : _slideHammerOnMap) {
+
+        const TefNote* const tefNote { slide.first };
+        LOGD("has effect: (tef) note %p (ms) note %p", slide.first, slide.second);
+        if (!((tefNote->simpleEffect == 1 || tefNote->simpleEffect == 2 || tefNote->simpleEffect == 3) && tefNote->complexEffect == 0)) {
+            LOGE("unsupported effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
+            continue;
+        }
+
         //Note* startNote = slide.first;
         Note* startNote = slide.second;
         Note* endNote = searchEndNote(startNote);
@@ -568,8 +571,8 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
         track_idx_t track = startNote->track();
 
         /// Layout info
-#if 0
-        if (slide.second == SlideHammerOn::LegatoSlide || slide.second == SlideHammerOn::Slide) {
+        //if (slide.second == SlideHammerOn::LegatoSlide || slide.second == SlideHammerOn::Slide) {
+        if (tefNote->simpleEffect == 3 && tefNote->complexEffect == 0) {
             Glissando* gl = mu::engraving::Factory::createGlissando(_score->dummy());
             gl->setAnchor(Spanner::Anchor::NOTE);
             gl->setStartElement(startNote);
@@ -580,11 +583,12 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
             gl->setParent(startNote);
             gl->setText(u"");
             gl->setGlissandoType(GlissandoType::STRAIGHT);
-            gl->setGlissandoShift(slide.second == SlideHammerOn::Slide);
+            //gl->setGlissandoShift(slide.second == SlideHammerOn::Slide);
             gl->setGlissandoStyle(startNote->part()->instrument(startTick)->glissandoStyle());
             _score->addElement(gl);
         }
 
+#if 0
         if (slide.second == SlideHammerOn::LegatoSlide) {
             if (legatoSlides.count(startNote) == 0) {
                 Slur* slur = mu::engraving::Factory::createSlur(_score->dummy());
@@ -608,7 +612,7 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
             }
         } else if (slide.second == SlideHammerOn::HammerOn) {
 #endif
-        {
+        if ((tefNote->simpleEffect == 1 || tefNote->simpleEffect == 2) && tefNote->complexEffect == 0) {
             Chord* startChord = startNote->chord();
             if (hammerOnInChord.find(startChord) != hammerOnInChord.end()) {
                 continue;
@@ -637,13 +641,7 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
 
 void TablEdit::createEffects()
 {
-    LOGD("begin");
-    // todo
-    for (const auto& [tefNote, note] : effectMap) {
-        LOGD("tefNote %p note %p", tefNote, note);
-    }
     addContinuousSlideHammerOn(score, effectMap);
-    LOGD("end");
 }
 
 void TablEdit::createLinkedTabs()
@@ -1175,7 +1173,7 @@ void TablEdit::readTefContents()
              */
             note.simpleEffect = byte3 & 0x0F;
             note.complexEffect = byte5;
-            LOGD("simpleEffect %d complexEffect %d", note.simpleEffect, note.complexEffect);
+            LOGN("simpleEffect %d complexEffect %d", note.simpleEffect, note.complexEffect);
             tefContents.push_back(note);
         } else if (noteRestMarker == 0x39) {
             TefTextMarker tefTextMarker;
