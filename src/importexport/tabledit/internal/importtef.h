@@ -149,6 +149,7 @@ class TablEdit
 
     void allocateVoices(std::vector<VoiceAllocator>& allocator);
     void createContents(const MeasureHandler& measureHandler);
+    void createEffects();
     void createLinkedTabs();
     void createMeasures(const MeasureHandler& measureHandler);
     void createNotesFrame();
@@ -176,6 +177,8 @@ class TablEdit
     std::vector<TefMeasure> tefMeasures;
     std::vector<TefReadingListItem> tefReadingList;
     std::vector<std::string> tefTexts;
+
+    std::map<const TefNote* const, mu::engraving::Note*> effectMap;
 
 public:
     TablEdit(muse::io::IODevice* f, mu::engraving::MasterScore* s)

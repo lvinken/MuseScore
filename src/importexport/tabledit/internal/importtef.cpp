@@ -446,6 +446,10 @@ void TablEdit::createContents(const MeasureHandler& measureHandler)
                                 int gracePitch = 96 - instrument.tuning.at(note->string - stringOffset - 1) + note->graceFret;
                                 addGraceNotesToChord(chord, gracePitch, note->graceFret, note->string - stringOffset - 1, toColor(voice));
                             }
+                            if (note->simpleEffect || note->complexEffect) {
+                                LOGD("has effect: (tef) note %p", note);
+                                effectMap.insert({note, nullptr});
+                            }
                         }
                         tupletHandler.addCr(measure, chord);
                     }
@@ -456,6 +460,15 @@ void TablEdit::createContents(const MeasureHandler& measureHandler)
             connectTie(note->chord(), note);
         }
     }
+}
+
+void TablEdit::createEffects()
+{
+    LOGD("begin");
+    // todo
+    for (const auto& [note, tefNote] : effectMap)
+        LOGD("tefNote %p note %p", tefNote, note);
+    LOGD("end");
 }
 
 void TablEdit::createLinkedTabs()
@@ -741,6 +754,7 @@ void TablEdit::createScore()
     createMeasures(measureHandler);
     createNotesFrame();
     createContents(measureHandler);
+    createEffects();
     fillGapsInFirstVoices(score);
     createRepeats();
     createTexts();
