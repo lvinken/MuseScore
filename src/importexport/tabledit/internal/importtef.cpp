@@ -1160,17 +1160,6 @@ void TablEdit::readTefContents()
             note.fingeringLH = (byte7 & 0x1F) % 6;
             note.fingeringRH = (byte7 & 0x1F) / 6;
             LOGN("fingeringLH %d fingeringRH %d", note.fingeringLH, note.fingeringRH);
-            /*
-             * TODO: handle hammer-on, pull-off and slide:
-             * - store TablEdit and MuseScore note pair in map (which is key ?)
-             * - after all notes are created, add effects found in map
-             *   -> requires second MuseScore note
-             *   -> search for note2 at note1.tick() + note1.ticks with same string
-             * previous implementations:
-             * - src/engraving/rw/read460/tread.cpp
-             * - src/importexport/guitarpro/internal/gtp/gpconverter.cpp
-             * - src/importexport/guitarpro/internal/importptb.cpp
-             */
             note.simpleEffect = byte3 & 0x0F;
             note.complexEffect = byte5;
             LOGN("simpleEffect %d complexEffect %d", note.simpleEffect, note.complexEffect);
