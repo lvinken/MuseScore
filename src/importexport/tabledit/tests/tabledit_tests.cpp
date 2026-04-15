@@ -70,6 +70,11 @@ TEST_F(TablEdit_Tests, tef_dynamic) {
     tefReadTest("dynamic");
 }
 
+// todo:
+// hammer-on / pull-off are missing from tab staff after import
+// while they are present after using the GUI to create a linked
+// tab staff from the standard staff
+
 TEST_F(TablEdit_Tests, tef_effects) {
     tefReadTest("effects");
 }
