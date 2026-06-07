@@ -653,7 +653,7 @@ void TablEdit::createLinkedTabs()
 
         Staff* srcStaff = part->staff(0);
         Staff* dstStaff = part->staff(1);
-        Excerpt::cloneStaff(srcStaff, dstStaff, false);
+        Excerpt::cloneStaff(srcStaff, dstStaff, true);
 
         static const std::vector<StaffTypes> types {
             StaffTypes::TAB_4SIMPLE,
@@ -1171,6 +1171,10 @@ void TablEdit::readTefContents()
             tefTextMarker.index = static_cast<int>((byte3 << 8) + byte2);
             LOGN("text marker %d", tefTextMarker.index);
             tefTextMarkers.push_back(tefTextMarker);
+        } else if (noteRestMarker == 0x3D) {
+            LOGN("connection");
+        } else {
+            LOGN("not supported %d", noteRestMarker);
         }
         offset = readUInt32();
     }
