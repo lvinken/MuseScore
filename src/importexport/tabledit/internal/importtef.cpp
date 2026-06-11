@@ -255,7 +255,8 @@ static String fingeringTextRH(int rightFinger)
     }
 }
 
-static mu::engraving::Note* addNoteToChord(mu::engraving::Chord* chord, const TefNote* tefNote, int stringOffset, int pitch, muse::draw::Color color,
+static mu::engraving::Note* addNoteToChord(mu::engraving::Chord* chord, const TefNote* tefNote, int stringOffset, int pitch,
+                                           muse::draw::Color color,
                                            std::vector<mu::engraving::Note*>& tiedNotes)
 {
     LOGN("pitch %d", pitch);
@@ -450,7 +451,7 @@ void TablEdit::createContents(const MeasureHandler& measureHandler)
                                 addGraceNotesToChord(chord, gracePitch, note->graceFret, note->string - stringOffset - 1, toColor(voice));
                             }
                             if (note->simpleEffect || note->complexEffect) {
-                                effectMap.insert({note, mn});
+                                effectMap.insert({ note, mn });
                             }
                         }
                         tupletHandler.addCr(measure, chord);
@@ -524,7 +525,6 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
     std::unordered_map<Note*, HammerOnPullOff*> hammerOnPullOffs;
     std::unordered_set<Chord*> hammerOnInChord;
     for (const auto& slide : _slideHammerOnMap) {
-
         const TefNote* const tefNote { slide.first };
         LOGD("has effect: (tef) note %p (ms) note %p", slide.first, slide.second);
         if (!((tefNote->simpleEffect == 1 || tefNote->simpleEffect == 2 || tefNote->simpleEffect == 3) && tefNote->complexEffect == 0)) {
