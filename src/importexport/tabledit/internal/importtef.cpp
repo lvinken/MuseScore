@@ -465,6 +465,7 @@ void TablEdit::createContents(const MeasureHandler& measureHandler)
 }
 
 // adapted copy of GPConverter::addContinuousSlideHammerOn()
+// features not yet supported disabled using "#if 0"
 
 static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNote* const, mu::engraving::Note*>& _slideHammerOnMap)
 {
