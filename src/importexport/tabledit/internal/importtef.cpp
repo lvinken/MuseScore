@@ -642,9 +642,43 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
     }
 }
 
+static void addHarmonics(Score* _score, const std::map<const TefNote* const, mu::engraving::Note*>& _slideHammerOnMap)
+{
+    for (const auto& slide : _slideHammerOnMap) {
+        const TefNote* const tefNote { slide.first };
+        LOGD("has effect: (tef) note %p (ms) note %p", slide.first, slide.second);
+        LOGD("effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
+        if (!((tefNote->simpleEffect == 6 || tefNote->simpleEffect == 7) && tefNote->complexEffect == 0)) {
+            LOGE("unsupported effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
+            continue;
+        }
+
+        Note* msNote = slide.second;
+        if (tefNote->simpleEffect == 6) {
+            msNote->setHeadGroup(NoteHeadGroup::HEAD_DIAMOND);
+            Segment* segment = msNote->chord()->segment();
+            StaffText* text = Factory::createStaffText(segment);
+            String s { "N.H." };
+            text->setPlainText(s);
+            text->setTrack(msNote->chord()->track());
+            segment->add(text);
+        }
+        if (tefNote->simpleEffect == 7) {
+            msNote->setHeadGroup(NoteHeadGroup::HEAD_DIAMOND);
+            Segment* segment = msNote->chord()->segment();
+            StaffText* text = Factory::createStaffText(segment);
+            String s { "A.H." };
+            text->setPlainText(s);
+            text->setTrack(msNote->chord()->track());
+            segment->add(text);
+        }
+    }
+}
+
 void TablEdit::createEffects()
 {
     addContinuousSlideHammerOn(score, effectMap);
+    addHarmonics(score, effectMap);
 }
 
 void TablEdit::createLinkedTabs()
