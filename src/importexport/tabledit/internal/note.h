@@ -22,5 +22,36 @@
 #pragma once
 
 namespace mu::iex::tabledit {
+enum class EffectType : int8_t {
+    INVALID = -1,
+    NONE,
+    HAMMER_ON,
+    PULL_OFF,
+    SLIDE,
+    CHOKE,
+    BRUSH,
+    NATURAL_HARMONIC,
+    ARTIFICIAL_HARMONIC,
+    MUTED,
+    TAPPING,
+    VIBRATO,
+    TREMOLO,
+    SIMPLE_BEND,
+    BEND_AND_RELEASE,
+    ROLL_ARPEGGIO,
+    DEAD_NOTE,
+    RINGING_NOTE,
+    SLAP,
+    RASGUEADO,
+    GHOST_NOTE,
+    TREMOLO_UP_DOWN,
+    TREMOLO_DIVE_RETURN,
+    STACCATO,
+    FADE_IN,
+    FADE_OUT,
+    ROLL,   // specific for combination effect
+    VARIATION
+};
+
 int durationToInt(uint8_t duration);
 } // namespace mu::iex::tabledit

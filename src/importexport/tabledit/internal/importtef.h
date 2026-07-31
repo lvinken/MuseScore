@@ -29,6 +29,7 @@
 #include "engraving/engravingerrors.h"
 #include "io/iodevice.h"
 
+#include "note.h"
 #include "voiceallocator.h"
 
 namespace mu::iex::tabledit {
@@ -83,6 +84,8 @@ struct TefNote {
     int fingeringRH { 0 };
     int simpleEffect { 0 };
     int complexEffect { 0 };
+    EffectType effect() const;
+    EffectType combinationEffect() const;
 };
 
 struct TefReadingListItem {
