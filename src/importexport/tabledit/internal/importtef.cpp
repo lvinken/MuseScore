@@ -470,7 +470,6 @@ void TablEdit::createContents(const MeasureHandler& measureHandler)
 }
 
 // adapted copy of GPConverter::addContinuousSlideHammerOn()
-// features not yet supported disabled using "#if 0"
 
 static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNote* const, mu::engraving::Note*>& _slideHammerOnMap)
 {
@@ -529,7 +528,6 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
         return nextChord->upNote();
     };
 
-    std::unordered_map<Note*, Slur*> legatoSlides;
     std::unordered_map<Note*, HammerOnPullOff*> hammerOnPullOffs;
     std::unordered_set<Chord*> hammerOnInChord;
     for (const auto& slide : _slideHammerOnMap) {
@@ -543,7 +541,7 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
               || (tefNote->complexEffect & 0xF0) == 0x10
               || (tefNote->complexEffect & 0xF0) == 0x20
               || tefNote->simpleEffect == 3)) {
-            LOGE("unsupported effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
+            LOGD("unsupported effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
             continue;
         }
 
@@ -600,9 +598,45 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
     }
 }
 
+static void addHarmonics(Score* _score, const std::map<const TefNote* const, mu::engraving::Note*>& _slideHammerOnMap)
+{
+    for (const auto& slide : _slideHammerOnMap) {
+        const TefNote* const tefNote { slide.first };
+        LOGD("has effect: (tef) note %p (ms) note %p", slide.first, slide.second);
+        LOGD("effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
+        // TODO: unsupported effect reporting is broken, this incorrectly reports errors on HO PO and SL
+        // also check addContinuousSlideHammerOn
+        if (!((tefNote->simpleEffect == 6 || tefNote->simpleEffect == 7) && tefNote->complexEffect == 0)) {
+            LOGD("unsupported effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
+            continue;
+        }
+
+        Note* msNote = slide.second;
+        if (tefNote->simpleEffect == 6) {
+            msNote->setHeadGroup(NoteHeadGroup::HEAD_DIAMOND);
+            Segment* segment = msNote->chord()->segment();
+            StaffText* text = Factory::createStaffText(segment);
+            String s { "N.H." };
+            text->setPlainText(s);
+            text->setTrack(msNote->chord()->track());
+            segment->add(text);
+        }
+        if (tefNote->simpleEffect == 7) {
+            msNote->setHeadGroup(NoteHeadGroup::HEAD_DIAMOND);
+            Segment* segment = msNote->chord()->segment();
+            StaffText* text = Factory::createStaffText(segment);
+            String s { "A.H." };
+            text->setPlainText(s);
+            text->setTrack(msNote->chord()->track());
+            segment->add(text);
+        }
+    }
+}
+
 void TablEdit::createEffects()
 {
     addContinuousSlideHammerOn(score, effectMap);
+    addHarmonics(score, effectMap);
 }
 
 void TablEdit::createLinkedTabs()
