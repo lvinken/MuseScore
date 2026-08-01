@@ -237,7 +237,7 @@
               <string>5</string>
               <Spanner type="Glissando">
                 <Glissando>
-                  <text></text>
+                  <text>Sl</text>
                   <eid>i_i</eid>
                   <diagonal>1</diagonal>
                   </Glissando>
@@ -529,7 +529,7 @@
               <string>5</string>
               <Spanner type="Glissando">
                 <Glissando>
-                  <text></text>
+                  <text>Sl</text>
                   <eid>PB_PB</eid>
                   <linkedTo>i_i</linkedTo>
                   <diagonal>1</diagonal>
