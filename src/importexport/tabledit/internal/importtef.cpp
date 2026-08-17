@@ -577,6 +577,8 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
                 continue;
             }
 
+            // TODO: combination hammer-on and pull-off (complexEffect 0x10 and 0x20) layout differently
+            // see https://tabledit.com/help/english_m/special_effects.shtml
             if (hammerOnPullOffs.count(startNote) == 0) {
                 HammerOnPullOff* hammerOnPullOff = Factory::createHammerOnPullOff(_score->dummy());
                 hammerOnPullOff->setTrack(startNote->track());
@@ -633,8 +635,24 @@ static void addHarmonics(Score* _score, const std::map<const TefNote* const, mu:
     }
 }
 
+static void addSingleNoteEffects(/* Score* _score, */ const std::map<const TefNote* const, mu::engraving::Note*>& effectMap)
+{
+    for (const auto& effect : effectMap) {
+        const TefNote* const tefNote { effect.first };
+        if (tefNote->simpleEffect == 8 || tefNote->simpleEffect == 0x0F) {
+            // do not distinguish between muted and dead note
+            // TODO check combination dead note
+            // current implementation results in "X" in both staves
+            Note* msNote { effect.second };
+            msNote->setHeadGroup(NoteHeadGroup::HEAD_CROSS);
+            msNote->setDeadNote(true);
+        }
+    }
+}
+
 void TablEdit::createEffects()
 {
+    addSingleNoteEffects(/* score, */ effectMap);
     addContinuousSlideHammerOn(score, effectMap);
     addHarmonics(score, effectMap);
 }
