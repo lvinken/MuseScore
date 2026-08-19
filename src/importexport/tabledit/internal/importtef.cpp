@@ -600,7 +600,7 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
     }
 }
 
-static void addHarmonics(Score* _score, const std::map<const TefNote* const, mu::engraving::Note*>& _slideHammerOnMap)
+static void addHarmonics(/* Score* _score, */ const std::map<const TefNote* const, mu::engraving::Note*>& _slideHammerOnMap)
 {
     for (const auto& slide : _slideHammerOnMap) {
         const TefNote* const tefNote { slide.first };
@@ -639,13 +639,29 @@ static void addSingleNoteEffects(/* Score* _score, */ const std::map<const TefNo
 {
     for (const auto& effect : effectMap) {
         const TefNote* const tefNote { effect.first };
+        Note* msNote { effect.second };
         if (tefNote->simpleEffect == 8 || tefNote->simpleEffect == 0x0F) {
             // do not distinguish between muted and dead note
             // TODO check combination dead note
             // current implementation results in "X" in both staves
-            Note* msNote { effect.second };
             msNote->setHeadGroup(NoteHeadGroup::HEAD_CROSS);
             msNote->setDeadNote(true);
+        }
+        else if ((tefNote->complexEffect & 0x0F) == 7) {
+            // TODO: add only one staccato per chord
+            // TODO: assert parent is not nullptr ?
+            // TODO: assert parent is chord ?
+            // TODO: set up/down and/or above/below
+            LOGD("add staccato");
+            Chord* chord { toChord(msNote->parent()) };
+            LOGD("add staccato chord %p", chord);
+            Articulation* na = Factory::createArticulation(chord);
+            const SymId articSym { SymId::articStaccatoAbove };
+            na->setSymId(articSym);
+            if (!chord->hasArticulation(na)) {
+                LOGD("add staccato chord %p na %p", chord, na);
+                chord->add(na);
+            }
         }
     }
 }
@@ -654,7 +670,7 @@ void TablEdit::createEffects()
 {
     addSingleNoteEffects(/* score, */ effectMap);
     addContinuousSlideHammerOn(score, effectMap);
-    addHarmonics(score, effectMap);
+    addHarmonics(/* score, */ effectMap);
 }
 
 void TablEdit::createLinkedTabs()

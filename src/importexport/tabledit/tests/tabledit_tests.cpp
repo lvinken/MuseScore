@@ -82,6 +82,10 @@ TEST_F(TablEdit_Tests, tef_effects_3) {
     tefReadTest("effects_3");
 }
 
+TEST_F(TablEdit_Tests, tef_effects_4) {
+    tefReadTest("effects_4");
+}
+
 TEST_F(TablEdit_Tests, tef_fingerings_1) {
     tefReadTest("fingerings_1");
 }
