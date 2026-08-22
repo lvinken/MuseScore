@@ -33,6 +33,7 @@
 #include "engraving/dom/glissando.h"
 #include "engraving/dom/hammeronpulloff.h"
 #include "engraving/dom/keysig.h"
+#include "engraving/dom/letring.h"
 #include "engraving/dom/measure.h"
 #include "engraving/dom/measurebase.h"
 #include "engraving/dom/note.h"
@@ -635,7 +636,7 @@ static void addHarmonics(/* Score* _score, */ const std::map<const TefNote* cons
     }
 }
 
-static void addSingleNoteEffects(/* Score* _score, */ const std::map<const TefNote* const, mu::engraving::Note*>& effectMap)
+static void addSingleNoteEffects(Score* score, const std::map<const TefNote* const, mu::engraving::Note*>& effectMap)
 {
     for (const auto& effect : effectMap) {
         const TefNote* const tefNote { effect.first };
@@ -647,11 +648,18 @@ static void addSingleNoteEffects(/* Score* _score, */ const std::map<const TefNo
             msNote->setHeadGroup(NoteHeadGroup::HEAD_CROSS);
             msNote->setDeadNote(true);
         }
+        else if ((tefNote->complexEffect & 0x0F) == 1) {
+            LOGD("add let-ring");
+            LetRing* lr = Factory::createLetRing(score->dummy()->segment());
+            lr->setTrack(msNote->track());
+            lr->setTick(msNote->tick());
+            lr->setTick2(msNote->tick() + 2 * msNote->chord()->ticks());
+            score->addSpanner(lr);
+        }
         else if ((tefNote->complexEffect & 0x0F) == 7) {
-            // TODO: add only one staccato per chord
             // TODO: assert parent is not nullptr ?
             // TODO: assert parent is chord ?
-            // TODO: set up/down and/or above/below
+            // TODO: set up/down and/or above/below (see importmusicxmlpass2.cpp addArticulationToChord()) ?
             LOGD("add staccato");
             Chord* chord { toChord(msNote->parent()) };
             LOGD("add staccato chord %p", chord);
@@ -668,7 +676,7 @@ static void addSingleNoteEffects(/* Score* _score, */ const std::map<const TefNo
 
 void TablEdit::createEffects()
 {
-    addSingleNoteEffects(/* score, */ effectMap);
+    addSingleNoteEffects(score, effectMap);
     addContinuousSlideHammerOn(score, effectMap);
     addHarmonics(/* score, */ effectMap);
 }
