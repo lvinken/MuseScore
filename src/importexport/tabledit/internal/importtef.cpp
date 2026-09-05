@@ -688,6 +688,13 @@ static void addArpeggio(Score* score, const Note* const msNote)
     Arpeggio* a = Factory::createArpeggio(score->dummy()->chord());
     int span { static_cast<int>(lastChordIdx - firstChordIdx + 1)};
     a->setSpan(span);
+    // hack: arpeggio is down if msNote is in the chord in the lowest voice
+    a->setArpeggioType(ArpeggioType::UP);
+    for (Note* note : firstChord->notes()) {
+        if (note == msNote) {
+            a->setArpeggioType(ArpeggioType::DOWN);
+        }
+    }
     LOGD("add arpeggio %p to chord %p with span %d", a, firstChord, span);
     firstChord->add(a);
 }
