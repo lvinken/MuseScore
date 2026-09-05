@@ -25,6 +25,7 @@
 #include "readinglist.h"
 #include "tuplethandler.h"
 
+#include "engraving/dom/arpeggio.h"
 #include "engraving/dom/box.h"
 #include "engraving/dom/chord.h"
 #include "engraving/dom/excerpt.h"
@@ -534,7 +535,7 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
     for (const auto& slide : _slideHammerOnMap) {
         const TefNote* const tefNote { slide.first };
         Note* startNote = slide.second;
-        LOGD("has effect: tefNote %p simple %d complex %d startNote %p tick %s track %zu",
+        LOGN("has effect: tefNote %p simple %d complex %d startNote %p tick %s track %zu",
              slide.first, tefNote->simpleEffect, tefNote->complexEffect,
              startNote, qPrintable(startNote->tick().toString().toQString()), startNote->track());
         if (!(tefNote->simpleEffect == 1
@@ -542,7 +543,7 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
               || (tefNote->complexEffect & 0xF0) == 0x10
               || (tefNote->complexEffect & 0xF0) == 0x20
               || tefNote->simpleEffect == 3)) {
-            LOGD("unsupported effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
+            LOGN("unsupported effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
             continue;
         }
 
@@ -605,12 +606,12 @@ static void addHarmonics(/* Score* _score, */ const std::map<const TefNote* cons
 {
     for (const auto& slide : _slideHammerOnMap) {
         const TefNote* const tefNote { slide.first };
-        LOGD("has effect: (tef) note %p (ms) note %p", slide.first, slide.second);
-        LOGD("effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
+        LOGN("has effect: (tef) note %p (ms) note %p", slide.first, slide.second);
+        LOGN("effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
         // TODO: unsupported effect reporting is broken, this incorrectly reports errors on HO PO and SL
         // also check addContinuousSlideHammerOn
         if (!((tefNote->simpleEffect == 6 || tefNote->simpleEffect == 7) && tefNote->complexEffect == 0)) {
-            LOGD("unsupported effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
+            LOGN("unsupported effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
             continue;
         }
 
@@ -636,17 +637,117 @@ static void addHarmonics(/* Score* _score, */ const std::map<const TefNote* cons
     }
 }
 
+static void dumpAllChords(const Note* const msNote)
+{
+    Chord* chord { toChord(msNote->parent()) };
+    track_idx_t staffIdx { msNote->track() / VOICES};
+    track_idx_t firstTrack { staffIdx * VOICES };
+    for (auto track = firstTrack; track < firstTrack + VOICES; ++track) {
+        Segment* segment { chord->segment() };
+        EngravingItem* element { segment->element(track) };
+        if (element && element->isChord()) {
+            Chord* chord { toChord(element) };
+            for (Note* note : chord->notes()) {
+                LOGD("chord %p track %zu %zu note %p pitch %d", chord, track, chord->track(), note, note->pitch());
+            }
+        }
+    }
+}
+
+static void addArpeggio(Score* score, const Note* const msNote)
+{
+    Chord* chord { toChord(msNote->parent()) };
+    track_idx_t staffIdx { msNote->track() / VOICES};
+    track_idx_t firstTrack { staffIdx * VOICES };
+    LOGD("score %p msNote %p staffIdx %zu firstTrack %zu", score, msNote, staffIdx, firstTrack);
+    track_idx_t firstChordIdx { 0 };
+    track_idx_t lastChordIdx { 0 };
+    bool firstChordFound { false };
+    Segment* segment { chord->segment() };
+    for (auto track = firstTrack; track < firstTrack + VOICES; ++track) {
+        EngravingItem* element { segment->element(track) };
+        if (element && element->isChord()) {
+            if (!firstChordFound) {
+                firstChordIdx = track;
+                firstChordFound = true;
+            }
+            lastChordIdx = track;
+            Chord* chord { toChord(element) };
+            for (Note* note : chord->notes()) {
+                LOGD("chord %p track %zu %zu note %p pitch %d", chord, track, chord->track(), note, note->pitch());
+            }
+        }
+    }
+    LOGD("firstChordFound %d firstChordIdx %zu lastChordIdx %zu", firstChordFound, firstChordIdx, lastChordIdx);
+    Chord* firstChord { toChord(segment->element(firstChordIdx)) };
+    if (firstChord->arpeggio()) {
+        LOGD("chord %p already has arpeggio", firstChord);
+        return;
+    }
+
+    Arpeggio* a = Factory::createArpeggio(score->dummy()->chord());
+    int span { static_cast<int>(lastChordIdx - firstChordIdx + 1)};
+    a->setSpan(span);
+    LOGD("add arpeggio %p to chord %p with span %d", a, firstChord, span);
+    firstChord->add(a);
+}
+
 static void addSingleNoteEffects(Score* score, const std::map<const TefNote* const, mu::engraving::Note*>& effectMap)
 {
     for (const auto& effect : effectMap) {
         const TefNote* const tefNote { effect.first };
         Note* msNote { effect.second };
-        if (tefNote->simpleEffect == 8 || tefNote->simpleEffect == 0x0F) {
+        LOGD("note %p tick %d track %zu", msNote, msNote->tick().ticks(), msNote->track());
+        if (tefNote->simpleEffect == 5) {
+            LOGD("add brush (as arpeggio)");
+            dumpAllChords(msNote);
+            addArpeggio(score, msNote);
+#if 0
+            Arpeggio* a = Factory::createArpeggio(score->dummy()->chord());
+            if (true) { // TODO
+                a->setArpeggioType(ArpeggioType::UP_STRAIGHT);
+            } /* else if (false) { // TODO
+                a->setArpeggioType(ArpeggioType::DOWN_STRAIGHT);
+            } else {
+                delete a;
+                a = 0;
+            } */
+
+            if (a) {
+                Chord* chord { toChord(msNote->parent()) };
+                //chord->setTrack(msNote->track());
+                chord->add(a);
+            }
+#endif
+        }
+        else if (tefNote->simpleEffect == 8 || tefNote->simpleEffect == 0x0F) {
             // do not distinguish between muted and dead note
             // TODO check combination dead note
             // current implementation results in "X" in both staves
             msNote->setHeadGroup(NoteHeadGroup::HEAD_CROSS);
             msNote->setDeadNote(true);
+        }
+        else if (tefNote->simpleEffect == 0x0E) {
+            LOGD("add roll (as arpeggio)");
+            dumpAllChords(msNote);
+            addArpeggio(score, msNote);
+#if 0
+            Arpeggio* a = Factory::createArpeggio(score->dummy()->chord());
+            if (true) { // TODO
+                a->setArpeggioType(ArpeggioType::UP_STRAIGHT);
+            } /* else if (false) { // TODO
+                a->setArpeggioType(ArpeggioType::DOWN_STRAIGHT);
+            } else {
+                delete a;
+                a = 0;
+            } */
+
+            if (a) {
+                Chord* chord { toChord(msNote->parent()) };
+                //chord->setTrack(msNote->track());
+                chord->add(a);
+            }
+#endif
         }
         else if ((tefNote->complexEffect & 0x0F) == 1) {
             LOGD("add let-ring");
