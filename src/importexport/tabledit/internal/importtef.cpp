@@ -96,12 +96,20 @@ EffectType TefNote::effect() const
 
 EffectType TefNote::combinationEffect() const
 {
-#if 0
-case : return EffectType::ROLL;
-case : return EffectType::VARIATION;
-}
-#endif
-    return EffectType::NONE;
+        switch (complexEffect & 0xF0) {
+        case    0: return EffectType::NONE;
+        case 0x10: return EffectType::HAMMER_ON;
+        case 0x20: return EffectType::PULL_OFF;
+        case 0x30: return EffectType::ROLL;
+        case 0x50: return EffectType::BRUSH;
+        case 0x60: return EffectType::NATURAL_HARMONIC;
+        case 0x70: return EffectType::ARTIFICIAL_HARMONIC;
+        case 0x80: return EffectType::RINGING_NOTE;
+        case 0x90: return EffectType::GHOST_NOTE;
+        case 0xB0: return EffectType::VARIATION;
+        default: return EffectType::INVALID;
+        }
+    return EffectType::NONE;  // not reached
 }
 
 int8_t TablEdit::readInt8()
@@ -587,14 +595,14 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
         const TefNote* const tefNote { slide.first };
         Note* startNote = slide.second;
         LOGN("has effect: tefNote %p simple %d complex %d startNote %p tick %s track %zu",
-             slide.first, 0 /* TODO tefNote->simpleEffect */, 0 /* TODO tefNote->complexEffect */,
+             slide.first, tefNote->simpleEffect, tefNote->complexEffect,
              startNote, qPrintable(startNote->tick().toString().toQString()), startNote->track());
         if (!(tefNote->effect() == EffectType::HAMMER_ON
               || tefNote->effect() == EffectType::PULL_OFF
-              // TODO || (tefNote->complexEffect & 0xF0) == 0x10
-              // TODO || (tefNote->complexEffect & 0xF0) == 0x20
+              || tefNote->combinationEffect() == EffectType::HAMMER_ON
+              || tefNote->combinationEffect() == EffectType::PULL_OFF
               || tefNote->effect() == EffectType::SLIDE)) {
-            LOGN("unsupported effect: simple %d complex %d", 0 /* TODO tefNote->simpleEffect */, 0 /* TODO tefNote->complexEffect */);
+            LOGN("unsupported effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
             continue;
         }
 
@@ -624,7 +632,7 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
         }
 
         if (tefNote->effect() == EffectType::HAMMER_ON || tefNote->effect() == EffectType::PULL_OFF
-            /* TODO || (tefNote->complexEffect & 0xF0) == 0x10 || (tefNote->complexEffect & 0xF0) == 0x20 */) {
+            || tefNote->combinationEffect() == EffectType::HAMMER_ON || tefNote->combinationEffect() == EffectType::PULL_OFF) {
             Chord* startChord = startNote->chord();
             if (hammerOnInChord.find(startChord) != hammerOnInChord.end()) {
                 continue;
@@ -658,7 +666,7 @@ static void addHarmonics(/* Score* _score, */ const std::map<const TefNote* cons
     for (const auto& slide : _slideHammerOnMap) {
         const TefNote* const tefNote { slide.first };
         LOGN("has effect: (tef) note %p (ms) note %p", slide.first, slide.second);
-        LOGN("effect: simple %d complex %d", 0 /* TODO tefNote->simpleEffect */, 0 /* TODO tefNote->complexEffect */);
+        LOGN("effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
         // TODO: unsupported effect reporting is broken, this incorrectly reports errors on HO PO and SL
         // also check addContinuousSlideHammerOn
         /* TODO ?
@@ -806,14 +814,14 @@ static void addSingleNoteEffects(Score* score, const std::map<const TefNote* con
                 chord->add(a);
             }
 #endif
-        } else if ((tefNote->complexEffect & 0x0F) == 1) {
+        } else if (tefNote->effect() == EffectType::RINGING_NOTE) {
             LOGD("add let-ring");
             LetRing* lr = Factory::createLetRing(score->dummy()->segment());
             lr->setTrack(msNote->track());
             lr->setTick(msNote->tick());
             lr->setTick2(msNote->tick() + 2 * msNote->chord()->ticks());
             score->addSpanner(lr);
-        } else if ((tefNote->complexEffect & 0x0F) == 7) {
+        } else if (tefNote->effect() == EffectType::STACCATO) {
             // TODO: assert parent is not nullptr ?
             // TODO: assert parent is chord ?
             // TODO: set up/down and/or above/below (see importmusicxmlpass2.cpp addArticulationToChord()) ?
