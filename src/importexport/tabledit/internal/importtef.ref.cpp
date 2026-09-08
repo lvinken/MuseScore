@@ -19,13 +19,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 #include "importtef.h"
 #include "measurehandler.h"
 #include "readinglist.h"
 #include "tuplethandler.h"
 
-#include "engraving/dom/arpeggio.h"
 #include "engraving/dom/box.h"
 #include "engraving/dom/chord.h"
 #include "engraving/dom/excerpt.h"
@@ -34,8 +32,6 @@
 #include "engraving/dom/glissando.h"
 #include "engraving/dom/hammeronpulloff.h"
 #include "engraving/dom/keysig.h"
-#include "engraving/dom/letring.h"
-#include "engraving/dom/measure.h"
 #include "engraving/dom/measurebase.h"
 #include "engraving/dom/note.h"
 #include "engraving/dom/part.h"
@@ -53,57 +49,6 @@
 using namespace mu::engraving;
 
 namespace mu::iex::tabledit {
-EffectType TefNote::effect() const
-{
-    if (simpleEffect != 0 && (complexEffect & 0x0F) == 0) {
-        switch (simpleEffect) {
-        case   0: return EffectType::NONE;  // for completeness, but not reached
-        case   1: return EffectType::HAMMER_ON;
-        case   2: return EffectType::PULL_OFF;
-        case   3: return EffectType::SLIDE;
-        case   4: return EffectType::CHOKE;
-        case   5: return EffectType::BRUSH;
-        case   6: return EffectType::NATURAL_HARMONIC;
-        case   7: return EffectType::ARTIFICIAL_HARMONIC;
-        case   8: return EffectType::MUTED;
-        case   9: return EffectType::TAPPING;
-        case 0xA: return EffectType::VIBRATO;
-        case 0xB: return EffectType::TREMOLO;
-        case 0xC: return EffectType::SIMPLE_BEND;
-        case 0xD: return EffectType::BEND_AND_RELEASE;
-        case 0xE: return EffectType::ROLL_ARPEGGIO;
-        case 0xF: return EffectType::DEAD_NOTE;
-        default: return EffectType::INVALID;
-        }
-    }
-    if (simpleEffect == 0 && (complexEffect & 0x0F) != 0) {
-        switch (complexEffect & 0x0F) {
-        case 0: return EffectType::NONE;  // for completeness, but not reached
-        case 1: return EffectType::RINGING_NOTE;
-        case 2: return EffectType::SLAP;
-        case 3: return EffectType::RASGUEADO;
-        case 4: return EffectType::GHOST_NOTE;
-        case 5: return EffectType::TREMOLO_UP_DOWN;
-        case 6: return EffectType::TREMOLO_DIVE_RETURN;
-        case 7: return EffectType::STACCATO;
-        case 8: return EffectType::FADE_IN;
-        case 9: return EffectType::FADE_OUT;
-        default: return EffectType::INVALID;
-        }
-    }
-    return EffectType::INVALID;
-}
-
-EffectType TefNote::combinationEffect() const
-{
-#if 0
-case : return EffectType::ROLL;
-case : return EffectType::VARIATION;
-}
-#endif
-    return EffectType::NONE;
-}
-
 int8_t TablEdit::readInt8()
 {
     int8_t result;
@@ -507,7 +452,7 @@ void TablEdit::createContents(const MeasureHandler& measureHandler)
                                 int gracePitch = 96 - instrument.tuning.at(note->string - stringOffset - 1) + note->graceFret;
                                 addGraceNotesToChord(chord, gracePitch, note->graceFret, note->string - stringOffset - 1, toColor(voice));
                             }
-                            if (mn && (note->effect() != EffectType::NONE || note->combinationEffect() != EffectType::NONE)) {
+                            if (note->simpleEffect || note->complexEffect) {
                                 effectMap.insert({ note, mn });
                             }
                         }
@@ -523,6 +468,7 @@ void TablEdit::createContents(const MeasureHandler& measureHandler)
 }
 
 // adapted copy of GPConverter::addContinuousSlideHammerOn()
+// features not yet supported disabled using "#if 0"
 
 static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNote* const, mu::engraving::Note*>& _slideHammerOnMap)
 {
@@ -550,11 +496,7 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
                 nextCr = *(++it);
             }
         } else {
-            Segment* nextSegment = start->chord()->segment()->next1();
-            if (!nextSegment) {
-                return nullptr;
-            }
-            nextCr = nextSegment->nextChordRest(start->track());
+            nextCr = start->chord()->segment()->next1()->nextChordRest(start->track());
             if (!nextCr) {
                 return nullptr;
             }
@@ -581,57 +523,104 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
         return nextChord->upNote();
     };
 
+    std::unordered_map<Note*, Slur*> legatoSlides;
     std::unordered_map<Note*, HammerOnPullOff*> hammerOnPullOffs;
     std::unordered_set<Chord*> hammerOnInChord;
     for (const auto& slide : _slideHammerOnMap) {
         const TefNote* const tefNote { slide.first };
-        Note* startNote = slide.second;
-        LOGN("has effect: tefNote %p simple %d complex %d startNote %p tick %s track %zu",
-             slide.first, 0 /* TODO tefNote->simpleEffect */, 0 /* TODO tefNote->complexEffect */,
-             startNote, qPrintable(startNote->tick().toString().toQString()), startNote->track());
-        if (!(tefNote->effect() == EffectType::HAMMER_ON
-              || tefNote->effect() == EffectType::PULL_OFF
-              // TODO || (tefNote->complexEffect & 0xF0) == 0x10
-              // TODO || (tefNote->complexEffect & 0xF0) == 0x20
-              || tefNote->effect() == EffectType::SLIDE)) {
-            LOGN("unsupported effect: simple %d complex %d", 0 /* TODO tefNote->simpleEffect */, 0 /* TODO tefNote->complexEffect */);
+        LOGD("has effect: (tef) note %p (ms) note %p", slide.first, slide.second);
+        if (!((tefNote->simpleEffect == 1 || tefNote->simpleEffect == 2 || tefNote->simpleEffect == 3) && tefNote->complexEffect == 0)) {
+            LOGE("unsupported effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
             continue;
         }
 
+        //Note* startNote = slide.first;
+        Note* startNote = slide.second;
         Note* endNote = searchEndNote(startNote);
         if (!endNote || startNote->string() == -1 || startNote->fret() == endNote->fret()) {
             //mistake in GP: such kind od slides shouldn't exist
             continue;
         }
 
+#if 0
+        Note* currentStart = nullptr;
+        if (startNote->bendFor()) {
+            Note* bendNote = startNote;
+            GuitarBend* bend = bendNote->bendFor();
+
+            while (bend) {
+                bendNote = bend->endNote();
+                IF_ASSERT_FAILED(bendNote) {
+                    LOGE() << "glissando start note may be incorrect";
+                    break;
+                }
+
+                if (!bendNote->chord()->isGraceAfter()) {
+                    break;
+                }
+
+                currentStart = bendNote;
+                bend = bendNote->bendFor();
+            }
+
+            if (currentStart) {
+                startNote = currentStart;
+            }
+        }
+#endif
+
         Fraction startTick = startNote->chord()->tick();
         Fraction endTick = endNote->chord()->tick();
         track_idx_t track = startNote->track();
 
         /// Layout info
-        if (tefNote->effect() == EffectType::SLIDE) {
+        //if (slide.second == SlideHammerOn::LegatoSlide || slide.second == SlideHammerOn::Slide) {
+        if (tefNote->simpleEffect == 3 && tefNote->complexEffect == 0) {
             Glissando* gl = mu::engraving::Factory::createGlissando(_score->dummy());
+            gl->setAnchor(Spanner::Anchor::NOTE);
             gl->setStartElement(startNote);
             gl->setTrack(track);
             gl->setTick(startTick);
             gl->setTick2(endNote->chord()->tick());
             gl->setEndElement(endNote);
             gl->setParent(startNote);
-            gl->setText(u"Sl");
+            gl->setText(u"");
             gl->setGlissandoType(GlissandoType::STRAIGHT);
+            //gl->setGlissandoShift(slide.second == SlideHammerOn::Slide);
             gl->setGlissandoStyle(startNote->part()->instrument(startTick)->glissandoStyle());
             _score->addElement(gl);
         }
 
-        if (tefNote->effect() == EffectType::HAMMER_ON || tefNote->effect() == EffectType::PULL_OFF
-            /* TODO || (tefNote->complexEffect & 0xF0) == 0x10 || (tefNote->complexEffect & 0xF0) == 0x20 */) {
+#if 0
+        if (slide.second == SlideHammerOn::LegatoSlide) {
+            if (legatoSlides.count(startNote) == 0) {
+                Slur* slur = mu::engraving::Factory::createSlur(_score->dummy());
+                if (slide.second == SlideHammerOn::LegatoSlide) {
+                    slur->setConnectedElement(mu::engraving::Slur::ConnectedElement::GLISSANDO);
+                }
+
+                slur->setStartElement(startNote->chord());
+                slur->setTrack(track);
+                slur->setTick(startTick);
+                slur->setTick2(endTick);
+                legatoSlides[endNote] = slur;
+                slur->setEndElement(endNote->chord());
+                _score->addSpanner(slur);
+            } else {
+                Slur* slur = legatoSlides[startNote];
+                slur->setTick2(endTick);
+                slur->setEndElement(endNote->chord());
+                legatoSlides.erase(startNote);
+                legatoSlides[endNote] = slur;
+            }
+        } else if (slide.second == SlideHammerOn::HammerOn) {
+#endif
+        if ((tefNote->simpleEffect == 1 || tefNote->simpleEffect == 2) && tefNote->complexEffect == 0) {
             Chord* startChord = startNote->chord();
             if (hammerOnInChord.find(startChord) != hammerOnInChord.end()) {
                 continue;
             }
 
-            // TODO: combination hammer-on and pull-off (complexEffect 0x10 and 0x20) layout differently
-            // see https://tabledit.com/help/english_m/special_effects.shtml
             if (hammerOnPullOffs.count(startNote) == 0) {
                 HammerOnPullOff* hammerOnPullOff = Factory::createHammerOnPullOff(_score->dummy());
                 hammerOnPullOff->setTrack(startNote->track());
@@ -653,23 +642,19 @@ static void addContinuousSlideHammerOn(Score* _score, const std::map<const TefNo
     }
 }
 
-static void addHarmonics(/* Score* _score, */ const std::map<const TefNote* const, mu::engraving::Note*>& _slideHammerOnMap)
+static void addHarmonics(Score* _score, const std::map<const TefNote* const, mu::engraving::Note*>& _slideHammerOnMap)
 {
     for (const auto& slide : _slideHammerOnMap) {
         const TefNote* const tefNote { slide.first };
-        LOGN("has effect: (tef) note %p (ms) note %p", slide.first, slide.second);
-        LOGN("effect: simple %d complex %d", 0 /* TODO tefNote->simpleEffect */, 0 /* TODO tefNote->complexEffect */);
-        // TODO: unsupported effect reporting is broken, this incorrectly reports errors on HO PO and SL
-        // also check addContinuousSlideHammerOn
-        /* TODO ?
+        LOGD("has effect: (tef) note %p (ms) note %p", slide.first, slide.second);
+        LOGD("effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
         if (!((tefNote->simpleEffect == 6 || tefNote->simpleEffect == 7) && tefNote->complexEffect == 0)) {
-            LOGN("unsupported effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
+            LOGE("unsupported effect: simple %d complex %d", tefNote->simpleEffect, tefNote->complexEffect);
             continue;
         }
-        */
 
         Note* msNote = slide.second;
-        if (tefNote->effect() == EffectType::NATURAL_HARMONIC) {
+        if (tefNote->simpleEffect == 6) {
             msNote->setHeadGroup(NoteHeadGroup::HEAD_DIAMOND);
             Segment* segment = msNote->chord()->segment();
             StaffText* text = Factory::createStaffText(segment);
@@ -678,7 +663,7 @@ static void addHarmonics(/* Score* _score, */ const std::map<const TefNote* cons
             text->setTrack(msNote->chord()->track());
             segment->add(text);
         }
-        if (tefNote->effect() == EffectType::ARTIFICIAL_HARMONIC) {
+        if (tefNote->simpleEffect == 7) {
             msNote->setHeadGroup(NoteHeadGroup::HEAD_DIAMOND);
             Segment* segment = msNote->chord()->segment();
             StaffText* text = Factory::createStaffText(segment);
@@ -690,152 +675,10 @@ static void addHarmonics(/* Score* _score, */ const std::map<const TefNote* cons
     }
 }
 
-static void dumpAllChords(const Note* const msNote)
-{
-    Chord* chord { toChord(msNote->parent()) };
-    track_idx_t staffIdx { msNote->track() / VOICES };
-    track_idx_t firstTrack { staffIdx* VOICES };
-    for (auto track = firstTrack; track < firstTrack + VOICES; ++track) {
-        Segment* segment { chord->segment() };
-        EngravingItem* element { segment->element(track) };
-        if (element && element->isChord()) {
-            Chord* chord { toChord(element) };
-            for (Note* note : chord->notes()) {
-                LOGD("chord %p track %zu %zu note %p pitch %d", chord, track, chord->track(), note, note->pitch());
-            }
-        }
-    }
-}
-
-static void addArpeggio(Score* score, const Note* const msNote)
-{
-    Chord* chord { toChord(msNote->parent()) };
-    track_idx_t staffIdx { msNote->track() / VOICES };
-    track_idx_t firstTrack { staffIdx* VOICES };
-    LOGD("score %p msNote %p staffIdx %zu firstTrack %zu", score, msNote, staffIdx, firstTrack);
-    track_idx_t firstChordIdx { 0 };
-    track_idx_t lastChordIdx { 0 };
-    bool firstChordFound { false };
-    Segment* segment { chord->segment() };
-    for (auto track = firstTrack; track < firstTrack + VOICES; ++track) {
-        EngravingItem* element { segment->element(track) };
-        if (element && element->isChord()) {
-            if (!firstChordFound) {
-                firstChordIdx = track;
-                firstChordFound = true;
-            }
-            lastChordIdx = track;
-            Chord* chord { toChord(element) };
-            for (Note* note : chord->notes()) {
-                LOGD("chord %p track %zu %zu note %p pitch %d", chord, track, chord->track(), note, note->pitch());
-            }
-        }
-    }
-    LOGD("firstChordFound %d firstChordIdx %zu lastChordIdx %zu", firstChordFound, firstChordIdx, lastChordIdx);
-    Chord* firstChord { toChord(segment->element(firstChordIdx)) };
-    if (firstChord->arpeggio()) {
-        LOGD("chord %p already has arpeggio", firstChord);
-        return;
-    }
-
-    Arpeggio* a = Factory::createArpeggio(score->dummy()->chord());
-    int span { static_cast<int>(lastChordIdx - firstChordIdx + 1) };
-    a->setSpan(span);
-    // hack: arpeggio is down if msNote is in the chord in the lowest voice
-    a->setArpeggioType(ArpeggioType::UP);
-    for (Note* note : firstChord->notes()) {
-        if (note == msNote) {
-            a->setArpeggioType(ArpeggioType::DOWN);
-        }
-    }
-    LOGD("add arpeggio %p to chord %p with span %d", a, firstChord, span);
-    firstChord->add(a);
-}
-
-static void addSingleNoteEffects(Score* score, const std::map<const TefNote* const, mu::engraving::Note*>& effectMap)
-{
-    for (const auto& effect : effectMap) {
-        const TefNote* const tefNote { effect.first };
-        Note* msNote { effect.second };
-        LOGD("note %p tick %d track %zu", msNote, msNote->tick().ticks(), msNote->track());
-        if (tefNote->effect() == EffectType::BRUSH) {
-            LOGD("add brush (as arpeggio)");
-            dumpAllChords(msNote);
-            addArpeggio(score, msNote);
-#if 0
-            Arpeggio* a = Factory::createArpeggio(score->dummy()->chord());
-            if (true) { // TODO
-                a->setArpeggioType(ArpeggioType::UP_STRAIGHT);
-            } /* else if (false) { // TODO
-                a->setArpeggioType(ArpeggioType::DOWN_STRAIGHT);
-            } else {
-                delete a;
-                a = 0;
-            } */
-
-            if (a) {
-                Chord* chord { toChord(msNote->parent()) };
-                //chord->setTrack(msNote->track());
-                chord->add(a);
-            }
-#endif
-        } else if (tefNote->effect() == EffectType::MUTED || tefNote->effect() == EffectType::DEAD_NOTE) {
-            // do not distinguish between muted and dead note
-            // TODO check combination dead note
-            // current implementation results in "X" in both staves
-            msNote->setHeadGroup(NoteHeadGroup::HEAD_CROSS);
-            msNote->setDeadNote(true);
-        } else if (tefNote->effect() == EffectType::ROLL_ARPEGGIO) {
-            LOGD("add roll (as arpeggio)");
-            dumpAllChords(msNote);
-            addArpeggio(score, msNote);
-#if 0
-            Arpeggio* a = Factory::createArpeggio(score->dummy()->chord());
-            if (true) { // TODO
-                a->setArpeggioType(ArpeggioType::UP_STRAIGHT);
-            } /* else if (false) { // TODO
-                a->setArpeggioType(ArpeggioType::DOWN_STRAIGHT);
-            } else {
-                delete a;
-                a = 0;
-            } */
-
-            if (a) {
-                Chord* chord { toChord(msNote->parent()) };
-                //chord->setTrack(msNote->track());
-                chord->add(a);
-            }
-#endif
-        } else if ((tefNote->complexEffect & 0x0F) == 1) {
-            LOGD("add let-ring");
-            LetRing* lr = Factory::createLetRing(score->dummy()->segment());
-            lr->setTrack(msNote->track());
-            lr->setTick(msNote->tick());
-            lr->setTick2(msNote->tick() + 2 * msNote->chord()->ticks());
-            score->addSpanner(lr);
-        } else if ((tefNote->complexEffect & 0x0F) == 7) {
-            // TODO: assert parent is not nullptr ?
-            // TODO: assert parent is chord ?
-            // TODO: set up/down and/or above/below (see importmusicxmlpass2.cpp addArticulationToChord()) ?
-            LOGD("add staccato");
-            Chord* chord { toChord(msNote->parent()) };
-            LOGD("add staccato chord %p", chord);
-            Articulation* na = Factory::createArticulation(chord);
-            const SymId articSym { SymId::articStaccatoAbove };
-            na->setSymId(articSym);
-            if (!chord->hasArticulation(na)) {
-                LOGD("add staccato chord %p na %p", chord, na);
-                chord->add(na);
-            }
-        }
-    }
-}
-
 void TablEdit::createEffects()
 {
-    addSingleNoteEffects(score, effectMap);
     addContinuousSlideHammerOn(score, effectMap);
-    addHarmonics(/* score, */ effectMap);
+    addHarmonics(score, effectMap);
 }
 
 void TablEdit::createLinkedTabs()
