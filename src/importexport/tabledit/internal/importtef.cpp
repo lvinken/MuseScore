@@ -96,19 +96,19 @@ EffectType TefNote::effect() const
 
 EffectType TefNote::combinationEffect() const
 {
-        switch (complexEffect & 0xF0) {
-        case    0: return EffectType::NONE;
-        case 0x10: return EffectType::HAMMER_ON;
-        case 0x20: return EffectType::PULL_OFF;
-        case 0x30: return EffectType::ROLL;
-        case 0x50: return EffectType::BRUSH;
-        case 0x60: return EffectType::NATURAL_HARMONIC;
-        case 0x70: return EffectType::ARTIFICIAL_HARMONIC;
-        case 0x80: return EffectType::RINGING_NOTE;
-        case 0x90: return EffectType::GHOST_NOTE;
-        case 0xB0: return EffectType::VARIATION;
-        default: return EffectType::INVALID;
-        }
+    switch (complexEffect & 0xF0) {
+    case    0: return EffectType::NONE;
+    case 0x10: return EffectType::HAMMER_ON;
+    case 0x20: return EffectType::PULL_OFF;
+    case 0x30: return EffectType::ROLL;
+    case 0x50: return EffectType::BRUSH;
+    case 0x60: return EffectType::NATURAL_HARMONIC;
+    case 0x70: return EffectType::ARTIFICIAL_HARMONIC;
+    case 0x80: return EffectType::RINGING_NOTE;
+    case 0x90: return EffectType::GHOST_NOTE;
+    case 0xB0: return EffectType::VARIATION;
+    default: return EffectType::INVALID;
+    }
     return EffectType::NONE;  // not reached
 }
 
