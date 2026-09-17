@@ -280,12 +280,14 @@
     <SpannerMap>
       <LetRing>
         <track2>0</track2>
+        <startTick>0/1</startTick>
         <ticks>64/64</ticks>
         <eid>o_o</eid>
         <track>0</track>
         </LetRing>
       <LetRing>
         <track2>4</track2>
+        <startTick>0/1</startTick>
         <ticks>64/64</ticks>
         <eid>p_p</eid>
         <linkedTo>o_o</linkedTo>

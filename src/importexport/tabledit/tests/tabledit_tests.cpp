@@ -111,8 +111,8 @@ TEST_F(TablEdit_Tests, tef_effects_5) {
     tefReadTest("effects_5");
 }
 
-TEST_F(TablEdit_Tests, tef_effect_arpeggio) {
-    tefReadTest("effect_arpeggio");
+TEST_F(TablEdit_Tests, tef_effect_arpeggio_like) {
+    tefReadTest("effect_arpeggio_like");
 }
 
 TEST_F(TablEdit_Tests, tef_fingerings_1) {

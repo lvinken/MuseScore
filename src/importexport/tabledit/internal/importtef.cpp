@@ -720,6 +720,25 @@ static void dumpAllChords(const Note* const msNote)
     }
 }
 
+// arpeggios are down when they start at the note at the highest string
+// simple solution: look for the highest string in the first chord only
+
+/* apparently not required as of commit c855c21 ??? */
+static bool isDown(const Chord* const firstChord, const Note* const msNote)
+{
+    for (const auto note : firstChord->notes()) {
+        LOGD("firstChord %p track %zu tick %d note %p pitch %d string %d",
+             firstChord, firstChord->track(), firstChord->tick().ticks(), note, note->pitch(), note->string());
+    }
+    for (Note* note : firstChord->notes()) {
+        if (note == msNote) {
+            return true;
+        }
+    }
+    return false;
+}
+/**/
+
 static void addArpeggio(Score* score, const Note* const msNote)
 {
     Chord* chord { toChord(msNote->parent()) };
@@ -754,13 +773,8 @@ static void addArpeggio(Score* score, const Note* const msNote)
     Arpeggio* a = Factory::createArpeggio(score->dummy()->chord());
     int span { static_cast<int>(lastChordIdx - firstChordIdx + 1) };
     a->setSpan(span);
-    // hack: arpeggio is down if msNote is in the chord in the lowest voice
-    a->setArpeggioType(ArpeggioType::UP);
-    for (Note* note : firstChord->notes()) {
-        if (note == msNote) {
-            a->setArpeggioType(ArpeggioType::DOWN);
-        }
-    }
+    // assume arpeggio is down if msNote is in the chord in the lowest voice
+    a->setArpeggioType(isDown(firstChord, msNote) ? ArpeggioType::DOWN : ArpeggioType::NORMAL);
     LOGD("add arpeggio %p to chord %p with span %d", a, firstChord, span);
     firstChord->add(a);
 }
@@ -770,55 +784,29 @@ static void addSingleNoteEffects(Score* score, const std::map<const TefNote* con
     for (const auto& effect : effectMap) {
         const TefNote* const tefNote { effect.first };
         Note* msNote { effect.second };
-        LOGD("note %p tick %d track %zu", msNote, msNote->tick().ticks(), msNote->track());
+        LOGD("note %p tick %d track %zu effect %d", msNote, msNote->tick().ticks(), msNote->track(), tefNote->effect());
         if (tefNote->effect() == EffectType::BRUSH) {
             LOGD("add brush (as arpeggio)");
-            dumpAllChords(msNote);
+            //dumpAllChords(msNote);
             addArpeggio(score, msNote);
-#if 0
-            Arpeggio* a = Factory::createArpeggio(score->dummy()->chord());
-            if (true) { // TODO
-                a->setArpeggioType(ArpeggioType::UP_STRAIGHT);
-            } /* else if (false) { // TODO
-                a->setArpeggioType(ArpeggioType::DOWN_STRAIGHT);
-            } else {
-                delete a;
-                a = 0;
-            } */
-
-            if (a) {
-                Chord* chord { toChord(msNote->parent()) };
-                //chord->setTrack(msNote->track());
-                chord->add(a);
-            }
-#endif
+        } else if (tefNote->effect() == EffectType::RASGUEADO) {
+            LOGD("add rasgueado (as arpeggio)");
+            //dumpAllChords(msNote);
+            addArpeggio(score, msNote);
+        } else if (tefNote->combinationEffect() == EffectType::ROLL) {
+            LOGD("add roll (as arpeggio)");
+            //dumpAllChords(msNote);
+            addArpeggio(score, msNote);
+        } else if (tefNote->effect() == EffectType::ROLL_ARPEGGIO) {
+            LOGD("add roll (arpeggio) (as arpeggio)");
+            //dumpAllChords(msNote);
+            addArpeggio(score, msNote);
         } else if (tefNote->effect() == EffectType::MUTED || tefNote->effect() == EffectType::DEAD_NOTE) {
             // do not distinguish between muted and dead note
             // TODO check combination dead note
             // current implementation results in "X" in both staves
             msNote->setHeadGroup(NoteHeadGroup::HEAD_CROSS);
             msNote->setDeadNote(true);
-        } else if (tefNote->effect() == EffectType::ROLL_ARPEGGIO) {
-            LOGD("add roll (as arpeggio)");
-            dumpAllChords(msNote);
-            addArpeggio(score, msNote);
-#if 0
-            Arpeggio* a = Factory::createArpeggio(score->dummy()->chord());
-            if (true) { // TODO
-                a->setArpeggioType(ArpeggioType::UP_STRAIGHT);
-            } /* else if (false) { // TODO
-                a->setArpeggioType(ArpeggioType::DOWN_STRAIGHT);
-            } else {
-                delete a;
-                a = 0;
-            } */
-
-            if (a) {
-                Chord* chord { toChord(msNote->parent()) };
-                //chord->setTrack(msNote->track());
-                chord->add(a);
-            }
-#endif
         } else if (tefNote->effect() == EffectType::RINGING_NOTE) {
             LOGD("add let-ring");
             LetRing* lr = Factory::createLetRing(score->dummy()->segment());
