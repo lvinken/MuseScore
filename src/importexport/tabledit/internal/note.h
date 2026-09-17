@@ -53,5 +53,34 @@ enum class EffectType : int8_t {
     VARIATION
 };
 
+// note attribute voice
+enum class Voice : uint8_t {
+    DEFAULT = 0,    // default: none set
+    UPPER = 2,      // upper set
+    LOWER = 3       // lower set
+};
+
+struct TefNote {
+    int position { 0 };
+    int string { 0 };
+    int fret { 0 };
+    bool tie { false };
+    bool rest { false };    // this is a bit of a hack
+    int duration { 0 };     // this is the duration as encoded in the .tef file
+    int length { 0 };
+    int dots { 0 };
+    bool triplet { false };
+    Voice voice { 0 };
+    bool hasGrace { false };
+    int graceEffect{ -1 };  // invalid
+    int graceFret { -1 };   // invalid
+    int fingeringLH { 0 };
+    int fingeringRH { 0 };
+    int simpleEffect { 0 };
+    int complexEffect { 0 };
+    EffectType effect() const;
+    EffectType combinationEffect() const;
+};
+
 int durationToInt(uint8_t duration);
 } // namespace mu::iex::tabledit
