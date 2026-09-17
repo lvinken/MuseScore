@@ -682,7 +682,8 @@ static void addHarmonics(/* Score* _score, */ const std::map<const TefNote* cons
         */
 
         Note* msNote = slide.second;
-        if (tefNote->effect() == EffectType::NATURAL_HARMONIC) {
+        if (tefNote->effect() == EffectType::NATURAL_HARMONIC
+            || tefNote->combinationEffect() == EffectType::NATURAL_HARMONIC) {
             msNote->setHeadGroup(NoteHeadGroup::HEAD_DIAMOND);
             Segment* segment = msNote->chord()->segment();
             StaffText* text = Factory::createStaffText(segment);
@@ -691,7 +692,8 @@ static void addHarmonics(/* Score* _score, */ const std::map<const TefNote* cons
             text->setTrack(msNote->chord()->track());
             segment->add(text);
         }
-        if (tefNote->effect() == EffectType::ARTIFICIAL_HARMONIC) {
+        if (tefNote->effect() == EffectType::ARTIFICIAL_HARMONIC
+            || tefNote->combinationEffect() == EffectType::ARTIFICIAL_HARMONIC) {
             msNote->setHeadGroup(NoteHeadGroup::HEAD_DIAMOND);
             Segment* segment = msNote->chord()->segment();
             StaffText* text = Factory::createStaffText(segment);
