@@ -638,10 +638,11 @@ static void addHarmonics(const std::map<const TefNote* const, mu::engraving::Not
 }
 
 // arpeggios are down when they start at the note at the highest string
-// simple solution: look for the highest string in the first chord only
+// (which has the lowest string number)
 
 static bool isDown(const Chord* const firstChord, const Note* const msNote)
 {
+#if 0
     for (const auto note : firstChord->notes()) {
         LOGN("firstChord %p track %zu tick %d note %p pitch %d string %d",
              firstChord, firstChord->track(), firstChord->tick().ticks(), note, note->pitch(), note->string());
@@ -651,7 +652,37 @@ static bool isDown(const Chord* const firstChord, const Note* const msNote)
             return true;
         }
     }
-    return false;
+#endif
+
+    // TODO remove code duplication with addArpeggio
+    Chord* chord { toChord(msNote->parent()) };
+    track_idx_t staffIdx { msNote->track() / VOICES };
+    track_idx_t firstTrack { staffIdx* VOICES };
+    //LOGD("score %p msNote %p staffIdx %zu firstTrack %zu", score, msNote, staffIdx, firstTrack);
+    //track_idx_t firstChordIdx { 0 };
+    //track_idx_t lastChordIdx { 0 };
+    Note* noteOnHighestString { nullptr };
+    Segment* segment { chord->segment() };
+    for (auto track = firstTrack; track < firstTrack + VOICES; ++track) {
+        EngravingItem* element { segment->element(track) };
+        if (element && element->isChord()) {
+            Chord* chord { toChord(element) };
+            for (Note* note : chord->notes()) {
+                LOGD("chord %p track %zu %zu note %p pitch %d string %d fret %d",
+                     chord, track, chord->track(), note, note->pitch(), note->string(), note->fret());
+                if (noteOnHighestString) {
+                    if (note->string() < noteOnHighestString->string()) {
+                        noteOnHighestString = note;
+                    }
+                } else {
+                    noteOnHighestString = note;
+                }
+            }
+        }
+    }
+    LOGD("highest string %d (note %p)", noteOnHighestString->string(), noteOnHighestString);
+
+    return msNote == noteOnHighestString;
 }
 
 static void addArpeggio(Score* score, const Note* const msNote)
@@ -683,7 +714,6 @@ static void addArpeggio(Score* score, const Note* const msNote)
     Arpeggio* a = Factory::createArpeggio(score->dummy()->chord());
     int span { static_cast<int>(lastChordIdx - firstChordIdx + 1) };
     a->setSpan(span);
-    // assume arpeggio is down if msNote is in the chord in the lowest numbered voice
     a->setArpeggioType(isDown(firstChord, msNote) ? ArpeggioType::DOWN : ArpeggioType::NORMAL);
     firstChord->add(a);
 }
