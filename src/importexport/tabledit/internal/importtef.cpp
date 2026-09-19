@@ -642,25 +642,10 @@ static void addHarmonics(const std::map<const TefNote* const, mu::engraving::Not
 
 static bool isDown(const Chord* const firstChord, const Note* const msNote)
 {
-#if 0
-    for (const auto note : firstChord->notes()) {
-        LOGN("firstChord %p track %zu tick %d note %p pitch %d string %d",
-             firstChord, firstChord->track(), firstChord->tick().ticks(), note, note->pitch(), note->string());
-    }
-    for (Note* note : firstChord->notes()) {
-        if (note == msNote) {
-            return true;
-        }
-    }
-#endif
-
     // TODO remove code duplication with addArpeggio
     Chord* chord { toChord(msNote->parent()) };
     track_idx_t staffIdx { msNote->track() / VOICES };
     track_idx_t firstTrack { staffIdx* VOICES };
-    //LOGD("score %p msNote %p staffIdx %zu firstTrack %zu", score, msNote, staffIdx, firstTrack);
-    //track_idx_t firstChordIdx { 0 };
-    //track_idx_t lastChordIdx { 0 };
     Note* noteOnHighestString { nullptr };
     Segment* segment { chord->segment() };
     for (auto track = firstTrack; track < firstTrack + VOICES; ++track) {
