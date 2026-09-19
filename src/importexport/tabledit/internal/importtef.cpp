@@ -663,17 +663,6 @@ static std::vector<Chord*> allChordsInStaff(const Note* const msNote)
 
 static bool isDown(/*const Chord* const firstChord, */ const Note* const msNote)
 {
-    /*
-    // TODO remove code duplication with addArpeggio
-    Chord* chord { toChord(msNote->parent()) };
-    track_idx_t staffIdx { msNote->track() / VOICES };
-    track_idx_t firstTrack { staffIdx* VOICES };
-    Segment* segment { chord->segment() };
-    for (auto track = firstTrack; track < firstTrack + VOICES; ++track) {
-        EngravingItem* element { segment->element(track) };
-        if (element && element->isChord()) {
-            Chord* chord { toChord(element) };
-*/
     Note* noteOnHighestString { nullptr };
     for (const Chord* const chord : allChordsInStaff(msNote)) {
         for (Note* note : chord->notes()) {
@@ -696,27 +685,6 @@ static bool isDown(/*const Chord* const firstChord, */ const Note* const msNote)
 
 static void addArpeggio(Score* score, const Note* const msNote)
 {
-    /*
-    Chord* chord { toChord(msNote->parent()) };
-    track_idx_t staffIdx { msNote->track() / VOICES };
-    track_idx_t firstTrack { staffIdx* VOICES };
-    LOGD("score %p msNote %p staffIdx %zu firstTrack %zu", score, msNote, staffIdx, firstTrack);
-    track_idx_t firstChordIdx { 0 };
-    track_idx_t lastChordIdx { 0 };
-    bool firstChordFound { false };
-    Segment* segment { chord->segment() };
-    for (auto track = firstTrack; track < firstTrack + VOICES; ++track) {
-        EngravingItem* element { segment->element(track) };
-        if (element && element->isChord()) {
-            if (!firstChordFound) {
-                firstChordIdx = track;
-                firstChordFound = true;
-            }
-            lastChordIdx = track;
-        }
-    }
-    */
-
     std::vector<Chord*> allChords { allChordsInStaff(msNote) };
     if (allChords.empty()) {
         return;
