@@ -637,34 +637,58 @@ static void addHarmonics(const std::map<const TefNote* const, mu::engraving::Not
     }
 }
 
+// return all chords in the same staff as a given note
+// ordered from lowest to highest track
+
+static std::vector<Chord*> allChordsInStaff(const Note* const msNote)
+{
+    std::vector<Chord*> allChords;
+    track_idx_t staffIdx { msNote->track() / VOICES };
+    track_idx_t firstTrack { staffIdx* VOICES };
+    //Note* noteOnHighestString { nullptr };
+    Segment* segment { msNote->chord()->segment() };
+    for (auto track = firstTrack; track < firstTrack + VOICES; ++track) {
+        EngravingItem* element { segment->element(track) };
+        if (element && element->isChord()) {
+            Chord* chord { toChord(element) };
+            LOGD("chord %p track %zu", chord, chord->track());
+            allChords.push_back(chord);
+        }
+    }
+    return allChords;
+}
+
 // arpeggios are down when they start at the note at the highest string
 // (which has the lowest string number)
 
-static bool isDown(const Chord* const firstChord, const Note* const msNote)
+static bool isDown(/*const Chord* const firstChord, */ const Note* const msNote)
 {
+    /*
     // TODO remove code duplication with addArpeggio
     Chord* chord { toChord(msNote->parent()) };
     track_idx_t staffIdx { msNote->track() / VOICES };
     track_idx_t firstTrack { staffIdx* VOICES };
-    Note* noteOnHighestString { nullptr };
     Segment* segment { chord->segment() };
     for (auto track = firstTrack; track < firstTrack + VOICES; ++track) {
         EngravingItem* element { segment->element(track) };
         if (element && element->isChord()) {
             Chord* chord { toChord(element) };
-            for (Note* note : chord->notes()) {
-                LOGD("chord %p track %zu %zu note %p pitch %d string %d fret %d",
-                     chord, track, chord->track(), note, note->pitch(), note->string(), note->fret());
-                if (noteOnHighestString) {
-                    if (note->string() < noteOnHighestString->string()) {
-                        noteOnHighestString = note;
-                    }
-                } else {
+*/
+    Note* noteOnHighestString { nullptr };
+    for (const Chord* const chord : allChordsInStaff(msNote)) {
+        for (Note* note : chord->notes()) {
+            LOGD("chord %p track %zu note %p pitch %d string %d fret %d",
+                 chord, chord->track(), note, note->pitch(), note->string(), note->fret());
+            if (noteOnHighestString) {
+                if (note->string() < noteOnHighestString->string()) {
                     noteOnHighestString = note;
                 }
+            } else {
+                noteOnHighestString = note;
             }
         }
     }
+
     LOGD("highest string %d (note %p)", noteOnHighestString->string(), noteOnHighestString);
 
     return msNote == noteOnHighestString;
@@ -672,6 +696,7 @@ static bool isDown(const Chord* const firstChord, const Note* const msNote)
 
 static void addArpeggio(Score* score, const Note* const msNote)
 {
+    /*
     Chord* chord { toChord(msNote->parent()) };
     track_idx_t staffIdx { msNote->track() / VOICES };
     track_idx_t firstTrack { staffIdx* VOICES };
@@ -690,16 +715,23 @@ static void addArpeggio(Score* score, const Note* const msNote)
             lastChordIdx = track;
         }
     }
+    */
 
-    Chord* firstChord { toChord(segment->element(firstChordIdx)) };
+    std::vector<Chord*> allChords { allChordsInStaff(msNote) };
+    if (allChords.empty()) {
+        return;
+    }
+    Chord* firstChord { allChords.at(0) };
     if (firstChord->arpeggio()) {
         return;
     }
 
     Arpeggio* a = Factory::createArpeggio(score->dummy()->chord());
+    track_idx_t firstChordIdx { firstChord->track() };
+    track_idx_t lastChordIdx { allChords.at(allChords.size() - 1)->track() };
     int span { static_cast<int>(lastChordIdx - firstChordIdx + 1) };
     a->setSpan(span);
-    a->setArpeggioType(isDown(firstChord, msNote) ? ArpeggioType::DOWN : ArpeggioType::NORMAL);
+    a->setArpeggioType(isDown(/*firstChord,*/ msNote) ? ArpeggioType::DOWN : ArpeggioType::NORMAL);
     firstChord->add(a);
 }
 
