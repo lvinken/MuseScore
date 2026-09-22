@@ -1385,6 +1385,22 @@ void TablEdit::readTefReadingList()
     }
 }
 
+static void show_matches(const std::string& in, const std::string& re)
+{
+    std::smatch m;
+    std::regex_search(in, m, std::regex(re));
+    if (!m.empty())
+    {
+        std::cout << "input=[" << in << "], regex=[" << re << "]\n  "
+                                                              "prefix=[" << m.prefix() << "]\n  smatch: ";
+        for (std::size_t n = 0; n < m.size(); ++n)
+            std::cout << "m[" << n << "]=[" << m[n] << "] ";
+        std::cout << "\n  suffix=[" << m.suffix() << "]\n";
+    }
+    else
+        std::cout << "input=[" << in << "], regex=[" << re << "]: NO MATCH\n";
+}
+
 void TablEdit::readTefTexts()
 {
     _file->seek(OFFSET_TEXTS);
@@ -1398,6 +1414,7 @@ void TablEdit::readTefTexts()
     for (uint16_t i = 0; i < numberOfTexts; ++i) {
         std::string text { readUtf8Text() };
         LOGN("i %d text '%s'", i, text.c_str());
+        show_matches(text, ".*?barchord?[0-9]+");
         tefTexts.push_back(text);
     }
 }
