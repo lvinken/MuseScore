@@ -148,6 +148,7 @@ class TablEdit
     };
 
     void allocateVoices(std::vector<VoiceAllocator>& allocator);
+    void createCapos();
     void createContents(const MeasureHandler& measureHandler);
     void createEffects();
     void createLinkedTabs();

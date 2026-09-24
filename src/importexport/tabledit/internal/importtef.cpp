@@ -26,6 +26,7 @@
 #include "tuplethandler.h"
 
 #include "engraving/dom/box.h"
+#include "engraving/dom/capo.h"
 #include "engraving/dom/chord.h"
 #include "engraving/dom/excerpt.h"
 #include "engraving/dom/factory.h"
@@ -355,6 +356,32 @@ static void addVolta(Score* score, Measure* measure, const Ending& ending)
     text += String("%1").arg(ending.number);
     volta->setText(text);
     score->addElement(volta);
+}
+
+void TablEdit::createCapos()
+{
+
+    for (size_t part = 0; part < tefInstruments.size(); ++part) {
+        int capo { tefInstruments.at(part).nCapo };
+        if (capo > 0 /*&& !engravingConfiguration()->guitarProImportExperimental()*/) {
+            Measure* measure = score->firstMeasure();
+            Segment* s = measure->getSegment(SegmentType::ChordRest, measure->tick());
+            const size_t track = part * VOICES;
+
+            CapoParams params;
+            params.active = true;
+            params.transposeMode = CapoParams::TransposeMode::TAB_ONLY;
+            params.fretPosition = capo;
+
+            Capo* capoEl = Factory::createCapo(score->dummy()->segment());
+            capoEl->setTrack(track);
+            capoEl->setParams(params);
+            s->add(capoEl);
+
+            Staff* staff = score->staff(part);
+            staff->insertCapoParams({ 0, 1 }, params, true);
+        }
+    }
 }
 
 void TablEdit::createContents(const MeasureHandler& measureHandler)
@@ -891,6 +918,7 @@ void TablEdit::createScore()
     createParts();
     createTitleFrame();
     createMeasures(measureHandler);
+    createCapos();
     createNotesFrame();
     createContents(measureHandler);
     createEffects();
@@ -1183,7 +1211,8 @@ void TablEdit::readTefInstruments()
         instrument.output = readUInt16();
         instrument.options = readUInt16();
         for (uint16_t j = 0; j < 12; ++j) {
-            auto n = readUInt8();
+            int n = readUInt8();
+            n += instrument.nCapo;
             instrument.tuning[j] = n;
         }
         // name is a zero-terminated utf8 string
