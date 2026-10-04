@@ -32,7 +32,23 @@ using namespace mu::engraving;
 
 muse::Ret TablEditReader::read(MasterScore* score, const muse::io::path_t& path, const Options&)
 {
-    Err err = import(score, path);
+    if (!fileSystem()->exists(path)) {
+        return make_ret(Err::FileNotFound, path);
+    }
+
+    muse::io::File file(path);
+    if (!file.open(muse::io::IODevice::ReadOnly)) {
+        return make_ret(Err::FileOpenError, path);
+    }
+
+    //Err err = import(score, path);
+    TablEdit tablEdit{ &file, score };
+    Err err = tablEdit.import();
+    if (err == Err::FileBadFormat) {
+        // Give a specific reason instead of the generic "Bad format" text.
+        return make_ret(err, tablEdit.loadErrorMessage(/* path.toQString()*/));
+    }
+
     return make_ret(err, path);
 }
 
@@ -51,3 +67,25 @@ Err TablEditReader::import(MasterScore* score, const muse::io::path_t& path, con
 
     return err;
 }
+
+/*
+Err TablEditReader::import(MasterScore* score, const muse::io::path_t& path, const Options&)
+{
+    if (!fileSystem()->exists(path)) {
+        return Err::FileNotFound;
+    }
+
+    muse::io::File file(path);
+    if (!file.open(muse::io::IODevice::ReadOnly)) {
+        return Err::FileOpenError;
+    }
+    TablEdit tablEdit{ &file, score };
+    Err err = tablEdit.import();
+    if (err == Err::FileBadFormat) {
+        // Give a specific reason instead of the generic "Bad format" text.
+        return make_ret(err, tablEdit.loadErrorMessage(/path.toQString()));
+    }
+
+    return err;
+}
+    */

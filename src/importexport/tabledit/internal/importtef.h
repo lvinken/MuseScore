@@ -158,5 +158,6 @@ public:
     TablEdit(muse::io::IODevice* f, mu::engraving::MasterScore* s)
         : _file(f), score(s) {}
     mu::engraving::Err import();
+    muse::String loadErrorMessage(/* const QString& path */);
 };
 } // namespace mu::iex::tabledit

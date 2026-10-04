@@ -1493,4 +1493,17 @@ Err TablEdit::import()
     createScore();
     return Err::NoError;
 }
+
+muse::String TablEdit::loadErrorMessage(/* const QString& path */){
+    return muse::mtrc("engraving",
+                      /*
+                      "“%1” is in an older, encrypted Encore format (%2) that this importer cannot read. "
+                      "Open it in Encore and save it again, then import the saved file."
+                    */
+                      "unsupported format %1"
+                      )
+        //.arg(name).arg(muse::String::fromQString(QString::fromLatin1(magic)));
+        .arg(tefHeader.wFormat >> 8);
+
+}
 } // namespace mu::iex::tabledit
