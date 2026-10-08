@@ -1415,7 +1415,24 @@ void TablEdit::readTefTexts()
     for (uint16_t i = 0; i < numberOfTexts; ++i) {
         std::string text { readUtf8Text() };
         LOGN("i %d text '%s'", i, text.c_str());
-        show_matches(text, ".*?barchord?[0-9]+");
+        const auto pos { text.find('%') };
+        if (pos != std::string::npos) {
+            // found % char
+            std::string left { text.substr(0, pos) };
+            std::string right { text.substr(pos + 1) };
+            std::smatch m;
+            //show_matches(right, "^tempo([248]?)(.?)[[:space:]]*=[[:space:]]*([[:digit:]]*)(.*$)");
+            std::regex_search(right, m, std::regex("^tempo([248]?)(.?)[[:space:]]*=[[:space:]]*([[:digit:]]+)(.*$)"));
+            if (m.size() == 5) {
+                int type = m[1].str().empty() ? 0 : std::stoi(m[1].str());
+                int bpm = m[3].str().empty() ? 0 : std::stoi(m[3].str());
+                LOGD("tempo type %d dot %d bpm %d right '%s'",
+                     type, (m[2].str() == "."), bpm, m[4].str().c_str());
+            }
+            else {
+                LOGD("invalid tempo '%s'", right.c_str());
+            }
+        }
         tefTexts.push_back(text);
     }
 }
