@@ -1044,6 +1044,7 @@ void TablEdit::createTempo()
     tempoText += u" = ";
     tempoText += muse::String::number(tefHeader.tempo);
     tt->setXmlText(tempoText);
+    tt->setVisible(false);
     segment->add(tt);
 }
 

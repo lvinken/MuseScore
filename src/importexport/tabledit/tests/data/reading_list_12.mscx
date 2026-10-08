@@ -155,6 +155,7 @@
             <tempo>2</tempo>
             <followText>1</followText>
             <eid>M_M</eid>
+            <visible>0</visible>
             <text><sym>metNoteQuarterUp</sym> = 120</text>
             </Tempo>
           <Chord>
