@@ -1048,6 +1048,47 @@ void TablEdit::createTempo()
     segment->add(tt);
 }
 
+static DurationType DurationTypeFromNumerator(const int i)
+{
+    switch (i) {
+    case 2: return DurationType::V_HALF;
+    case 4: return DurationType::V_QUARTER;
+    case 8: return DurationType::V_EIGHTH;
+    default: return DurationType::V_INVALID;
+    }
+}
+
+static bool toTempoText(const std::string& text, mu::engraving::Segment* segment)
+{
+    std::smatch m;
+    std::regex_search(text, m, std::regex("^tempo([248]?)(.?)[[:space:]]*=[[:space:]]*([[:digit:]]+)(.*$)"));
+    if (m.size() == 5) {
+        int type = m[1].str().empty() ? 4 : std::stoi(m[1].str());
+        int dots = (m[2] == ".") ? 1 : 0;
+        int bpm = m[3].str().empty() ? 0 : std::stoi(m[3].str());
+        LOGD("tempo type %d dot %d bpm %d right '%s'",
+             type, dots, bpm, m[4].str().c_str());
+
+        TempoText* tt = Factory::createTempoText(segment);
+        float dotfactor(dots == 1 ? 1.5 : 1);
+        tt->setTempo(4 * dotfactor * double(bpm) / (60 * type));
+        tt->setTrack(0);
+        tt->setFollowText(true);
+        TDuration dur { DurationTypeWithDots { DurationTypeFromNumerator(type), dots } };
+        muse::String tempoText = mu::engraving::TempoText::duration2tempoTextString(dur);
+        tempoText += u" = ";
+        tempoText += muse::String::number(bpm);
+        tempoText += muse::String::fromStdString(m[4]);
+        tt->setXmlText(tempoText);
+        tt->setVisible(true);
+        segment->add(tt);
+        return true;
+    } else {
+        LOGD("invalid tempo '%s'", text.c_str());
+    }
+    return false;
+}
+
 void TablEdit::createTexts()
 {
     for (const auto& textMarker : tefTextMarkers) {
@@ -1078,9 +1119,22 @@ void TablEdit::createTexts()
             LOGE() << "text marker index invalid";
             continue;
         }
+
+        const std::string text { tefTexts.at(textMarker.index) };
+        const auto pos { text.find('%') };
+        if (pos != std::string::npos) {
+            // found % char
+            std::string left { text.substr(0, pos) };
+            std::string right { text.substr(pos + 1) };
+            if (right.find("tempo") == 0) {
+                if (toTempoText(right, segment)) {
+                    continue;
+                }
+            }
+        }
+
         StaffText* staffText = Factory::createStaffText(segment);
-        muse::String text { tefTexts.at(textMarker.index).c_str() };
-        staffText->setPlainText(text);
+        staffText->setPlainText(muse::String(text.c_str()));
         staffText->setTrack(track);
         segment->add(staffText);
     }
@@ -1386,22 +1440,6 @@ void TablEdit::readTefReadingList()
     }
 }
 
-static void show_matches(const std::string& in, const std::string& re)
-{
-    std::smatch m;
-    std::regex_search(in, m, std::regex(re));
-    if (!m.empty())
-    {
-        std::cout << "input=[" << in << "], regex=[" << re << "]\n  "
-                                                              "prefix=[" << m.prefix() << "]\n  smatch: ";
-        for (std::size_t n = 0; n < m.size(); ++n)
-            std::cout << "m[" << n << "]=[" << m[n] << "] ";
-        std::cout << "\n  suffix=[" << m.suffix() << "]\n";
-    }
-    else
-        std::cout << "input=[" << in << "], regex=[" << re << "]: NO MATCH\n";
-}
-
 void TablEdit::readTefTexts()
 {
     _file->seek(OFFSET_TEXTS);
@@ -1415,24 +1453,6 @@ void TablEdit::readTefTexts()
     for (uint16_t i = 0; i < numberOfTexts; ++i) {
         std::string text { readUtf8Text() };
         LOGN("i %d text '%s'", i, text.c_str());
-        const auto pos { text.find('%') };
-        if (pos != std::string::npos) {
-            // found % char
-            std::string left { text.substr(0, pos) };
-            std::string right { text.substr(pos + 1) };
-            std::smatch m;
-            //show_matches(right, "^tempo([248]?)(.?)[[:space:]]*=[[:space:]]*([[:digit:]]*)(.*$)");
-            std::regex_search(right, m, std::regex("^tempo([248]?)(.?)[[:space:]]*=[[:space:]]*([[:digit:]]+)(.*$)"));
-            if (m.size() == 5) {
-                int type = m[1].str().empty() ? 0 : std::stoi(m[1].str());
-                int bpm = m[3].str().empty() ? 0 : std::stoi(m[3].str());
-                LOGD("tempo type %d dot %d bpm %d right '%s'",
-                     type, (m[2].str() == "."), bpm, m[4].str().c_str());
-            }
-            else {
-                LOGD("invalid tempo '%s'", right.c_str());
-            }
-        }
         tefTexts.push_back(text);
     }
 }

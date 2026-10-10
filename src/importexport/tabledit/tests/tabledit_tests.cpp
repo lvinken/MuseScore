@@ -251,6 +251,10 @@ TEST_F(TablEdit_Tests, tef_staff_text_2) {
     tefReadTest("staff_text_2");
 }
 
+TEST_F(TablEdit_Tests, tef_tempo_text) {
+    tefReadTest("tempo_text");
+}
+
 TEST_F(TablEdit_Tests, tef_tie_1) {
     tefReadTest("tie_1");
 }
