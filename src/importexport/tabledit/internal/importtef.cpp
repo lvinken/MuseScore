@@ -1078,12 +1078,10 @@ void TablEdit::createScore()
     setInstrumentIDs(score->parts());
 }
 
-static void addTempoText(mu::engraving::Segment* segment, double tempo, TDuration dur, /* int bpm, */ muse::String rhs, bool visible = true)
+static void addTempoText(mu::engraving::Segment* segment, double tempo, TDuration dur, muse::String rhs, bool visible = true)
 {
-    double correctedBpm { tempo * 480 / dur.ticks().ticks() };
-    LOGD("tempo %f (%f) dur ticks %d bpm %d calc bpm %f", tempo, tempo / 60, dur.ticks().ticks(), 0 /* bpm */, correctedBpm);
+    double correctedBpm { tempo* 480 / dur.ticks().ticks() };
     mu::engraving::TempoText* tt = new mu::engraving::TempoText(segment);
-    LOGD("tick %d tt %p", segment->tick().ticks(), tt);
     tt->setTempo(double(tempo) / 60.0);
     tt->setTrack(0);
     tt->setFollowText(true);
@@ -1100,32 +1098,14 @@ void TablEdit::createTempo()
 {
     mu::engraving::Measure* measure = score->firstMeasure();
     mu::engraving::Segment* segment = measure->getSegment(mu::engraving::SegmentType::ChordRest, mu::engraving::Fraction(0, 1));
-    LOGD("segment %p #annotations %zu", segment, segment->annotations().size());
-    for (const auto anno : segment->annotations()) {
-        LOGD("anno %p '%s'", anno, anno->typeName());
-    }
-    LOGD("findAnnotation(TEMPO_TEXT) %p", segment->findAnnotation(ElementType::TEMPO_TEXT, 0, 0));
+
     if (segment->findAnnotation(ElementType::TEMPO_TEXT, 0, 0)) {
         return; // a tempo text is already present at tick = 0
     }
 
     // no tempo text yet, use the basic tempo to create one
     // (invisible to match TablEdit's behaviour)
-    /*
-    mu::engraving::TempoText* tt = new mu::engraving::TempoText(segment);
-    LOGD("tick %d tt %p", segment->tick().ticks(), tt);
-    tt->setTempo(double(tefHeader.tempo) / 60.0);
-    tt->setTrack(0);
-    tt->setFollowText(true);
-    muse::String tempoText = mu::engraving::TempoText::duration2tempoTextString(mu::engraving::DurationType::V_QUARTER);
-    tempoText += u" = ";
-    tempoText += muse::String::number(tefHeader.tempo);
-    tt->setXmlText(tempoText);
-    tt->setVisible(false);
-    segment->add(tt);
-    */
-
-    addTempoText(segment, tefHeader.tempo, mu::engraving::DurationType::V_QUARTER, /* tefHeader.tempo, */ muse::String { "" }, false);
+    addTempoText(segment, tefHeader.tempo, mu::engraving::DurationType::V_QUARTER, muse::String { "" }, false);
 }
 
 static DurationType DurationTypeFromNumerator(const int i)
@@ -1146,28 +1126,12 @@ static bool toTempoText(const std::string& text, mu::engraving::Segment* segment
         int type = m[1].str().empty() ? 4 : std::stoi(m[1].str());
         int dots = (m[2] == ".") ? 1 : 0;
         int bpm = m[3].str().empty() ? 0 : std::stoi(m[3].str());
-        LOGD("tempo type %d dot %d bpm %d right '%s'",
+        LOGN("tempo type %d dot %d bpm %d right '%s'",
              type, dots, bpm, m[4].str().c_str());
-
-        /*
-        TempoText* tt = Factory::createTempoText(segment);
-        LOGD("tick %d tt %p", segment->tick().ticks(), tt);
-        float dotfactor(dots == 1 ? 1.5 : 1);
-        tt->setTempo(4 * dotfactor * double(bpm) / (60 * type));
-        tt->setTrack(0);
-        tt->setFollowText(true);
-        TDuration dur { DurationTypeWithDots { DurationTypeFromNumerator(type), dots } };
-        muse::String tempoText = mu::engraving::TempoText::duration2tempoTextString(dur);
-        tempoText += u" = ";
-        tempoText += muse::String::number(bpm);
-        tempoText += muse::String::fromStdString(m[4]);
-        tt->setXmlText(tempoText);
-        tt->setVisible(true);
-        segment->add(tt);
-        */
         double dotfactor { (dots == 1) ? 1.5 : 1 };
         double tempo { 4 * dotfactor * double(bpm) / type };
-        addTempoText(segment, tempo, DurationTypeWithDots { DurationTypeFromNumerator(type), dots }, /* bpm, */ muse::String::fromStdString(m[4]));
+        addTempoText(segment, tempo, DurationTypeWithDots { DurationTypeFromNumerator(type), dots },
+                     /* bpm, */ muse::String::fromStdString(m[4]));
         return true;
     } else {
         LOGD("invalid tempo '%s'", text.c_str());
