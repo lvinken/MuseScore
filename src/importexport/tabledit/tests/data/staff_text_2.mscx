@@ -149,17 +149,17 @@
             <sigN>4</sigN>
             <sigD>4</sigD>
             </TimeSig>
+          <StaffText>
+            <eid>M_M</eid>
+            <text>Part 1</text>
+            </StaffText>
           <Tempo>
             <tempo>2</tempo>
             <followText>1</followText>
-            <eid>M_M</eid>
+            <eid>N_N</eid>
             <visible>0</visible>
             <text><sym>metNoteQuarterUp</sym> = 120</text>
             </Tempo>
-          <StaffText>
-            <eid>N_N</eid>
-            <text>Part 1</text>
-            </StaffText>
           <Chord>
             <eid>O_O</eid>
             <durationType>whole</durationType>
