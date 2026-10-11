@@ -1032,9 +1032,10 @@ void TablEdit::createScore()
     setInstrumentIDs(score->parts());
 }
 
-static void addTempoText(mu::engraving::Segment* segment, double tempo, TDuration dur, int bpm, muse::String rhs, bool visible = true)
+static void addTempoText(mu::engraving::Segment* segment, double tempo, TDuration dur, /* int bpm, */ muse::String rhs, bool visible = true)
 {
-    LOGD("tempo %f (%f) dur ticks %d", tempo, tempo / 60, dur.ticks().ticks());
+    double correctedBpm { tempo * 480 / dur.ticks().ticks() };
+    LOGD("tempo %f (%f) dur ticks %d bpm %d calc bpm %f", tempo, tempo / 60, dur.ticks().ticks(), 0 /* bpm */, correctedBpm);
     mu::engraving::TempoText* tt = new mu::engraving::TempoText(segment);
     LOGD("tick %d tt %p", segment->tick().ticks(), tt);
     tt->setTempo(double(tempo) / 60.0);
@@ -1042,7 +1043,7 @@ static void addTempoText(mu::engraving::Segment* segment, double tempo, TDuratio
     tt->setFollowText(true);
     muse::String tempoText = mu::engraving::TempoText::duration2tempoTextString(dur);
     tempoText += u" = ";
-    tempoText += muse::String::number(bpm);
+    tempoText += muse::String::number(correctedBpm);
     tempoText += rhs;
     tt->setXmlText(tempoText);
     tt->setVisible(visible);
@@ -1078,7 +1079,7 @@ void TablEdit::createTempo()
     segment->add(tt);
     */
 
-    addTempoText(segment, tefHeader.tempo, mu::engraving::DurationType::V_QUARTER, tefHeader.tempo, muse::String { "" }, false);
+    addTempoText(segment, tefHeader.tempo, mu::engraving::DurationType::V_QUARTER, /* tefHeader.tempo, */ muse::String { "" }, false);
 }
 
 static DurationType DurationTypeFromNumerator(const int i)
@@ -1120,7 +1121,7 @@ static bool toTempoText(const std::string& text, mu::engraving::Segment* segment
         */
         double dotfactor { (dots == 1) ? 1.5 : 1 };
         double tempo { 4 * dotfactor * double(bpm) / type };
-        addTempoText(segment, tempo, DurationTypeWithDots { DurationTypeFromNumerator(type), dots }, bpm, muse::String::fromStdString(m[4]));
+        addTempoText(segment, tempo, DurationTypeWithDots { DurationTypeFromNumerator(type), dots }, /* bpm, */ muse::String::fromStdString(m[4]));
         return true;
     } else {
         LOGD("invalid tempo '%s'", text.c_str());
