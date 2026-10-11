@@ -1078,6 +1078,23 @@ void TablEdit::createScore()
     setInstrumentIDs(score->parts());
 }
 
+static void addTempoText(mu::engraving::Segment* segment, double tempo, TDuration dur, int bpm, muse::String rhs, bool visible = true)
+{
+    LOGD("tempo %f (%f) dur ticks %d", tempo, tempo / 60, dur.ticks().ticks());
+    mu::engraving::TempoText* tt = new mu::engraving::TempoText(segment);
+    LOGD("tick %d tt %p", segment->tick().ticks(), tt);
+    tt->setTempo(double(tempo) / 60.0);
+    tt->setTrack(0);
+    tt->setFollowText(true);
+    muse::String tempoText = mu::engraving::TempoText::duration2tempoTextString(dur);
+    tempoText += u" = ";
+    tempoText += muse::String::number(bpm);
+    tempoText += rhs;
+    tt->setXmlText(tempoText);
+    tt->setVisible(visible);
+    segment->add(tt);
+}
+
 void TablEdit::createTempo()
 {
     mu::engraving::Measure* measure = score->firstMeasure();
@@ -1093,6 +1110,7 @@ void TablEdit::createTempo()
 
     // no tempo text yet, use the basic tempo to create one
     // (invisible to match TablEdit's behaviour)
+    /*
     mu::engraving::TempoText* tt = new mu::engraving::TempoText(segment);
     LOGD("tick %d tt %p", segment->tick().ticks(), tt);
     tt->setTempo(double(tefHeader.tempo) / 60.0);
@@ -1104,6 +1122,9 @@ void TablEdit::createTempo()
     tt->setXmlText(tempoText);
     tt->setVisible(false);
     segment->add(tt);
+    */
+
+    addTempoText(segment, tefHeader.tempo, mu::engraving::DurationType::V_QUARTER, tefHeader.tempo, muse::String { "" }, false);
 }
 
 static DurationType DurationTypeFromNumerator(const int i)
@@ -1127,6 +1148,7 @@ static bool toTempoText(const std::string& text, mu::engraving::Segment* segment
         LOGD("tempo type %d dot %d bpm %d right '%s'",
              type, dots, bpm, m[4].str().c_str());
 
+        /*
         TempoText* tt = Factory::createTempoText(segment);
         LOGD("tick %d tt %p", segment->tick().ticks(), tt);
         float dotfactor(dots == 1 ? 1.5 : 1);
@@ -1141,6 +1163,10 @@ static bool toTempoText(const std::string& text, mu::engraving::Segment* segment
         tt->setXmlText(tempoText);
         tt->setVisible(true);
         segment->add(tt);
+        */
+        double dotfactor { (dots == 1) ? 1.5 : 1 };
+        double tempo { 4 * dotfactor * double(bpm) / type };
+        addTempoText(segment, tempo, DurationTypeWithDots { DurationTypeFromNumerator(type), dots }, bpm, muse::String::fromStdString(m[4]));
         return true;
     } else {
         LOGD("invalid tempo '%s'", text.c_str());
