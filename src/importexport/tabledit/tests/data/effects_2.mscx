@@ -104,17 +104,17 @@
             <sigN>4</sigN>
             <sigD>4</sigD>
             </TimeSig>
+          <StaffText>
+            <eid>L_L</eid>
+            <text>N.H.</text>
+            </StaffText>
           <Tempo>
             <tempo>2</tempo>
             <followText>1</followText>
-            <eid>L_L</eid>
+            <eid>M_M</eid>
             <visible>0</visible>
             <text><sym>metNoteQuarterUp</sym> = 120</text>
             </Tempo>
-          <StaffText>
-            <eid>M_M</eid>
-            <text>N.H.</text>
-            </StaffText>
           <Chord>
             <eid>N_N</eid>
             <durationType>quarter</durationType>

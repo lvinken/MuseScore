@@ -868,7 +868,6 @@ void TablEdit::createMeasures(const MeasureHandler& measureHandler)
                 s2->add(timesig);
             }
             lastTimeSig = nominalLength;
-            createTempo();
         } else {
             if (tefMeasure.key != lastKey) {
                 auto s1 = measure->getSegment(mu::engraving::SegmentType::KeySig, tick);
@@ -1074,6 +1073,7 @@ void TablEdit::createScore()
     fillGapsInFirstVoices(score);
     createRepeats();
     createTexts();
+    createTempo();
     createLinkedTabs();
     setInstrumentIDs(score->parts());
 }
@@ -1082,7 +1082,19 @@ void TablEdit::createTempo()
 {
     mu::engraving::Measure* measure = score->firstMeasure();
     mu::engraving::Segment* segment = measure->getSegment(mu::engraving::SegmentType::ChordRest, mu::engraving::Fraction(0, 1));
+    LOGD("segment %p #annotations %zu", segment, segment->annotations().size());
+    for (const auto anno : segment->annotations()) {
+        LOGD("anno %p '%s'", anno, anno->typeName());
+    }
+    LOGD("findAnnotation(TEMPO_TEXT) %p", segment->findAnnotation(ElementType::TEMPO_TEXT, 0, 0));
+    if (segment->findAnnotation(ElementType::TEMPO_TEXT, 0, 0)) {
+        return; // a tempo text is already present at tick = 0
+    }
+
+    // no tempo text yet, use the basic tempo to create one
+    // (invisible to match TablEdit's behaviour)
     mu::engraving::TempoText* tt = new mu::engraving::TempoText(segment);
+    LOGD("tick %d tt %p", segment->tick().ticks(), tt);
     tt->setTempo(double(tefHeader.tempo) / 60.0);
     tt->setTrack(0);
     tt->setFollowText(true);
@@ -1116,6 +1128,7 @@ static bool toTempoText(const std::string& text, mu::engraving::Segment* segment
              type, dots, bpm, m[4].str().c_str());
 
         TempoText* tt = Factory::createTempoText(segment);
+        LOGD("tick %d tt %p", segment->tick().ticks(), tt);
         float dotfactor(dots == 1 ? 1.5 : 1);
         tt->setTempo(4 * dotfactor * double(bpm) / (60 * type));
         tt->setTrack(0);

@@ -94,139 +94,132 @@
             <sigD>4</sigD>
             </TimeSig>
           <Tempo>
-            <tempo>2</tempo>
-            <followText>1</followText>
-            <eid>J_J</eid>
-            <visible>0</visible>
-            <text><sym>metNoteQuarterUp</sym> = 120</text>
-            </Tempo>
-          <Tempo>
             <tempo>2.666667</tempo>
             <followText>1</followText>
-            <eid>K_K</eid>
+            <eid>J_J</eid>
             <text><sym>metNoteQuarterUp</sym> = 160</text>
             </Tempo>
           <Rest>
-            <eid>L_L</eid>
+            <eid>K_K</eid>
             <visible>0</visible>
             <durationType>whole</durationType>
             </Rest>
           <BarLine>
-            <eid>M_M</eid>
+            <eid>L_L</eid>
             </BarLine>
           </voice>
         </Measure>
       <Measure>
-        <eid>N_N</eid>
+        <eid>M_M</eid>
         <voice>
           <Tempo>
             <tempo>1.333333</tempo>
             <followText>1</followText>
-            <eid>O_O</eid>
+            <eid>N_N</eid>
             <text><sym>metNoteHalfUp</sym> = 40</text>
             </Tempo>
           <Rest>
-            <eid>P_P</eid>
+            <eid>O_O</eid>
             <visible>0</visible>
             <durationType>whole</durationType>
             </Rest>
           <BarLine>
-            <eid>Q_Q</eid>
+            <eid>P_P</eid>
             </BarLine>
           </voice>
         </Measure>
       <Measure>
-        <eid>R_R</eid>
+        <eid>Q_Q</eid>
         <voice>
           <Tempo>
             <tempo>1.333333</tempo>
             <followText>1</followText>
-            <eid>S_S</eid>
+            <eid>R_R</eid>
             <text><sym>metNoteQuarterUp</sym> = 80</text>
             </Tempo>
           <Rest>
-            <eid>T_T</eid>
+            <eid>S_S</eid>
             <visible>0</visible>
             <durationType>whole</durationType>
             </Rest>
           <BarLine>
-            <eid>U_U</eid>
+            <eid>T_T</eid>
             </BarLine>
           </voice>
         </Measure>
       <Measure>
-        <eid>V_V</eid>
+        <eid>U_U</eid>
         <voice>
           <Tempo>
             <tempo>1.333333</tempo>
             <followText>1</followText>
-            <eid>W_W</eid>
+            <eid>V_V</eid>
             <text><sym>metNote8thUp</sym> = 160</text>
             </Tempo>
           <Rest>
-            <eid>X_X</eid>
+            <eid>W_W</eid>
             <visible>0</visible>
             <durationType>whole</durationType>
             </Rest>
           <BarLine>
-            <eid>Y_Y</eid>
+            <eid>X_X</eid>
             </BarLine>
           </voice>
         </Measure>
       <Measure>
-        <eid>Z_Z</eid>
+        <eid>Y_Y</eid>
         <voice>
           <Tempo>
             <tempo>2.75</tempo>
             <followText>1</followText>
-            <eid>a_a</eid>
+            <eid>Z_Z</eid>
             <text><sym>metNoteQuarterUp</sym> = 165 Vivace</text>
             </Tempo>
           <Rest>
-            <eid>b_b</eid>
+            <eid>a_a</eid>
             <visible>0</visible>
             <durationType>whole</durationType>
             </Rest>
           <BarLine>
-            <eid>c_c</eid>
+            <eid>b_b</eid>
             </BarLine>
           </voice>
         </Measure>
       <Measure>
-        <eid>d_d</eid>
+        <eid>c_c</eid>
         <voice>
           <Tempo>
             <tempo>0.75</tempo>
             <followText>1</followText>
-            <eid>e_e</eid>
+            <eid>d_d</eid>
             <text><sym>metNote8thUp</sym> = 90</text>
             </Tempo>
           <Rest>
-            <eid>f_f</eid>
+            <eid>e_e</eid>
             <visible>0</visible>
             <durationType>whole</durationType>
             </Rest>
           <BarLine>
-            <eid>g_g</eid>
+            <eid>f_f</eid>
             </BarLine>
           </voice>
         </Measure>
       <Measure>
-        <eid>h_h</eid>
+        <eid>g_g</eid>
         <voice>
           <Tempo>
             <tempo>2</tempo>
             <followText>1</followText>
-            <eid>i_i</eid>
+            <eid>h_h</eid>
             <text><sym>metNoteQuarterUp</sym><sym>space</sym><sym>metAugmentationDot</sym> = 80</text>
             </Tempo>
           <Rest>
-            <eid>j_j</eid>
+            <eid>i_i</eid>
             <visible>0</visible>
             <durationType>whole</durationType>
             </Rest>
           <BarLine>
-            <eid>k_k</eid>
+            <eid>j_j</eid>
             </BarLine>
           </voice>
         </Measure>
@@ -235,103 +228,103 @@
       <Measure>
         <voice>
           <KeySig>
-            <eid>l_l</eid>
+            <eid>k_k</eid>
             <linkedTo>H_H</linkedTo>
             <concertKey>0</concertKey>
             </KeySig>
           <Rest>
+            <eid>l_l</eid>
+            <linkedTo>K_K</linkedTo>
+            <visible>0</visible>
+            <durationType>whole</durationType>
+            </Rest>
+          <BarLine>
             <eid>m_m</eid>
             <linkedTo>L_L</linkedTo>
-            <visible>0</visible>
-            <durationType>whole</durationType>
-            </Rest>
-          <BarLine>
-            <eid>n_n</eid>
-            <linkedTo>M_M</linkedTo>
             </BarLine>
           </voice>
         </Measure>
       <Measure>
         <voice>
           <Rest>
+            <eid>n_n</eid>
+            <linkedTo>O_O</linkedTo>
+            <visible>0</visible>
+            <durationType>whole</durationType>
+            </Rest>
+          <BarLine>
             <eid>o_o</eid>
             <linkedTo>P_P</linkedTo>
-            <visible>0</visible>
-            <durationType>whole</durationType>
-            </Rest>
-          <BarLine>
-            <eid>p_p</eid>
-            <linkedTo>Q_Q</linkedTo>
             </BarLine>
           </voice>
         </Measure>
       <Measure>
         <voice>
           <Rest>
+            <eid>p_p</eid>
+            <linkedTo>S_S</linkedTo>
+            <visible>0</visible>
+            <durationType>whole</durationType>
+            </Rest>
+          <BarLine>
             <eid>q_q</eid>
             <linkedTo>T_T</linkedTo>
-            <visible>0</visible>
-            <durationType>whole</durationType>
-            </Rest>
-          <BarLine>
-            <eid>r_r</eid>
-            <linkedTo>U_U</linkedTo>
             </BarLine>
           </voice>
         </Measure>
       <Measure>
         <voice>
           <Rest>
+            <eid>r_r</eid>
+            <linkedTo>W_W</linkedTo>
+            <visible>0</visible>
+            <durationType>whole</durationType>
+            </Rest>
+          <BarLine>
             <eid>s_s</eid>
             <linkedTo>X_X</linkedTo>
-            <visible>0</visible>
-            <durationType>whole</durationType>
-            </Rest>
-          <BarLine>
-            <eid>t_t</eid>
-            <linkedTo>Y_Y</linkedTo>
             </BarLine>
           </voice>
         </Measure>
       <Measure>
         <voice>
           <Rest>
+            <eid>t_t</eid>
+            <linkedTo>a_a</linkedTo>
+            <visible>0</visible>
+            <durationType>whole</durationType>
+            </Rest>
+          <BarLine>
             <eid>u_u</eid>
             <linkedTo>b_b</linkedTo>
-            <visible>0</visible>
-            <durationType>whole</durationType>
-            </Rest>
-          <BarLine>
-            <eid>v_v</eid>
-            <linkedTo>c_c</linkedTo>
             </BarLine>
           </voice>
         </Measure>
       <Measure>
         <voice>
           <Rest>
+            <eid>v_v</eid>
+            <linkedTo>e_e</linkedTo>
+            <visible>0</visible>
+            <durationType>whole</durationType>
+            </Rest>
+          <BarLine>
             <eid>w_w</eid>
             <linkedTo>f_f</linkedTo>
-            <visible>0</visible>
-            <durationType>whole</durationType>
-            </Rest>
-          <BarLine>
-            <eid>x_x</eid>
-            <linkedTo>g_g</linkedTo>
             </BarLine>
           </voice>
         </Measure>
       <Measure>
         <voice>
           <Rest>
-            <eid>y_y</eid>
-            <linkedTo>j_j</linkedTo>
+            <eid>x_x</eid>
+            <linkedTo>i_i</linkedTo>
             <visible>0</visible>
             <durationType>whole</durationType>
             </Rest>
           <BarLine>
-            <eid>z_z</eid>
-            <linkedTo>k_k</linkedTo>
+            <eid>y_y</eid>
+            <linkedTo>j_j</linkedTo>
             </BarLine>
           </voice>
         </Measure>

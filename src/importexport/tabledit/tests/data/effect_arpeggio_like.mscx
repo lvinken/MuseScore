@@ -98,21 +98,21 @@
             <sigN>4</sigN>
             <sigD>4</sigD>
             </TimeSig>
-          <Tempo>
-            <tempo>2</tempo>
-            <followText>1</followText>
-            <eid>K_K</eid>
-            <visible>0</visible>
-            <text><sym>metNoteQuarterUp</sym> = 120</text>
-            </Tempo>
           <StaffText>
-            <eid>L_L</eid>
+            <eid>K_K</eid>
             <text>E</text>
             </StaffText>
           <StaffText>
-            <eid>M_M</eid>
+            <eid>L_L</eid>
             <text>Roll arpeggio</text>
             </StaffText>
+          <Tempo>
+            <tempo>2</tempo>
+            <followText>1</followText>
+            <eid>M_M</eid>
+            <visible>0</visible>
+            <text><sym>metNoteQuarterUp</sym> = 120</text>
+            </Tempo>
           <Chord>
             <eid>N_N</eid>
             <durationType>half</durationType>
