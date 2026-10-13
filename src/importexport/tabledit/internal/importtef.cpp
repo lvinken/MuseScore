@@ -46,6 +46,7 @@
 #include "engraving/dom/stafftype.h"
 #include "engraving/dom/tempotext.h"
 #include "engraving/dom/text.h"
+#include "engraving/dom/textline.h"
 #include "engraving/dom/timesig.h"
 #include "engraving/dom/volta.h"
 #include "log.h"
@@ -1093,6 +1094,34 @@ static bool toTempoText(const std::string& text, mu::engraving::Segment* segment
     return false;
 }
 
+static void addTextLine(mu::engraving::Segment* segment, muse::String lhs, Fraction dur)
+{
+    mu::engraving::TextLine* tl = Factory::createTextLine(segment);
+    tl->setTick(segment->tick());
+    tl->setTick2(segment->tick() + dur);
+    tl->setTrack(0);
+    tl->setTrack2(0);
+    tl->setBeginText(lhs);
+    segment->score()->addElement(tl);
+}
+
+static bool toTextLine(const std::string& left, const std::string& text, mu::engraving::Segment* segment)
+{
+    std::smatch m;
+    std::regex_search(text, m, std::regex("^barchord([.:])([[:digit:]]*$)"));
+    if (m.size() == 3) {
+        std::string type = m[1].str();
+        int length = m[2].str().empty() ? 0 : std::stoi(m[2].str());
+        LOGD("tempo type '%s' length %d",
+             type.c_str(), length);
+        addTextLine(segment, muse::String::fromStdString(left), Fraction(2, 4) /* todo */);
+        return true;
+    } else {
+        LOGD("invalid barchord '%s'", text.c_str());
+    }
+    return false;
+}
+
 void TablEdit::createTexts()
 {
     for (const auto& textMarker : tefTextMarkers) {
@@ -1130,8 +1159,14 @@ void TablEdit::createTexts()
             // found % char
             std::string left { text.substr(0, pos) };
             std::string right { text.substr(pos + 1) };
+            LOGD("left '%s' right '%s'", left.c_str(), right.c_str());
             if (right.find("tempo") == 0) {
                 if (toTempoText(right, segment)) {
+                    continue;
+                }
+            }
+            if (right.find("barchord") == 0) {
+                if (toTextLine(left, right, segment)) {
                     continue;
                 }
             }

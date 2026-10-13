@@ -79,6 +79,10 @@ MasterScore* TablEdit_Tests::tefRead(const char* file, Err& err)
     return ScoreRW::readScore(TABLEDIT_DIR + String::fromUtf8(file) + u".tef", false, importFunc);
 }
 
+TEST_F(TablEdit_Tests, tef_barre_line_1) {
+    tefReadTest("barre_line_1");
+}
+
 TEST_F(TablEdit_Tests, tef_bass) {
     tefReadTest("bass");
 }
