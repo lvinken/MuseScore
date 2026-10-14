@@ -1079,12 +1079,12 @@ void TablEdit::createScore()
     setInstrumentIDs(score->parts());
 }
 
-static void addTempoText(mu::engraving::Segment* segment, double tempo, TDuration dur, muse::String rhs, bool visible = true)
+static void addTempoText(mu::engraving::Segment* segment, const track_idx_t track, double tempo, TDuration dur, muse::String rhs, bool visible = true)
 {
     double correctedBpm { tempo* 480 / dur.ticks().ticks() };
     mu::engraving::TempoText* tt = new mu::engraving::TempoText(segment);
     tt->setTempo(double(tempo) / 60.0);
-    tt->setTrack(0);
+    tt->setTrack(track);
     tt->setFollowText(true);
     muse::String tempoText = mu::engraving::TempoText::duration2tempoTextString(dur);
     tempoText += u" = ";
@@ -1106,7 +1106,7 @@ void TablEdit::createTempo()
 
     // no tempo text yet, use the basic tempo to create one
     // (invisible to match TablEdit's behaviour)
-    addTempoText(segment, tefHeader.tempo, mu::engraving::DurationType::V_QUARTER, muse::String { "" }, false);
+    addTempoText(segment, 0, tefHeader.tempo, mu::engraving::DurationType::V_QUARTER, muse::String { "" }, false);
 }
 
 static DurationType DurationTypeFromNumerator(const int i)
@@ -1119,7 +1119,7 @@ static DurationType DurationTypeFromNumerator(const int i)
     }
 }
 
-static bool toTempoText(const std::string& text, mu::engraving::Segment* segment)
+static bool toTempoText(const std::string& text, mu::engraving::Segment* segment, const track_idx_t track)
 {
     std::smatch m;
     std::regex_search(text, m, std::regex("^tempo([248]?)(.?)[[:space:]]*=[[:space:]]*([[:digit:]]+)(.*$)"));
@@ -1131,7 +1131,7 @@ static bool toTempoText(const std::string& text, mu::engraving::Segment* segment
              type, dots, bpm, m[4].str().c_str());
         double dotfactor { (dots == 1) ? 1.5 : 1 };
         double tempo { 4 * dotfactor * double(bpm) / type };
-        addTempoText(segment, tempo, DurationTypeWithDots { DurationTypeFromNumerator(type), dots },
+        addTempoText(segment, track, tempo, DurationTypeWithDots { DurationTypeFromNumerator(type), dots },
                      /* bpm, */ muse::String::fromStdString(m[4]));
         return true;
     } else {
@@ -1140,18 +1140,22 @@ static bool toTempoText(const std::string& text, mu::engraving::Segment* segment
     return false;
 }
 
-static void addTextLine(mu::engraving::Segment* segment, muse::String lhs, Fraction dur)
+static void addTextLine(mu::engraving::Segment* segment, muse::String lhs, Fraction dur, const track_idx_t track)
 {
     mu::engraving::TextLine* tl = Factory::createTextLine(segment);
     tl->setTick(segment->tick());
+    if (dur.isZero()) {
+        dur = Fraction(16, 16);
+    }
     tl->setTick2(segment->tick() + dur);
-    tl->setTrack(0);
-    tl->setTrack2(0);
+    tl->setTrack(track);
+    tl->setTrack2(track);
     tl->setBeginText(lhs);
+    tl->setEndHookType(HookType::HOOK_90);
     segment->score()->addElement(tl);
 }
 
-static bool toTextLine(const std::string& left, const std::string& text, mu::engraving::Segment* segment)
+static bool toTextLine(const std::string& left, const std::string& text, mu::engraving::Segment* segment, const track_idx_t track)
 {
     std::smatch m;
     std::regex_search(text, m, std::regex("^barchord([.:])([[:digit:]]*$)"));
@@ -1160,7 +1164,7 @@ static bool toTextLine(const std::string& left, const std::string& text, mu::eng
         int length = m[2].str().empty() ? 0 : std::stoi(m[2].str());
         LOGD("tempo type '%s' length %d",
              type.c_str(), length);
-        addTextLine(segment, muse::String::fromStdString(left), Fraction(2, 4) /* todo */);
+        addTextLine(segment, muse::String::fromStdString(left), Fraction(length, 16), track);
         return true;
     } else {
         LOGD("invalid barchord '%s'", text.c_str());
@@ -1207,12 +1211,12 @@ void TablEdit::createTexts()
             std::string right { text.substr(pos + 1) };
             LOGD("left '%s' right '%s'", left.c_str(), right.c_str());
             if (right.find("tempo") == 0) {
-                if (toTempoText(right, segment)) {
+                if (toTempoText(right, segment, track)) {
                     continue;
                 }
             }
             if (right.find("barchord") == 0) {
-                if (toTextLine(left, right, segment)) {
+                if (toTextLine(left, right, segment, track)) {
                     continue;
                 }
             }

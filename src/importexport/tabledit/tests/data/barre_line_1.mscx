@@ -172,18 +172,20 @@
       </Staff>
     <SpannerMap>
       <TextLine>
+        <endHookType>1</endHookType>
         <beginText>C3</beginText>
         <track2>0</track2>
         <startTick>0/64</startTick>
-        <ticks>32/64</ticks>
+        <ticks>64/64</ticks>
         <eid>V_V</eid>
         <track>0</track>
         </TextLine>
       <TextLine>
+        <endHookType>1</endHookType>
         <beginText>C3</beginText>
         <track2>4</track2>
         <startTick>0/64</startTick>
-        <ticks>32/64</ticks>
+        <ticks>64/64</ticks>
         <eid>W_W</eid>
         <linkedTo>V_V</linkedTo>
         <track>4</track>
