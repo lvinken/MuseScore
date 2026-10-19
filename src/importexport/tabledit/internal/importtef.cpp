@@ -1152,7 +1152,7 @@ static void addTextLine(mu::engraving::Segment* segment, muse::String lhs, Fract
     tl->setTrack2(track);
     tl->setBeginText(lhs);
     tl->setEndHookType(HookType::HOOK_90);
-    segment->score()->addElement(tl);
+    segment->score()->addSpanner(tl);
 }
 
 static bool toTextLine(const std::string& left, const std::string& text, mu::engraving::Segment* segment, const track_idx_t track)
