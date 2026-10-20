@@ -93,19 +93,20 @@
             <sigN>4</sigN>
             <sigD>4</sigD>
             </TimeSig>
-          <Tempo>
-            <tempo>2</tempo>
-            <followText>1</followText>
-            <eid>J_J</eid>
-            <text><sym>metNoteQuarterUp</sym> = 120</text>
-            </Tempo>
           <Capo>
             <fretPosition>2</fretPosition>
             <transposeMode>2</transposeMode>
             <style>staff</style>
-            <eid>K_K</eid>
+            <eid>J_J</eid>
             <text>Capo 2</text>
             </Capo>
+          <Tempo>
+            <tempo>2</tempo>
+            <followText>1</followText>
+            <eid>K_K</eid>
+            <visible>0</visible>
+            <text><sym>metNoteQuarterUp</sym> = 120</text>
+            </Tempo>
           <Chord>
             <eid>L_L</eid>
             <durationType>quarter</durationType>
