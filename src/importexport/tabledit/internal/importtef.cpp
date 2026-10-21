@@ -1140,7 +1140,7 @@ static bool toTempoText(const std::string& text, mu::engraving::Segment* segment
     return false;
 }
 
-static void addTextLine(mu::engraving::Segment* segment, muse::String lhs, Fraction dur, const track_idx_t track)
+static mu::engraving::TextLine* addTextLine(mu::engraving::Segment* segment, muse::String lhs, Fraction dur, const track_idx_t track)
 {
     mu::engraving::TextLine* tl = Factory::createTextLine(segment);
     tl->setTick(segment->tick());
@@ -1153,9 +1153,14 @@ static void addTextLine(mu::engraving::Segment* segment, muse::String lhs, Fract
     tl->setBeginText(lhs);
     tl->setEndHookType(HookType::HOOK_90);
     segment->score()->addSpanner(tl);
+    return tl;
 }
 
-static bool toTextLine(const std::string& left, const std::string& text, mu::engraving::Segment* segment, const track_idx_t track, const int remaining)
+// return TextLine created if RE parsing succeeded, nullptr otherwise
+// todo: implementation conflicts with handling TextLine continuation, factor out parsing/allocating
+
+static mu::engraving::TextLine* toTextLine(const std::string& left, const std::string& text, mu::engraving::Segment* segment, const track_idx_t track,
+                                           const int remaining, mu::engraving::TextLine* textLine)
 {
     std::smatch m;
     std::regex_search(text, m, std::regex("^barchord([.:])([[:digit:]]*$)"));
@@ -1166,21 +1171,35 @@ static bool toTextLine(const std::string& left, const std::string& text, mu::eng
              type.c_str(), length);
         if (length) {
             // explicit length provided
-            addTextLine(segment, muse::String::fromStdString(left), Fraction(length, 16), track);
+            length *= 4; // TablEdit position is in 64th, barre line length in 16th
+            // todo: increase length "a bit" to match TablEdit behaviour
         }
         else {
             // no length means extend to end of measure
-            addTextLine(segment, muse::String::fromStdString(left), Fraction(remaining, 64), track);
+            length = remaining;
         }
-        return true;
+        if (textLine) {
+            // already have a TextLine, extend it
+            textLine->setTick2(textLine->tick2() + Fraction(length, 64));
+            if (m[2].str().empty()) {
+                return textLine;
+            }
+            else {
+                return nullptr;
+            }
+        }
+        else {
+            return addTextLine(segment, muse::String::fromStdString(left), Fraction(length, 64), track);
+        }
     } else {
         LOGD("invalid barchord '%s'", text.c_str());
     }
-    return false;
+    return nullptr;
 }
 
 void TablEdit::createTexts(const MeasureHandler& measureHandler)
 {
+    mu::engraving::TextLine* textLine { nullptr };
     for (const auto& textMarker : tefTextMarkers) {
         LOGN("position %d string %d text marker %d", textMarker.position, textMarker.string, textMarker.index);
         bool ok { true };
@@ -1228,7 +1247,8 @@ void TablEdit::createTexts(const MeasureHandler& measureHandler)
                 const auto start { measureHandler.actualStart(tefMeasures, idx)};
                 const int remaining { size - (textMarker.position - start) };
                 LOGD("measure idx %zu start %d size %d remaining %d", idx, start, size, remaining);
-                if (toTextLine(left, right, segment, track, remaining)) {
+                textLine = toTextLine(left, right, segment, track, remaining, textLine);
+                if (textLine) {
                     continue;
                 }
             }
