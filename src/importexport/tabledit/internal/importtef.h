@@ -133,7 +133,7 @@ class TablEdit
     void createRepeats();
     void createScore();
     void createTempo();
-    void createTexts();
+    void createTexts(const MeasureHandler& measureHandler);
     void createTitleFrame();
     void initializeVoiceAllocators(std::vector<VoiceAllocator>& allocators);
     engraving::part_idx_t partIdx(size_t stringIdx, bool& ok) const;

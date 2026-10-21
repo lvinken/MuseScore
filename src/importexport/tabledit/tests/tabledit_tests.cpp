@@ -91,6 +91,10 @@ TEST_F(TablEdit_Tests, tef_barre_line_3) {
     tefReadTest("barre_line_3");
 }
 
+TEST_F(TablEdit_Tests, tef_barre_line_4) {
+    tefReadTest("barre_line_4");
+}
+
 TEST_F(TablEdit_Tests, tef_bass) {
     tefReadTest("bass");
 }

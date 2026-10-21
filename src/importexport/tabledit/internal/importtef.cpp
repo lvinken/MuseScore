@@ -1073,7 +1073,7 @@ void TablEdit::createScore()
     createEffects();
     fillGapsInFirstVoices(score);
     createRepeats();
-    createTexts();
+    createTexts(measureHandler);
     createTempo();
     createLinkedTabs();
     setInstrumentIDs(score->parts());
@@ -1155,7 +1155,7 @@ static void addTextLine(mu::engraving::Segment* segment, muse::String lhs, Fract
     segment->score()->addSpanner(tl);
 }
 
-static bool toTextLine(const std::string& left, const std::string& text, mu::engraving::Segment* segment, const track_idx_t track)
+static bool toTextLine(const std::string& left, const std::string& text, mu::engraving::Segment* segment, const track_idx_t track, const int remaining)
 {
     std::smatch m;
     std::regex_search(text, m, std::regex("^barchord([.:])([[:digit:]]*$)"));
@@ -1164,7 +1164,14 @@ static bool toTextLine(const std::string& left, const std::string& text, mu::eng
         int length = m[2].str().empty() ? 0 : std::stoi(m[2].str());
         LOGD("tempo type '%s' length %d",
              type.c_str(), length);
-        addTextLine(segment, muse::String::fromStdString(left), Fraction(length, 16), track);
+        if (length) {
+            // explicit length provided
+            addTextLine(segment, muse::String::fromStdString(left), Fraction(length, 16), track);
+        }
+        else {
+            // no length means extend to end of measure
+            addTextLine(segment, muse::String::fromStdString(left), Fraction(remaining, 64), track);
+        }
         return true;
     } else {
         LOGD("invalid barchord '%s'", text.c_str());
@@ -1172,7 +1179,7 @@ static bool toTextLine(const std::string& left, const std::string& text, mu::eng
     return false;
 }
 
-void TablEdit::createTexts()
+void TablEdit::createTexts(const MeasureHandler& measureHandler)
 {
     for (const auto& textMarker : tefTextMarkers) {
         LOGN("position %d string %d text marker %d", textMarker.position, textMarker.string, textMarker.index);
@@ -1216,7 +1223,12 @@ void TablEdit::createTexts()
                 }
             }
             if (right.find("barchord") == 0) {
-                if (toTextLine(left, right, segment, track)) {
+                const auto idx { measureHandler.measureIndex(textMarker.position, tefMeasures) };
+                const auto size { measureHandler.actualSize(tefMeasures, idx)};
+                const auto start { measureHandler.actualStart(tefMeasures, idx)};
+                const int remaining { size - (textMarker.position - start) };
+                LOGD("measure idx %zu start %d size %d remaining %d", idx, start, size, remaining);
+                if (toTextLine(left, right, segment, track, remaining)) {
                     continue;
                 }
             }
@@ -1418,7 +1430,8 @@ void TablEdit::readTefContents()
             tefTextMarker.position = (offset >> 3) / totalNumberOfStrings;
             tefTextMarker.string = ((offset >> 3) % totalNumberOfStrings) + 1;
             tefTextMarker.index = static_cast<int>((byte3 << 8) + byte2);
-            LOGN("text marker %d", tefTextMarker.index);
+            LOGD("text marker index %d position %d string %d text '%s'",
+                 tefTextMarker.index, tefTextMarker.position, tefTextMarker.string, tefTexts.at(tefTextMarker.index).c_str());
             tefTextMarkers.push_back(tefTextMarker);
         } else if (noteRestMarker == 0x3D) {
             LOGN("connection");

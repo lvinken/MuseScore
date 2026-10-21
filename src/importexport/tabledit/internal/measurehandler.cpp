@@ -104,6 +104,24 @@ int MeasureHandler::actualSize(const std::vector<TefMeasure>& tefMeasures, const
     return size;
 }
 
+// return the actual start of measure idx
+// TBD:
+// normal measure: based on time signature
+// pickup measure: based on time signature and left and right gaps
+
+int MeasureHandler::actualStart(const std::vector<TefMeasure>& tefMeasures, const size_t idx) const
+{
+    if (idx >= tefMeasures.size()) {
+        return 0; // not found
+    }
+    int start { 0 };
+    for (size_t i = 0; i < idx; ++i) {
+        start += actualSize(tefMeasures, i); // TBD check correct w/ and w/o pickup measures (with gaps)
+    }
+    LOGN("idx %zu start %d", idx, start);
+    return start;
+}
+
 void MeasureHandler::initializeMeasureStartsAndGaps(const std::vector<TefMeasure>& tefMeasures)
 {
     int measureStart { 0 };

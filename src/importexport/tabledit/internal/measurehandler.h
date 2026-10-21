@@ -30,6 +30,7 @@ class MeasureHandler
 {
 public:
     int actualSize(const std::vector<TefMeasure>& tefMeasures, const size_t idx) const;
+    int actualStart(const std::vector<TefMeasure>& tefMeasures, const size_t idx) const;
     void calculate(const std::vector<TefNote>& tefContents, const std::vector<TefMeasure>& tefMeasures);
     int sumPreviousGaps(const size_t idx) const;
     size_t measureIndex(int tstart, const std::vector<TefMeasure>& tefMeasures) const;
