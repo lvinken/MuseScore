@@ -95,6 +95,10 @@ TEST_F(TablEdit_Tests, tef_chord_C_D) {
     tefReadTest("chord_C_D");
 }
 
+TEST_F(TablEdit_Tests, tef_crescendo) {
+    tefReadTest("crescendo");
+}
+
 TEST_F(TablEdit_Tests, tef_dynamic) {
     tefReadTest("dynamic");
 }

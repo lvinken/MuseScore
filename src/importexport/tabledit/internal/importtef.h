@@ -139,6 +139,7 @@ class TablEdit
     void allocateVoices(std::vector<VoiceAllocator>& allocator);
     void createCapos();
     void createContents(const MeasureHandler& measureHandler);
+    void createCrescendos();
     void createEffects();
     void createLinkedTabs();
     void createMeasures(const MeasureHandler& measureHandler);
@@ -160,6 +161,8 @@ class TablEdit
     void readTefReadingList();
     void readTefTexts();
 
+    std::vector<TefConnection> tefConnections;
+    std::vector<TefCrescendo> tefCrescendos;
     TefHeader tefHeader;
     std::vector<TefTextMarker> tefTextMarkers;
     std::vector<TefNote> tefContents; // notes (and rests) only

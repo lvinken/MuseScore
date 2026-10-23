@@ -33,6 +33,7 @@
 #include "engraving/dom/factory.h"
 #include "engraving/dom/fingering.h"
 #include "engraving/dom/glissando.h"
+#include "engraving/dom/hairpin.h"
 #include "engraving/dom/hammeronpulloff.h"
 #include "engraving/dom/keysig.h"
 #include "engraving/dom/letring.h"
@@ -694,6 +695,36 @@ static std::vector<Chord*> allChordsInStaff(const Note* const msNote)
     return allChords;
 }
 
+void TablEdit::createCrescendos()
+{
+    for (const auto& crescendo : tefCrescendos) {
+        LOGN("position %d string %d", crescendo.position, crescendo.string);
+        bool ok { true };
+        const auto part = partIdx(crescendo.string, ok);
+        if (!ok) {
+            LOGD("error: invalid string %d", crescendo.string);
+            continue;
+        }
+        const auto track = part * VOICES;
+        LOGN("part %zu track %zu", part, track);
+
+        DummyParent* dummy = score->dummy();
+        Hairpin* hp = Factory::createHairpin(dummy);
+        Fraction tick { crescendo.position, 64 }; // position is in 64th
+        hp->setTick(tick);
+        auto ticks { Fraction{ crescendo.durationIn64th, 64 } };
+        hp->setTick2(tick + ticks);
+        LOGD("tick %s ticks %s",
+             tick.toString().toStdString().c_str(),
+             ticks.toString().toStdString().c_str());
+        hp->setTrack(track);
+        hp->setTrack2(track);
+        hp->setHairpinType(crescendo.decrescendo ? HairpinType::DIM_HAIRPIN : HairpinType::CRESC_HAIRPIN);
+
+        score->addElement(hp);
+    }
+}
+
 // arpeggios are down when they start at the note at the highest string
 // (which has the lowest string number)
 
@@ -1070,6 +1101,7 @@ void TablEdit::createScore()
     createCapos();
     createNotesFrame();
     createContents(measureHandler);
+    createCrescendos();
     createEffects();
     fillGapsInFirstVoices(score);
     createRepeats();
@@ -1316,13 +1348,15 @@ void TablEdit::readTefContents()
             LOGN("simpleEffect %d complexEffect %d", note.simpleEffect, note.complexEffect);
             tefContents.push_back(note);
         } else if (noteRestMarker == 0x38) {
+            // TODO: verify if timing correction a la note is also required for connection, crescendo and text marker
             // crescendo or decrescendo
             TefCrescendo tefCrescendo;
             tefCrescendo.position = (offset >> 3) / totalNumberOfStrings;
             tefCrescendo.string = ((offset >> 3) % totalNumberOfStrings) + 1;
             tefCrescendo.durationIn64th = byte3;
             tefCrescendo.decrescendo = byte2 & 0x10;
-            LOGD("crescendo duration %d 64th decrescendo %d", tefCrescendo.durationIn64th, tefCrescendo.decrescendo);
+            LOGN("crescendo duration %d 64th decrescendo %d", tefCrescendo.durationIn64th, tefCrescendo.decrescendo);
+            tefCrescendos.push_back(tefCrescendo);
         } else if (noteRestMarker == 0x39) {
             TefTextMarker tefTextMarker;
             tefTextMarker.position = (offset >> 3) / totalNumberOfStrings;
@@ -1338,7 +1372,9 @@ void TablEdit::readTefContents()
             tefConnection.durationIn64th = (byte2 & 0x7f) + 1;
             tefConnection.dashed = byte2 & 0x80;
             tefConnection.number = byte3 >> 4;
-            LOGD("connection duration %d 64th dashed %d number %d", tefConnection.durationIn64th, tefConnection.dashed, tefConnection.number);
+            LOGN("connection duration %d 64th dashed %d number %d", tefConnection.durationIn64th, tefConnection.dashed,
+                 tefConnection.number);
+            tefConnections.push_back(tefConnection);
         } else {
             LOGN("not supported %d", noteRestMarker);
         }
