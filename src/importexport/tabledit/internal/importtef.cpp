@@ -1315,6 +1315,14 @@ void TablEdit::readTefContents()
             note.complexEffect = byte5;
             LOGN("simpleEffect %d complexEffect %d", note.simpleEffect, note.complexEffect);
             tefContents.push_back(note);
+        } else if (noteRestMarker == 0x38) {
+            // crescendo or decrescendo
+            TefCrescendo tefCrescendo;
+            tefCrescendo.position = (offset >> 3) / totalNumberOfStrings;
+            tefCrescendo.string = ((offset >> 3) % totalNumberOfStrings) + 1;
+            tefCrescendo.durationIn64th = byte3;
+            tefCrescendo.decrescendo = byte2 & 0x10;
+            LOGD("crescendo duration %d 64th decrescendo %d", tefCrescendo.durationIn64th, tefCrescendo.decrescendo);
         } else if (noteRestMarker == 0x39) {
             TefTextMarker tefTextMarker;
             tefTextMarker.position = (offset >> 3) / totalNumberOfStrings;
@@ -1323,7 +1331,14 @@ void TablEdit::readTefContents()
             LOGN("text marker %d", tefTextMarker.index);
             tefTextMarkers.push_back(tefTextMarker);
         } else if (noteRestMarker == 0x3D) {
-            LOGN("connection");
+            // slur or bracket
+            TefConnection tefConnection;
+            tefConnection.position = (offset >> 3) / totalNumberOfStrings;
+            tefConnection.string = ((offset >> 3) % totalNumberOfStrings) + 1;
+            tefConnection.durationIn64th = (byte2 & 0x7f) + 1;
+            tefConnection.dashed = byte2 & 0x80;
+            tefConnection.number = byte3 >> 4;
+            LOGD("connection duration %d 64th dashed %d number %d", tefConnection.durationIn64th, tefConnection.dashed, tefConnection.number);
         } else {
             LOGN("not supported %d", noteRestMarker);
         }

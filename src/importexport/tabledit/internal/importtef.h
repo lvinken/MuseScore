@@ -77,6 +77,21 @@ class TablEdit
     std::string readUtf8Text();
     std::string readUtf8TextIndirect(uint32_t positionOfPosition);
 
+    struct TefConnection { // slur or bracket
+        int position { 0 };
+        int string { 0 };
+        int durationIn64th { 0 };
+        bool dashed { false };
+        int number { 0 };
+    };
+
+    struct TefCrescendo { // crescendo or decrescendo
+        int position { 0 };
+        int string { 0 };
+        int durationIn64th { 0 };
+        bool decrescendo { false };
+    };
+
     struct TefHeader {
         int version { 0 };
         int subVersion { 0 };
