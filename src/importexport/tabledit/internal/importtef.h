@@ -138,6 +138,7 @@ class TablEdit
 
     void allocateVoices(std::vector<VoiceAllocator>& allocator);
     void createCapos();
+    void createConnections();
     void createContents(const MeasureHandler& measureHandler);
     void createCrescendos();
     void createEffects();

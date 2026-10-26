@@ -695,6 +695,34 @@ static std::vector<Chord*> allChordsInStaff(const Note* const msNote)
     return allChords;
 }
 
+void TablEdit::createConnections()
+{
+    for (const auto& connection : tefConnections) {
+        LOGD("position %d string %d", connection.position, connection.string);
+        bool ok { true };
+        const auto part = partIdx(connection.string, ok);
+        if (!ok) {
+            LOGD("error: invalid string %d", connection.string);
+            continue;
+        }
+        const auto track = part * VOICES;
+        LOGN("part %zu track %zu", part, track);
+
+        DummyParent* dummy = score->dummy();
+        Slur* slur = Factory::createSlur(dummy);
+        Fraction tick { connection.position, 64 }; // position is in 64th
+        slur->setTick(tick);
+        auto ticks { Fraction{ connection.durationIn64th, 64 } };
+        slur->setTick2(tick + ticks);
+        // not required ? slur->setStartElement(cr1);
+        // not required ? slur->setEndElement(cr2);
+        slur->setTrack(track);
+        slur->setTrack2(track);
+
+        score->addElement(slur);
+    }
+}
+
 void TablEdit::createCrescendos()
 {
     for (const auto& crescendo : tefCrescendos) {
@@ -1102,6 +1130,7 @@ void TablEdit::createScore()
     createNotesFrame();
     createContents(measureHandler);
     createCrescendos();
+    createConnections();
     createEffects();
     fillGapsInFirstVoices(score);
     createRepeats();
@@ -1364,7 +1393,7 @@ void TablEdit::readTefContents()
             tefTextMarker.index = static_cast<int>((byte3 << 8) + byte2);
             LOGN("text marker %d", tefTextMarker.index);
             tefTextMarkers.push_back(tefTextMarker);
-        } else if (noteRestMarker == 0x3D) {
+        } else if (byte1 == 0x3D) {
             // slur or bracket
             TefConnection tefConnection;
             tefConnection.position = (offset >> 3) / totalNumberOfStrings;
@@ -1372,7 +1401,9 @@ void TablEdit::readTefContents()
             tefConnection.durationIn64th = (byte2 & 0x7f) + 1;
             tefConnection.dashed = byte2 & 0x80;
             tefConnection.number = byte3 >> 4;
-            LOGN("connection duration %d 64th dashed %d number %d", tefConnection.durationIn64th, tefConnection.dashed,
+            LOGD("position %d string %d connection duration %d 64th dashed %d number %d",
+                 tefConnection.position, tefConnection.string,
+                 tefConnection.durationIn64th, tefConnection.dashed,
                  tefConnection.number);
             tefConnections.push_back(tefConnection);
         } else {
