@@ -41,6 +41,7 @@
 #include "engraving/dom/note.h"
 #include "engraving/dom/part.h"
 #include "engraving/dom/playcounttext.h"
+#include "engraving/dom/rehearsalmark.h"
 #include "engraving/dom/rest.h"
 #include "engraving/dom/staff.h"
 #include "engraving/dom/stafftext.h"
@@ -897,6 +898,46 @@ void TablEdit::createMeasures(const MeasureHandler& measureHandler)
     score->updateTicksAndTimeSigMap();
 }
 
+void TablEdit::createMusicalSymbols()
+{
+    for (const auto& symbol : tefMusicalSymbols) {
+        LOGD("symbol pos %d str %d index %d", symbol.position, symbol.string, symbol.index);
+        // todo remove duplicate code
+        bool ok { true };
+        const auto part = partIdx(symbol.string, ok);
+        if (!ok) {
+            LOGD("error: invalid string %d", symbol.string);
+            continue;
+        }
+        const auto track = part * VOICES;
+        LOGN("part %zu track %zu", part, track);
+
+        Fraction tick { symbol.position, 64 }; // position is in 64th
+        Measure* measure { score->tick2measure(tick) };
+        if (!measure) {
+            LOGD("error: no measure");
+            continue;
+        } else {
+            LOGN("measure %p", measure);
+        }
+        Segment* segment { measure->getSegment(mu::engraving::SegmentType::ChordRest, tick) };
+        if (!segment) {
+            LOGD("error: no segment");
+            continue;
+        }
+        //
+        if (109 <= symbol.index && symbol.index <= 112) {
+            RehearsalMark* mark = Factory::createRehearsalMark(segment);
+            mark->setTrack(track);
+            std::string text;
+            text.append(1, 'A' + symbol.index - 109); // map 119..112 to 'A"'..'D'
+            mark->setPlainText(muse::String::fromStdString(text));
+            segment->add(mark);
+
+        }
+    }
+}
+
 void TablEdit::createNotesFrame()
 {
     if (!tefHeader.notes.empty()) {
@@ -1072,6 +1113,7 @@ void TablEdit::createScore()
     createContents(measureHandler);
     createEffects();
     fillGapsInFirstVoices(score);
+    createMusicalSymbols();
     createRepeats();
     createTexts();
     createLinkedTabs();
@@ -1324,6 +1366,13 @@ void TablEdit::readTefContents()
             tefTextMarkers.push_back(tefTextMarker);
         } else if (noteRestMarker == 0x3D) {
             LOGN("connection");
+        } else if (byte1 == 0xB6) {
+            TefMusicalSymbol tefMusicalSymbol;
+            tefMusicalSymbol.position = (offset >> 3) / totalNumberOfStrings;
+            tefMusicalSymbol.string = ((offset >> 3) % totalNumberOfStrings) + 1;
+            tefMusicalSymbol.index = byte2;
+            LOGN("symbol pos %d str %d index %d", tefMusicalSymbol.position, tefMusicalSymbol.string, tefMusicalSymbol.index);
+            tefMusicalSymbols.push_back(tefMusicalSymbol);
         } else {
             LOGN("not supported %d", noteRestMarker);
         }

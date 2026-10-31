@@ -115,6 +115,12 @@ class TablEdit
         std::string name;
     };
 
+    struct TefMusicalSymbol {
+        int position { 0 };
+        int string { 0 };
+        int index { 0 };
+    };
+
     struct TefTextMarker {
         int position { 0 };
         int string { 0 };
@@ -127,6 +133,7 @@ class TablEdit
     void createEffects();
     void createLinkedTabs();
     void createMeasures(const MeasureHandler& measureHandler);
+    void createMusicalSymbols();
     void createNotesFrame();
     void createParts();
     void createProperties();
@@ -146,6 +153,7 @@ class TablEdit
     void readTefTexts();
 
     TefHeader tefHeader;
+    std::vector<TefMusicalSymbol> tefMusicalSymbols;
     std::vector<TefTextMarker> tefTextMarkers;
     std::vector<TefNote> tefContents; // notes (and rests) only
     std::vector<TefInstrument> tefInstruments;
