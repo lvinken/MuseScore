@@ -1167,51 +1167,8 @@ void TablEdit::createTitleFrame()
  * 28 16th double dotted
  */
 
-// return TablEdit note length in 64th
-// (including triplets rounded down to nearest note length)
-// TODO: remove code duplication with voiceallocator.cpp durationToInt()
-
-static int duration2length(const int duration)
-{
-    if (0 <= duration && duration <= 18) {
-        // remove dot and triplet
-        int noteType { 0 };
-        int dotOrTriplet { duration % 3 };
-        switch (dotOrTriplet) {
-        case 0: noteType = duration / 3;
-            break;
-        case 1: noteType = (duration + 2) / 3;
-            break;
-        case 2: noteType = (duration - 2) / 3;
-            break;
-        default: LOGD("impossible value %d", dotOrTriplet);
-        }
-        switch (noteType) {
-        case 0: return 64; // 1/1
-        case 1: return 32; // 1/2
-        case 2: return 16; // 1/4
-        case 3: return 8;  // 1/8
-        case 4: return 4;  // 1/16
-        case 5: return 2;  // 1/32
-        case 6: return 1;  // 1/64
-        // as long as the if statement above is correct, this cannot actually happen
-        default: LOGD("impossible value %d", dotOrTriplet);
-        }
-    } else {
-        switch (duration) {
-        case 19: return 32; // 1/2
-        case 22: return 16; // 1/4
-        case 25: return 8;  // 1/8
-        case 28: return 4;  // 1/16
-        default: LOGD("impossible value %d", duration);
-        }
-    }
-    LOGD("invalid note duration %d", duration);
-    return 0; // invalid (result is weird layout)
-}
-
 // return the number of dots
-// TODO: remove code duplication with voiceallocator.cpp durationToInt()
+// TODO: move to note.cpp ?
 
 static int duration2dots(const int duration)
 {
@@ -1227,6 +1184,7 @@ static int duration2dots(const int duration)
 }
 
 // check if 3:2 tuplet
+// TODO: move to note.cpp ?
 
 static bool duration2triplet(const int duration)
 {
@@ -1297,6 +1255,7 @@ void TablEdit::readTefContents()
         }
         if (noteRestMarker <= 0x33) {
             note.duration = byte2 & 0x1F;
+            LOGD("duration %d duration2length %d durationToInt %d", note.duration, duration2length(note.duration), durationToInt(note.duration));
             note.length = duration2length(note.duration);
             note.dots = duration2dots(note.duration);
             note.triplet = duration2triplet(note.duration);
@@ -1534,6 +1493,9 @@ Err TablEdit::import()
         LOGN("position %d string %d text marker %d", textMarker.position, textMarker.string, textMarker.index);
     }
     createScore();
+    for (uint8_t i = 0; i<32; ++i) {
+        LOGD("duration %d duration2length %d durationToInt %d", i, duration2length(i), durationToInt(i));
+    }
     return Err::NoError;
 }
 } // namespace mu::iex::tabledit

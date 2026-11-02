@@ -21,6 +21,7 @@
  */
 
 #include "note.h"
+#include "log.h"
 
 namespace mu::iex::tabledit {
 EffectType TefNote::effect() const
@@ -82,6 +83,62 @@ EffectType TefNote::combinationEffect() const
     }
 }
 
+/*
+ * encoding of note durations
+ * 0 whole
+ * 1 half dotted
+ * 2 whole triplet
+ * 3 half
+ * 4 quarter dotted
+ * 5 half triplet
+ * 6 quarter
+ * 7 eight dotted
+ * 8 quarter triplet
+ * ...
+ * 18 1/64th note
+ * 19 half double dotted
+ * 22 quarter double dotted
+ * 25 eighth double dotted
+ * 28 16th double dotted
+ */
+
+// return TablEdit note length in 64th
+// (including triplets rounded UP to nearest note length)
+// TODO: remove code duplication with voiceallocator.cpp durationToInt()
+
+int duration2length(const int duration)
+{
+    switch (duration) {
+    case  0: return 64; //"whole";
+    case  1: return 32; //"half dotted";
+    case  2: return 64; //"whole triplet";
+    case  3: return 32; //"half";
+    case  4: return 16; //"quarter dotted";
+    case  5: return 32; //"half triplet";
+    case  6: return 16; //"quarter";
+    case  7: return 8; //"eighth dotted";
+    case  8: return 16; //"quarter triplet";
+    case  9: return 8; //"eighth";
+    case 10: return 4; //"16th dotted";
+    case 11: return 8; //"eighth triplet";
+    case 12: return 4; //"16th";
+    case 13: return 2; //"32nd dotted";
+    case 14: return 4; //"16th triplet";
+    case 15: return 2; //"32nd";
+    case 16: return 1; //"64th dotted"; ???
+    case 17: return 2; //"32nd triplet";
+    case 18: return 1; //"64th";
+    case 19: return 32; //"half double dotted"; ???
+    //case 20: return "16th quintuplet";
+    case 22: return 16; //"quarter double dotted"; ???
+    case 25: return 8; //"eighth double dotted"; ???
+    case 28: return 4; //"16th double dotted"; ???
+    default:
+        LOGD("invalid note duration %d", duration);
+        return 0; // invalid (result is weird layout)
+    }
+}
+
 // return TablEdit note length in 64th (including triplets rounded down to nearest note length)
 // TODO: remove code duplication with importtef.cpp duration2length()
 
@@ -112,7 +169,9 @@ int durationToInt(uint8_t duration)
     case 22: return 28; //"quarter double dotted";
     case 25: return 14; //"eighth double dotted";
     case 28: return 7; //"16th double dotted";
-    default: return 0; //"undefined";
+    default:
+        LOGD("invalid note duration %d", duration);
+        return 0; // invalid (result is weird layout)
     }
 }
 } // namespace mu::iex::tabledit

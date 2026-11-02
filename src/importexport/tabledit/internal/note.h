@@ -82,5 +82,6 @@ struct TefNote {
     EffectType combinationEffect() const;
 };
 
+int duration2length(const int duration);
 int durationToInt(uint8_t duration);
 } // namespace mu::iex::tabledit
