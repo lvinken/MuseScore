@@ -1207,8 +1207,8 @@ void TablEdit::readTefContents()
         }
         if (noteRestMarker <= 0x33) {
             note.duration = byte2 & 0x1F;
-            LOGD("duration %d duration2length %d durationToInt %d", note.duration, duration2length(note.duration), durationToInt(note.duration));
-            note.length = duration2length(note.duration);
+            LOGD("duration %d duration2type %d durationToInt %d", note.duration, duration2type(note.duration), durationToInt(note.duration));
+            note.length = duration2type(note.duration);
             note.dots = duration2dots(note.duration);
             note.triplet = duration2tuplet(note.duration);
             note.voice = extractVoice(byte3);

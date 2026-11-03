@@ -177,7 +177,7 @@ void MeasureHandler::updateGapRight(std::vector<int>& gapRight, const TefNote& n
         auto offset { offsetInMeasure(pos, tefMeasures) };
         LOGN("pos %d index %zu offset %d", pos, index, offset);
         if (0 <= offset) {
-            auto dur { durationToInt(note.duration) };
+            auto dur { durationToTablEditLength(note.duration) };
             auto end { offset + dur };
             auto size { 64 * tefMeasures.at(index).numerator / tefMeasures.at(index).denominator };
             auto gap { size - end };

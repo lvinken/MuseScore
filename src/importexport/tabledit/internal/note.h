@@ -66,7 +66,7 @@ struct TefNote {
     int fret { 0 };
     bool tie { false };
     bool rest { false };    // this is a bit of a hack
-    int duration { 0 };     // this is the duration as encoded in the .tef file
+    uint8_t duration { 0 };     // this is the duration as encoded in the .tef file
     int length { 0 };
     int dots { 0 };
     bool triplet { false };
@@ -82,8 +82,8 @@ struct TefNote {
     EffectType combinationEffect() const;
 };
 
-int duration2dots(const int duration);
-int duration2length(const int duration);
-bool duration2tuplet(const int duration);
-int durationToInt(uint8_t duration);
+int duration2dots(const uint8_t duration);
+int duration2type(const uint8_t duration);
+bool duration2tuplet(const uint8_t duration);
+int durationToTablEditLength(const uint8_t duration);
 } // namespace mu::iex::tabledit

@@ -87,26 +87,6 @@ EffectType TefNote::combinationEffect() const
  * TablEdit encoding of note duration is an enum with 32 possible values,
  * some of which are not used. It encodes note type, number of dots
  * and tuplet type.
- *
- * 0 whole
- * 1 half dotted
- * 2 whole triplet
- * 3 half
- * 4 quarter dotted
- * 5 half triplet
- * 6 quarter
- * 7 eight dotted
- * 8 quarter triplet
- * ...
- * 18 1/64th note
- * 19 half double dotted
- * 20 1/16 quintuplet
- * 22 quarter double dotted
- * 23 1/32 septuplet
- * 25 eighth double dotted
- * 26 1/32 nonuplet
- * 28 16th double dotted
- * 31 whole dotted
  */
 
 static const uint8_t NOTE_TYPE_WHOLE =  0;
@@ -142,7 +122,7 @@ static const uint8_t NOTE_TYPE_WHOLE_DOTTED = 31;
 // i.e. the nominal duration (excluding dots)
 //---------------------------------------------------------
 
-int duration2length(const int duration)
+int duration2type(const uint8_t duration)
 {
     switch (duration) {
     case NOTE_TYPE_WHOLE:
@@ -190,7 +170,7 @@ int duration2length(const int duration)
 // convert TablEdit duration to number of dots
 //---------------------------------------------------------
 
-int duration2dots(const int duration)
+int duration2dots(const uint8_t duration)
 {
     switch (duration) {
     case NOTE_TYPE_WHOLE_DOTTED:
@@ -214,12 +194,12 @@ int duration2dots(const int duration)
 }
 
 //---------------------------------------------------------
-// duration2dots
-// convert TablEdit duration to tuplet
+// duration2tuplet
+// convert TablEdit duration to tuplet type
 // currently a bool (triplet yes/no), in future the tuplet value
 //---------------------------------------------------------
 
-bool duration2tuplet(const int duration)
+bool duration2tuplet(const uint8_t duration)
 {
     switch (duration) {
     case NOTE_TYPE_WHOLE_TRIPLET:
@@ -242,37 +222,31 @@ bool duration2tuplet(const int duration)
     }
 }
 
-// return TablEdit note length in 64th (including triplets (rounded DOWN to nearest note length) and including dots)
-// -> effectively this returns the actual duration (including dots)
-// TODO: remove code duplication with duration2length()
+todo: add duration2length (duration2type + dots)
 
-int durationToInt(uint8_t duration)
+//---------------------------------------------------------
+// durationToTablEditLength
+// return TablEdit note length in 64th (including triplets
+// (rounded DOWN to nearest note length) and including dots)
+// e.g. in a eighth note triplet, the notes will be at 1/16th
+// intervals with a filler gap after the last note
+//---------------------------------------------------------
+
+int durationToTablEditLength(const uint8_t duration)
 {
+    if (!duration2tuplet(duration)) {
+        return duration2type(duration);
+    }
     switch (duration) {
-    case  0: return 64; //"whole";
-    case  1: return 48; //"half dotted";
-    case  2: return 32; //"whole triplet";
-    case  3: return 32; //"half";
-    case  4: return 24; //"quarter dotted";
-    case  5: return 16; //"half triplet";
-    case  6: return 16; //"quarter";
-    case  7: return 12; //"eighth dotted";
-    case  8: return 8; //"quarter triplet";
-    case  9: return 8; //"eighth";
-    case 10: return 6; //"16th dotted";
-    case 11: return 4; //"eighth triplet";
-    case 12: return 4; //"16th";
-    case 13: return 3; //"32nd dotted";
-    case 14: return 2; //"16th triplet";
-    case 15: return 2; //"32nd";
-    //case 16: return "64th dotted";
-    case 17: return 1; //"32nd triplet";
-    case 18: return 1; //"64th";
-    case 19: return 56; //"half double dotted";
-    //case 20: return "16th quintuplet";
-    case 22: return 28; //"quarter double dotted";
-    case 25: return 14; //"eighth double dotted";
-    case 28: return 7; //"16th double dotted";
+    case NOTE_TYPE_WHOLE_TRIPLET: return 32;
+    case NOTE_TYPE_HALF_TRIPLET: return 16;
+    case NOTE_TYPE_QUARTER_TRIPLET: return 8;
+    case NOTE_TYPE_EIGHTH_TRIPLET: return 4;
+    case NOTE_TYPE_16TH_TRIPLET: return 2;
+    case NOTE_TYPE_32ND_TRIPLET: return 1;
+    case NOTE_TYPE_16TH_QUINTUPLET: // not supported by importer yet
+    case NOTE_TYPE_32ND_SEPTUPLET: // not supported by importer yet
+    case NOTE_TYPE_32ND_NONUPLET: // not supported by importer yet
     default:
         LOGD("invalid note duration %d", duration);
         return 0; // invalid (result is weird layout)

@@ -65,7 +65,7 @@ int VoiceAllocator::stopPosition(const size_t voice)
 
     const auto note = notesPlaying.at(voice);
     if (note) {
-        return note->position + durationToInt(note->duration);
+        return note->position + durationToTablEditLength(note->duration);
     }
     return 0;
 }
