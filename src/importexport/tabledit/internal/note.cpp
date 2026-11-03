@@ -109,7 +109,6 @@ EffectType TefNote::combinationEffect() const
  * 31 whole dotted
  */
 
-// offsets into the file header
 static const uint8_t NOTE_TYPE_WHOLE =  0;
 static const uint8_t NOTE_TYPE_HALF_DOTTED =  1;
 static const uint8_t NOTE_TYPE_WHOLE_TRIPLET =  2;
@@ -138,8 +137,10 @@ static const uint8_t NOTE_TYPE_32ND_NONUPLET = 26;
 static const uint8_t NOTE_TYPE_16TH_DOUBLE_DOTTED = 28;
 static const uint8_t NOTE_TYPE_WHOLE_DOTTED = 31;
 
-// return TablEdit note type in 64th
+//---------------------------------------------------------
+// convert TablEdit duration to note type in 64th
 // i.e. the nominal duration (excluding dots)
+//---------------------------------------------------------
 
 int duration2length(const int duration)
 {
@@ -148,9 +149,9 @@ int duration2length(const int duration)
     case NOTE_TYPE_WHOLE_DOTTED:
     case NOTE_TYPE_WHOLE_TRIPLET:
         return 64;
-    case  NOTE_TYPE_HALF:
-    case  NOTE_TYPE_HALF_DOTTED:
-    case  NOTE_TYPE_HALF_TRIPLET:
+    case NOTE_TYPE_HALF:
+    case NOTE_TYPE_HALF_DOTTED:
+    case NOTE_TYPE_HALF_TRIPLET:
         return 32;
     case  NOTE_TYPE_QUARTER:
     case  NOTE_TYPE_QUARTER_DOTTED:
@@ -181,6 +182,63 @@ int duration2length(const int duration)
     default:
         LOGD("invalid note duration %d", duration);
         return 0; // invalid (result is weird layout)
+    }
+}
+
+//---------------------------------------------------------
+// duration2dots
+// convert TablEdit duration to number of dots
+//---------------------------------------------------------
+
+int duration2dots(const int duration)
+{
+    switch (duration) {
+    case NOTE_TYPE_WHOLE_DOTTED:
+    case NOTE_TYPE_HALF_DOTTED:
+    case NOTE_TYPE_QUARTER_DOTTED:
+    case NOTE_TYPE_EIGHTH_DOTTED:
+    case NOTE_TYPE_16TH_DOTTED:
+    case NOTE_TYPE_32ND_DOTTED:
+    case NOTE_TYPE_64TH_DOTTED: // ??? can TablEdit generate this ???
+        return 1;
+    case NOTE_TYPE_HALF_DOUBLE_DOTTED: // not supported by importer yet
+    case NOTE_TYPE_QUARTER_DOUBLE_DOTTED: // not supported by importer yet
+    case NOTE_TYPE_EIGHTH_DOUBLE_DOTTED: // not supported by importer yet
+    case NOTE_TYPE_16TH_DOUBLE_DOTTED: // not supported by importer yet
+    case NOTE_TYPE_16TH_QUINTUPLET: // not supported by importer yet
+    case NOTE_TYPE_32ND_SEPTUPLET: // not supported by importer yet
+    case NOTE_TYPE_32ND_NONUPLET: // not supported by importer yet
+    default:
+        return 0;
+    }
+}
+
+//---------------------------------------------------------
+// duration2dots
+// convert TablEdit duration to tuplet
+// currently a bool (triplet yes/no), in future the tuplet value
+//---------------------------------------------------------
+
+bool duration2tuplet(const int duration)
+{
+    switch (duration) {
+    case NOTE_TYPE_WHOLE_TRIPLET:
+    case NOTE_TYPE_HALF_TRIPLET:
+    case NOTE_TYPE_QUARTER_TRIPLET:
+    case NOTE_TYPE_EIGHTH_TRIPLET:
+    case NOTE_TYPE_16TH_TRIPLET:
+    case NOTE_TYPE_32ND_TRIPLET:
+        return true;
+    case NOTE_TYPE_HALF_DOUBLE_DOTTED: // not supported by importer yet
+    case NOTE_TYPE_QUARTER_DOUBLE_DOTTED: // not supported by importer yet
+    case NOTE_TYPE_EIGHTH_DOUBLE_DOTTED: // not supported by importer yet
+    case NOTE_TYPE_16TH_DOUBLE_DOTTED: // not supported by importer yet
+    case NOTE_TYPE_16TH_QUINTUPLET: // not supported by importer yet
+    case NOTE_TYPE_32ND_SEPTUPLET: // not supported by importer yet
+    case NOTE_TYPE_32ND_NONUPLET: // not supported by importer yet
+    case NOTE_TYPE_64TH_DOTTED: // ??? can TablEdit generate this ???
+    default:
+        return false;
     }
 }
 

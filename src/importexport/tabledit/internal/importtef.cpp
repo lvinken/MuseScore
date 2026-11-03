@@ -1148,54 +1148,6 @@ void TablEdit::createTitleFrame()
     }
 }
 
-/*
- * encoding of note durations
- * 0 whole
- * 1 half dotted
- * 2 whole triplet
- * 3 half
- * 4 quarter dotted
- * 5 half triplet
- * 6 quarter
- * 7 eight dotted
- * 8 quarter triplet
- * ...
- * 18 1/64th note
- * 19 half double dotted
- * 22 quarter double dotted
- * 25 eighth double dotted
- * 28 16th double dotted
- */
-
-// return the number of dots
-// TODO: move to note.cpp ?
-
-static int duration2dots(const int duration)
-{
-    if (0 <= duration && duration <= 18 && (duration % 3) == 0) {
-        return 0;
-    } else if (0 <= duration && duration <= 18 && (duration % 3) == 1) {
-        return 1;
-    } else if (duration == 19 || duration == 22 || duration == 25 || duration == 28) {
-        return 2;
-    }
-    LOGD("invalid note duration %d", duration);
-    return 0; // invalid
-}
-
-// check if 3:2 tuplet
-// TODO: move to note.cpp ?
-
-static bool duration2triplet(const int duration)
-{
-    if (0 <= duration && duration <= 18) {
-        return duration % 3 == 2;
-    } else {
-        LOGD("invalid note duration %d", duration);
-        return false; // invalid
-    }
-}
-
 Voice extractVoice(const uint8_t byte3)
 {
     switch ((byte3 & 0x30) / 0x10) {
@@ -1258,7 +1210,7 @@ void TablEdit::readTefContents()
             LOGD("duration %d duration2length %d durationToInt %d", note.duration, duration2length(note.duration), durationToInt(note.duration));
             note.length = duration2length(note.duration);
             note.dots = duration2dots(note.duration);
-            note.triplet = duration2triplet(note.duration);
+            note.triplet = duration2tuplet(note.duration);
             note.voice = extractVoice(byte3);
             note.tie = (byte2 / 0x20) == 7;
             if (byte1 & 0x40) {
