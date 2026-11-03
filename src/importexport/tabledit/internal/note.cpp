@@ -84,7 +84,10 @@ EffectType TefNote::combinationEffect() const
 }
 
 /*
- * encoding of note durations
+ * TablEdit encoding of note duration is an enum with 32 possible values,
+ * some of which are not used. It encodes note type, number of dots
+ * and tuplet type.
+ *
  * 0 whole
  * 1 half dotted
  * 2 whole triplet
@@ -97,50 +100,93 @@ EffectType TefNote::combinationEffect() const
  * ...
  * 18 1/64th note
  * 19 half double dotted
+ * 20 1/16 quintuplet
  * 22 quarter double dotted
+ * 23 1/32 septuplet
  * 25 eighth double dotted
+ * 26 1/32 nonuplet
  * 28 16th double dotted
+ * 31 whole dotted
  */
 
-// return TablEdit note length in 64th
-// (including triplets rounded UP to nearest note length)
-// TODO: remove code duplication with voiceallocator.cpp durationToInt()
+// offsets into the file header
+static const uint8_t NOTE_TYPE_WHOLE =  0;
+static const uint8_t NOTE_TYPE_HALF_DOTTED =  1;
+static const uint8_t NOTE_TYPE_WHOLE_TRIPLET =  2;
+static const uint8_t NOTE_TYPE_HALF =  3;
+static const uint8_t NOTE_TYPE_QUARTER_DOTTED =  4;
+static const uint8_t NOTE_TYPE_HALF_TRIPLET =  5;
+static const uint8_t NOTE_TYPE_QUARTER =  6;
+static const uint8_t NOTE_TYPE_EIGHTH_DOTTED =  7;
+static const uint8_t NOTE_TYPE_QUARTER_TRIPLET =  8;
+static const uint8_t NOTE_TYPE_EIGHTH =  9;
+static const uint8_t NOTE_TYPE_16TH_DOTTED = 10;
+static const uint8_t NOTE_TYPE_EIGHTH_TRIPLET = 11;
+static const uint8_t NOTE_TYPE_16TH = 12;
+static const uint8_t NOTE_TYPE_32ND_DOTTED = 13;
+static const uint8_t NOTE_TYPE_16TH_TRIPLET = 14;
+static const uint8_t NOTE_TYPE_32ND = 15;
+static const uint8_t NOTE_TYPE_64TH_DOTTED = 16; // ??? can TablEdit generate this ???
+static const uint8_t NOTE_TYPE_32ND_TRIPLET = 17;
+static const uint8_t NOTE_TYPE_64TH = 18;
+static const uint8_t NOTE_TYPE_HALF_DOUBLE_DOTTED = 19;
+static const uint8_t NOTE_TYPE_16TH_QUINTUPLET = 20;
+static const uint8_t NOTE_TYPE_QUARTER_DOUBLE_DOTTED = 22;
+static const uint8_t NOTE_TYPE_32ND_SEPTUPLET = 23;
+static const uint8_t NOTE_TYPE_EIGHTH_DOUBLE_DOTTED = 25;
+static const uint8_t NOTE_TYPE_32ND_NONUPLET = 26;
+static const uint8_t NOTE_TYPE_16TH_DOUBLE_DOTTED = 28;
+static const uint8_t NOTE_TYPE_WHOLE_DOTTED = 31;
+
+// return TablEdit note type in 64th
+// i.e. the nominal duration (excluding dots)
 
 int duration2length(const int duration)
 {
     switch (duration) {
-    case  0: return 64; //"whole";
-    case  1: return 32; //"half dotted";
-    case  2: return 64; //"whole triplet";
-    case  3: return 32; //"half";
-    case  4: return 16; //"quarter dotted";
-    case  5: return 32; //"half triplet";
-    case  6: return 16; //"quarter";
-    case  7: return 8; //"eighth dotted";
-    case  8: return 16; //"quarter triplet";
-    case  9: return 8; //"eighth";
-    case 10: return 4; //"16th dotted";
-    case 11: return 8; //"eighth triplet";
-    case 12: return 4; //"16th";
-    case 13: return 2; //"32nd dotted";
-    case 14: return 4; //"16th triplet";
-    case 15: return 2; //"32nd";
-    case 16: return 1; //"64th dotted"; ???
-    case 17: return 2; //"32nd triplet";
-    case 18: return 1; //"64th";
-    case 19: return 32; //"half double dotted"; ???
-    //case 20: return "16th quintuplet";
-    case 22: return 16; //"quarter double dotted"; ???
-    case 25: return 8; //"eighth double dotted"; ???
-    case 28: return 4; //"16th double dotted"; ???
+    case NOTE_TYPE_WHOLE:
+    case NOTE_TYPE_WHOLE_DOTTED:
+    case NOTE_TYPE_WHOLE_TRIPLET:
+        return 64;
+    case  NOTE_TYPE_HALF:
+    case  NOTE_TYPE_HALF_DOTTED:
+    case  NOTE_TYPE_HALF_TRIPLET:
+        return 32;
+    case  NOTE_TYPE_QUARTER:
+    case  NOTE_TYPE_QUARTER_DOTTED:
+    case  NOTE_TYPE_QUARTER_TRIPLET:
+        return 16;
+    case NOTE_TYPE_EIGHTH:
+    case NOTE_TYPE_EIGHTH_DOTTED:
+    case NOTE_TYPE_EIGHTH_TRIPLET:
+        return 8;
+    case NOTE_TYPE_16TH:
+    case NOTE_TYPE_16TH_DOTTED:
+    case NOTE_TYPE_16TH_TRIPLET:
+        return 4;
+    case NOTE_TYPE_32ND:
+    case NOTE_TYPE_32ND_DOTTED:
+    case NOTE_TYPE_32ND_TRIPLET:
+        return 2;
+    case NOTE_TYPE_64TH:
+        return 1;
+    case NOTE_TYPE_HALF_DOUBLE_DOTTED: // not supported by importer yet
+    case NOTE_TYPE_QUARTER_DOUBLE_DOTTED: // not supported by importer yet
+    case NOTE_TYPE_EIGHTH_DOUBLE_DOTTED: // not supported by importer yet
+    case NOTE_TYPE_16TH_DOUBLE_DOTTED: // not supported by importer yet
+    case NOTE_TYPE_16TH_QUINTUPLET: // not supported by importer yet
+    case NOTE_TYPE_32ND_SEPTUPLET: // not supported by importer yet
+    case NOTE_TYPE_32ND_NONUPLET: // not supported by importer yet
+    case NOTE_TYPE_64TH_DOTTED: // ??? can TablEdit generate this ???
     default:
         LOGD("invalid note duration %d", duration);
         return 0; // invalid (result is weird layout)
     }
 }
 
-// return TablEdit note length in 64th (including triplets rounded down to nearest note length)
-// TODO: remove code duplication with importtef.cpp duration2length()
+// return TablEdit note length in 64th (including triplets (rounded DOWN to nearest note length) and including dots)
+// -> effectively this returns the actual duration (including dots)
+// TODO: remove code duplication with duration2length()
 
 int durationToInt(uint8_t duration)
 {
