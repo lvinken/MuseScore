@@ -105,7 +105,7 @@ static const uint8_t NOTE_TYPE_16TH = 12;
 static const uint8_t NOTE_TYPE_32ND_DOTTED = 13;
 static const uint8_t NOTE_TYPE_16TH_TRIPLET = 14;
 static const uint8_t NOTE_TYPE_32ND = 15;
-static const uint8_t NOTE_TYPE_64TH_DOTTED = 16; // ??? can TablEdit generate this ???
+static const uint8_t NOTE_TYPE_64TH_DOTTED = 16;
 static const uint8_t NOTE_TYPE_32ND_TRIPLET = 17;
 static const uint8_t NOTE_TYPE_64TH = 18;
 static const uint8_t NOTE_TYPE_HALF_DOUBLE_DOTTED = 19;
@@ -119,7 +119,7 @@ static const uint8_t NOTE_TYPE_WHOLE_DOTTED = 31;
 
 //---------------------------------------------------------
 // convert TablEdit duration to note type in 64th
-// i.e. the nominal duration (excluding dots)
+// i.e. the nominal duration (excluding dots or tuplet)
 //---------------------------------------------------------
 
 int duration2type(const uint8_t duration)
@@ -158,7 +158,7 @@ int duration2type(const uint8_t duration)
     case NOTE_TYPE_16TH_QUINTUPLET: // not supported by importer yet
     case NOTE_TYPE_32ND_SEPTUPLET: // not supported by importer yet
     case NOTE_TYPE_32ND_NONUPLET: // not supported by importer yet
-    case NOTE_TYPE_64TH_DOTTED: // ??? can TablEdit generate this ???
+    case NOTE_TYPE_64TH_DOTTED:
     default:
         LOGD("invalid note duration %d", duration);
         return 0; // invalid (result is weird layout)
@@ -179,7 +179,7 @@ int duration2dots(const uint8_t duration)
     case NOTE_TYPE_EIGHTH_DOTTED:
     case NOTE_TYPE_16TH_DOTTED:
     case NOTE_TYPE_32ND_DOTTED:
-    case NOTE_TYPE_64TH_DOTTED: // ??? can TablEdit generate this ???
+    case NOTE_TYPE_64TH_DOTTED:
         return 1;
     case NOTE_TYPE_HALF_DOUBLE_DOTTED: // not supported by importer yet
     case NOTE_TYPE_QUARTER_DOUBLE_DOTTED: // not supported by importer yet
@@ -216,13 +216,30 @@ bool duration2tuplet(const uint8_t duration)
     case NOTE_TYPE_16TH_QUINTUPLET: // not supported by importer yet
     case NOTE_TYPE_32ND_SEPTUPLET: // not supported by importer yet
     case NOTE_TYPE_32ND_NONUPLET: // not supported by importer yet
-    case NOTE_TYPE_64TH_DOTTED: // ??? can TablEdit generate this ???
+    case NOTE_TYPE_64TH_DOTTED:
     default:
         return false;
     }
 }
 
-todo: add duration2length (duration2type + dots)
+//---------------------------------------------------------
+// convert TablEdit duration to length in 64th
+// i.e. the nominal duration (including dot(s), excluding tuplet)
+//---------------------------------------------------------
+
+int duration2lengthInclDots(const uint8_t duration)
+{
+    const int dots { duration2dots(duration) };
+    const int length { duration2type(duration) };
+    switch (dots) {
+    case 0: return length;
+    case 1: return 3 * length / 2;
+    case 2: return 7 * length / 4;
+    default:
+        LOGD("number of dots (%d) not supported", dots);
+        return 0;
+    }
+}
 
 //---------------------------------------------------------
 // durationToTablEditLength

@@ -429,13 +429,8 @@ void TablEdit::createContents(const MeasureHandler& measureHandler)
                 }
 
                 const TefNote* const firstNote { tefNotes.at(0) };
-                Fraction length { firstNote->length, 64 }; // length is in 64th
-                if (firstNote->dots == 1) {
-                    length *= Fraction{ 3, 2 };
-                } else if (firstNote->dots == 2) {
-                    length *= Fraction{ 7, 4 };
-                }
 
+                Fraction length { duration2lengthInclDots(firstNote->duration), 64 }; // length is in 64th
                 TDuration tDuration(length);
                 if (firstNote->dots) {
                     tDuration.setDots(firstNote->dots);
@@ -1207,7 +1202,8 @@ void TablEdit::readTefContents()
         }
         if (noteRestMarker <= 0x33) {
             note.duration = byte2 & 0x1F;
-            LOGD("duration %d duration2type %d durationToInt %d", note.duration, duration2type(note.duration), durationToInt(note.duration));
+            LOGD("duration %d duration2type %d durationToTablEditLength %d",
+                 note.duration, duration2type(note.duration), durationToTablEditLength(note.duration));
             note.length = duration2type(note.duration);
             note.dots = duration2dots(note.duration);
             note.triplet = duration2tuplet(note.duration);
@@ -1436,7 +1432,7 @@ Err TablEdit::import()
     }
     readTefContents();
     for (const auto& note : tefContents) {
-        LOGN("position %d rest %d string %d fret %d duration %d length %d dots %d tie %d triplet %d voice %d",
+        LOGD("position %d rest %d string %d fret %d duration %d length %d dots %d tie %d triplet %d voice %d",
              note.position, note.rest, note.string, note.fret,
              note.duration, note.length, note.dots,
              note.tie, note.triplet, static_cast<int>(note.voice));
@@ -1446,7 +1442,7 @@ Err TablEdit::import()
     }
     createScore();
     for (uint8_t i = 0; i<32; ++i) {
-        LOGD("duration %d duration2length %d durationToInt %d", i, duration2length(i), durationToInt(i));
+        LOGD("duration %d duration2type %d durationToTablEditLength %d", i, duration2type(i), durationToTablEditLength(i));
     }
     return Err::NoError;
 }
