@@ -252,7 +252,7 @@ int duration2lengthInclDots(const uint8_t duration)
 int durationToTablEditLength(const uint8_t duration)
 {
     if (!duration2tuplet(duration)) {
-        return duration2type(duration);
+        return duration2lengthInclDots(duration);
     }
     switch (duration) {
     case NOTE_TYPE_WHOLE_TRIPLET: return 32;

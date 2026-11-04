@@ -1441,9 +1441,11 @@ Err TablEdit::import()
         LOGN("position %d string %d text marker %d", textMarker.position, textMarker.string, textMarker.index);
     }
     createScore();
+    /*
     for (uint8_t i = 0; i<32; ++i) {
         LOGD("duration %d duration2type %d durationToTablEditLength %d", i, duration2type(i), durationToTablEditLength(i));
     }
+    */
     return Err::NoError;
 }
 } // namespace mu::iex::tabledit
