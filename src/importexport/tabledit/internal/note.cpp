@@ -83,82 +83,48 @@ EffectType TefNote::combinationEffect() const
     }
 }
 
-/*
- * TablEdit encoding of note duration is an enum with 32 possible values,
- * some of which are not used. It encodes note type, number of dots
- * and tuplet type.
- */
-
-static const uint8_t NOTE_TYPE_WHOLE =  0;
-static const uint8_t NOTE_TYPE_HALF_DOTTED =  1;
-static const uint8_t NOTE_TYPE_WHOLE_TRIPLET =  2;
-static const uint8_t NOTE_TYPE_HALF =  3;
-static const uint8_t NOTE_TYPE_QUARTER_DOTTED =  4;
-static const uint8_t NOTE_TYPE_HALF_TRIPLET =  5;
-static const uint8_t NOTE_TYPE_QUARTER =  6;
-static const uint8_t NOTE_TYPE_EIGHTH_DOTTED =  7;
-static const uint8_t NOTE_TYPE_QUARTER_TRIPLET =  8;
-static const uint8_t NOTE_TYPE_EIGHTH =  9;
-static const uint8_t NOTE_TYPE_16TH_DOTTED = 10;
-static const uint8_t NOTE_TYPE_EIGHTH_TRIPLET = 11;
-static const uint8_t NOTE_TYPE_16TH = 12;
-static const uint8_t NOTE_TYPE_32ND_DOTTED = 13;
-static const uint8_t NOTE_TYPE_16TH_TRIPLET = 14;
-static const uint8_t NOTE_TYPE_32ND = 15;
-static const uint8_t NOTE_TYPE_64TH_DOTTED = 16;
-static const uint8_t NOTE_TYPE_32ND_TRIPLET = 17;
-static const uint8_t NOTE_TYPE_64TH = 18;
-static const uint8_t NOTE_TYPE_HALF_DOUBLE_DOTTED = 19;
-static const uint8_t NOTE_TYPE_16TH_QUINTUPLET = 20;
-static const uint8_t NOTE_TYPE_QUARTER_DOUBLE_DOTTED = 22;
-static const uint8_t NOTE_TYPE_32ND_SEPTUPLET = 23;
-static const uint8_t NOTE_TYPE_EIGHTH_DOUBLE_DOTTED = 25;
-static const uint8_t NOTE_TYPE_32ND_NONUPLET = 26;
-static const uint8_t NOTE_TYPE_16TH_DOUBLE_DOTTED = 28;
-static const uint8_t NOTE_TYPE_WHOLE_DOTTED = 31;
-
 //---------------------------------------------------------
 // convert TablEdit duration to note type in 64th
 // i.e. the nominal duration (excluding dots or tuplet)
 //---------------------------------------------------------
 
-int duration2type(const uint8_t duration)
+int duration2type(const NoteDuration duration)
 {
     switch (duration) {
-    case NOTE_TYPE_WHOLE:
-    case NOTE_TYPE_WHOLE_DOTTED:
-    case NOTE_TYPE_WHOLE_TRIPLET:
+    case NoteDuration::V_WHOLE:
+    case NoteDuration::V_WHOLE_DOTTED:
+    case NoteDuration::V_WHOLE_TRIPLET:
         return 64;
-    case NOTE_TYPE_HALF:
-    case NOTE_TYPE_HALF_DOTTED:
-    case NOTE_TYPE_HALF_TRIPLET:
+    case NoteDuration::V_HALF:
+    case NoteDuration::V_HALF_DOTTED:
+    case NoteDuration::V_HALF_TRIPLET:
         return 32;
-    case  NOTE_TYPE_QUARTER:
-    case  NOTE_TYPE_QUARTER_DOTTED:
-    case  NOTE_TYPE_QUARTER_TRIPLET:
+    case NoteDuration::V_QUARTER:
+    case NoteDuration::V_QUARTER_DOTTED:
+    case NoteDuration::V_QUARTER_TRIPLET:
         return 16;
-    case NOTE_TYPE_EIGHTH:
-    case NOTE_TYPE_EIGHTH_DOTTED:
-    case NOTE_TYPE_EIGHTH_TRIPLET:
+    case NoteDuration::V_EIGHTH:
+    case NoteDuration::V_EIGHTH_DOTTED:
+    case NoteDuration::V_EIGHTH_TRIPLET:
         return 8;
-    case NOTE_TYPE_16TH:
-    case NOTE_TYPE_16TH_DOTTED:
-    case NOTE_TYPE_16TH_TRIPLET:
+    case NoteDuration::V_16TH:
+    case NoteDuration::V_16TH_DOTTED:
+    case NoteDuration::V_16TH_TRIPLET:
         return 4;
-    case NOTE_TYPE_32ND:
-    case NOTE_TYPE_32ND_DOTTED:
-    case NOTE_TYPE_32ND_TRIPLET:
+    case NoteDuration::V_32ND:
+    case NoteDuration::V_32ND_DOTTED:
+    case NoteDuration::V_32ND_TRIPLET:
         return 2;
-    case NOTE_TYPE_64TH:
+    case NoteDuration::V_64TH:
         return 1;
-    case NOTE_TYPE_HALF_DOUBLE_DOTTED: // not supported by importer yet
-    case NOTE_TYPE_QUARTER_DOUBLE_DOTTED: // not supported by importer yet
-    case NOTE_TYPE_EIGHTH_DOUBLE_DOTTED: // not supported by importer yet
-    case NOTE_TYPE_16TH_DOUBLE_DOTTED: // not supported by importer yet
-    case NOTE_TYPE_16TH_QUINTUPLET: // not supported by importer yet
-    case NOTE_TYPE_32ND_SEPTUPLET: // not supported by importer yet
-    case NOTE_TYPE_32ND_NONUPLET: // not supported by importer yet
-    case NOTE_TYPE_64TH_DOTTED:
+    case NoteDuration::V_HALF_DOUBLE_DOTTED: // not supported by importer yet
+    case NoteDuration::V_QUARTER_DOUBLE_DOTTED: // not supported by importer yet
+    case NoteDuration::V_EIGHTH_DOUBLE_DOTTED: // not supported by importer yet
+    case NoteDuration::V_16TH_DOUBLE_DOTTED: // not supported by importer yet
+    case NoteDuration::V_16TH_QUINTUPLET: // not supported by importer yet
+    case NoteDuration::V_32ND_SEPTUPLET: // not supported by importer yet
+    case NoteDuration::V_32ND_NONUPLET: // not supported by importer yet
+    case NoteDuration::V_64TH_DOTTED:
     default:
         LOGD("invalid note duration %d", duration);
         return 0; // invalid (result is weird layout)
@@ -170,24 +136,24 @@ int duration2type(const uint8_t duration)
 // convert TablEdit duration to number of dots
 //---------------------------------------------------------
 
-int duration2dots(const uint8_t duration)
+int duration2dots(const NoteDuration duration)
 {
     switch (duration) {
-    case NOTE_TYPE_WHOLE_DOTTED:
-    case NOTE_TYPE_HALF_DOTTED:
-    case NOTE_TYPE_QUARTER_DOTTED:
-    case NOTE_TYPE_EIGHTH_DOTTED:
-    case NOTE_TYPE_16TH_DOTTED:
-    case NOTE_TYPE_32ND_DOTTED:
-    case NOTE_TYPE_64TH_DOTTED:
+    case NoteDuration::V_WHOLE_DOTTED:
+    case NoteDuration::V_HALF_DOTTED:
+    case NoteDuration::V_QUARTER_DOTTED:
+    case NoteDuration::V_EIGHTH_DOTTED:
+    case NoteDuration::V_16TH_DOTTED:
+    case NoteDuration::V_32ND_DOTTED:
+    case NoteDuration::V_64TH_DOTTED:
         return 1;
-    case NOTE_TYPE_HALF_DOUBLE_DOTTED: // not supported by importer yet
-    case NOTE_TYPE_QUARTER_DOUBLE_DOTTED: // not supported by importer yet
-    case NOTE_TYPE_EIGHTH_DOUBLE_DOTTED: // not supported by importer yet
-    case NOTE_TYPE_16TH_DOUBLE_DOTTED: // not supported by importer yet
-    case NOTE_TYPE_16TH_QUINTUPLET: // not supported by importer yet
-    case NOTE_TYPE_32ND_SEPTUPLET: // not supported by importer yet
-    case NOTE_TYPE_32ND_NONUPLET: // not supported by importer yet
+    case NoteDuration::V_HALF_DOUBLE_DOTTED: // not supported by importer yet
+    case NoteDuration::V_QUARTER_DOUBLE_DOTTED: // not supported by importer yet
+    case NoteDuration::V_EIGHTH_DOUBLE_DOTTED: // not supported by importer yet
+    case NoteDuration::V_16TH_DOUBLE_DOTTED: // not supported by importer yet
+    case NoteDuration::V_16TH_QUINTUPLET: // not supported by importer yet
+    case NoteDuration::V_32ND_SEPTUPLET: // not supported by importer yet
+    case NoteDuration::V_32ND_NONUPLET: // not supported by importer yet
     default:
         return 0;
     }
@@ -199,24 +165,24 @@ int duration2dots(const uint8_t duration)
 // currently a bool (triplet yes/no), in future the tuplet value
 //---------------------------------------------------------
 
-bool duration2tuplet(const uint8_t duration)
+bool duration2tuplet(const NoteDuration duration)
 {
     switch (duration) {
-    case NOTE_TYPE_WHOLE_TRIPLET:
-    case NOTE_TYPE_HALF_TRIPLET:
-    case NOTE_TYPE_QUARTER_TRIPLET:
-    case NOTE_TYPE_EIGHTH_TRIPLET:
-    case NOTE_TYPE_16TH_TRIPLET:
-    case NOTE_TYPE_32ND_TRIPLET:
+    case NoteDuration::V_WHOLE_TRIPLET:
+    case NoteDuration::V_HALF_TRIPLET:
+    case NoteDuration::V_QUARTER_TRIPLET:
+    case NoteDuration::V_EIGHTH_TRIPLET:
+    case NoteDuration::V_16TH_TRIPLET:
+    case NoteDuration::V_32ND_TRIPLET:
         return true;
-    case NOTE_TYPE_HALF_DOUBLE_DOTTED: // not supported by importer yet
-    case NOTE_TYPE_QUARTER_DOUBLE_DOTTED: // not supported by importer yet
-    case NOTE_TYPE_EIGHTH_DOUBLE_DOTTED: // not supported by importer yet
-    case NOTE_TYPE_16TH_DOUBLE_DOTTED: // not supported by importer yet
-    case NOTE_TYPE_16TH_QUINTUPLET: // not supported by importer yet
-    case NOTE_TYPE_32ND_SEPTUPLET: // not supported by importer yet
-    case NOTE_TYPE_32ND_NONUPLET: // not supported by importer yet
-    case NOTE_TYPE_64TH_DOTTED:
+    case NoteDuration::V_HALF_DOUBLE_DOTTED: // not supported by importer yet
+    case NoteDuration::V_QUARTER_DOUBLE_DOTTED: // not supported by importer yet
+    case NoteDuration::V_EIGHTH_DOUBLE_DOTTED: // not supported by importer yet
+    case NoteDuration::V_16TH_DOUBLE_DOTTED: // not supported by importer yet
+    case NoteDuration::V_16TH_QUINTUPLET: // not supported by importer yet
+    case NoteDuration::V_32ND_SEPTUPLET: // not supported by importer yet
+    case NoteDuration::V_32ND_NONUPLET: // not supported by importer yet
+    case NoteDuration::V_64TH_DOTTED:
     default:
         return false;
     }
@@ -227,7 +193,7 @@ bool duration2tuplet(const uint8_t duration)
 // i.e. the nominal duration (including dot(s), excluding tuplet)
 //---------------------------------------------------------
 
-int duration2lengthInclDots(const uint8_t duration)
+int duration2lengthInclDots(const NoteDuration duration)
 {
     const int dots { duration2dots(duration) };
     const int length { duration2type(duration) };
@@ -249,21 +215,21 @@ int duration2lengthInclDots(const uint8_t duration)
 // intervals with a filler gap after the last note
 //---------------------------------------------------------
 
-int durationToTablEditLength(const uint8_t duration)
+int durationToTablEditLength(const NoteDuration duration)
 {
     if (!duration2tuplet(duration)) {
         return duration2lengthInclDots(duration);
     }
     switch (duration) {
-    case NOTE_TYPE_WHOLE_TRIPLET: return 32;
-    case NOTE_TYPE_HALF_TRIPLET: return 16;
-    case NOTE_TYPE_QUARTER_TRIPLET: return 8;
-    case NOTE_TYPE_EIGHTH_TRIPLET: return 4;
-    case NOTE_TYPE_16TH_TRIPLET: return 2;
-    case NOTE_TYPE_32ND_TRIPLET: return 1;
-    case NOTE_TYPE_16TH_QUINTUPLET: // not supported by importer yet
-    case NOTE_TYPE_32ND_SEPTUPLET: // not supported by importer yet
-    case NOTE_TYPE_32ND_NONUPLET: // not supported by importer yet
+    case NoteDuration::V_WHOLE_TRIPLET: return 32;
+    case NoteDuration::V_HALF_TRIPLET: return 16;
+    case NoteDuration::V_QUARTER_TRIPLET: return 8;
+    case NoteDuration::V_EIGHTH_TRIPLET: return 4;
+    case NoteDuration::V_16TH_TRIPLET: return 2;
+    case NoteDuration::V_32ND_TRIPLET: return 1;
+    case NoteDuration::V_16TH_QUINTUPLET: // not supported by importer yet
+    case NoteDuration::V_32ND_SEPTUPLET: // not supported by importer yet
+    case NoteDuration::V_32ND_NONUPLET: // not supported by importer yet
     default:
         LOGD("invalid note duration %d", duration);
         return 0; // invalid (result is weird layout)

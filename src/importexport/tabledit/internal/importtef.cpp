@@ -1201,7 +1201,7 @@ void TablEdit::readTefContents()
             //LOGD("marker %d duration %d length %d dots %d", noteRestMarker, note.duration, note.length, note.dots);
         }
         if (noteRestMarker <= 0x33) {
-            note.duration = byte2 & 0x1F;
+            note.duration = static_cast<NoteDuration>(byte2 & 0x1F);
             LOGD("duration %d duration2type %d durationToTablEditLength %d",
                  note.duration, duration2type(note.duration), durationToTablEditLength(note.duration));
             note.length = duration2type(note.duration);

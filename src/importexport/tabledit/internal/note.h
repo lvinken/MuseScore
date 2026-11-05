@@ -53,6 +53,42 @@ enum class EffectType : int8_t {
     VARIATION
 };
 
+/*
+ * TablEdit encoding of note duration is an enum with 32 possible values,
+ * some of which are not used. It encodes note type, number of dots
+ * and tuplet type.
+ */
+
+enum class NoteDuration : uint8_t {
+    V_WHOLE =  0,
+    V_HALF_DOTTED =  1,
+    V_WHOLE_TRIPLET =  2,
+    V_HALF =  3,
+    V_QUARTER_DOTTED =  4,
+    V_HALF_TRIPLET =  5,
+    V_QUARTER =  6,
+    V_EIGHTH_DOTTED =  7,
+    V_QUARTER_TRIPLET =  8,
+    V_EIGHTH =  9,
+    V_16TH_DOTTED = 10,
+    V_EIGHTH_TRIPLET = 11,
+    V_16TH = 12,
+    V_32ND_DOTTED = 13,
+    V_16TH_TRIPLET = 14,
+    V_32ND = 15,
+    V_64TH_DOTTED = 16,
+    V_32ND_TRIPLET = 17,
+    V_64TH = 18,
+    V_HALF_DOUBLE_DOTTED = 19,
+    V_16TH_QUINTUPLET = 20,
+    V_QUARTER_DOUBLE_DOTTED = 22,
+    V_32ND_SEPTUPLET = 23,
+    V_EIGHTH_DOUBLE_DOTTED = 25,
+    V_32ND_NONUPLET = 26,
+    V_16TH_DOUBLE_DOTTED = 28,
+    V_WHOLE_DOTTED = 31
+};
+
 // note attribute voice
 enum class Voice : uint8_t {
     DEFAULT = 0,    // default: none set
@@ -66,7 +102,7 @@ struct TefNote {
     int fret { 0 };
     bool tie { false };
     bool rest { false };    // this is a bit of a hack
-    int duration { 0 };     // this is the duration as encoded in the .tef file
+    NoteDuration duration { 0 };     // duration as encoded in the .tef file
     int length { 0 };
     int dots { 0 };
     bool triplet { false };
@@ -82,9 +118,9 @@ struct TefNote {
     EffectType combinationEffect() const;
 };
 
-int duration2dots(const uint8_t duration);
-int duration2type(const uint8_t duration);
-bool duration2tuplet(const uint8_t duration);
-int duration2lengthInclDots(const uint8_t duration);
-int durationToTablEditLength(const uint8_t duration);
+int duration2dots(const NoteDuration duration);
+int duration2type(const NoteDuration duration);
+bool duration2tuplet(const NoteDuration duration);
+int duration2lengthInclDots(const NoteDuration duration);
+int durationToTablEditLength(const NoteDuration duration);
 } // namespace mu::iex::tabledit
