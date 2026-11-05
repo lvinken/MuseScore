@@ -97,18 +97,22 @@ int duration2type(const NoteDuration duration)
         return 64;
     case NoteDuration::V_HALF:
     case NoteDuration::V_HALF_DOTTED:
+    case NoteDuration::V_HALF_DOUBLE_DOTTED:
     case NoteDuration::V_HALF_TRIPLET:
         return 32;
     case NoteDuration::V_QUARTER:
     case NoteDuration::V_QUARTER_DOTTED:
+    case NoteDuration::V_QUARTER_DOUBLE_DOTTED:
     case NoteDuration::V_QUARTER_TRIPLET:
         return 16;
     case NoteDuration::V_EIGHTH:
     case NoteDuration::V_EIGHTH_DOTTED:
+    case NoteDuration::V_EIGHTH_DOUBLE_DOTTED:
     case NoteDuration::V_EIGHTH_TRIPLET:
         return 8;
     case NoteDuration::V_16TH:
     case NoteDuration::V_16TH_DOTTED:
+    case NoteDuration::V_16TH_DOUBLE_DOTTED:
     case NoteDuration::V_16TH_TRIPLET:
         return 4;
     case NoteDuration::V_32ND:
@@ -117,10 +121,6 @@ int duration2type(const NoteDuration duration)
         return 2;
     case NoteDuration::V_64TH:
         return 1;
-    case NoteDuration::V_HALF_DOUBLE_DOTTED: // not supported by importer yet
-    case NoteDuration::V_QUARTER_DOUBLE_DOTTED: // not supported by importer yet
-    case NoteDuration::V_EIGHTH_DOUBLE_DOTTED: // not supported by importer yet
-    case NoteDuration::V_16TH_DOUBLE_DOTTED: // not supported by importer yet
     case NoteDuration::V_16TH_QUINTUPLET: // not supported by importer yet
     case NoteDuration::V_32ND_SEPTUPLET: // not supported by importer yet
     case NoteDuration::V_32ND_NONUPLET: // not supported by importer yet
@@ -147,10 +147,11 @@ int duration2dots(const NoteDuration duration)
     case NoteDuration::V_32ND_DOTTED:
     case NoteDuration::V_64TH_DOTTED:
         return 1;
-    case NoteDuration::V_HALF_DOUBLE_DOTTED: // not supported by importer yet
-    case NoteDuration::V_QUARTER_DOUBLE_DOTTED: // not supported by importer yet
-    case NoteDuration::V_EIGHTH_DOUBLE_DOTTED: // not supported by importer yet
-    case NoteDuration::V_16TH_DOUBLE_DOTTED: // not supported by importer yet
+    case NoteDuration::V_HALF_DOUBLE_DOTTED:
+    case NoteDuration::V_QUARTER_DOUBLE_DOTTED:
+    case NoteDuration::V_EIGHTH_DOUBLE_DOTTED:
+    case NoteDuration::V_16TH_DOUBLE_DOTTED:
+        return 2;
     case NoteDuration::V_16TH_QUINTUPLET: // not supported by importer yet
     case NoteDuration::V_32ND_SEPTUPLET: // not supported by importer yet
     case NoteDuration::V_32ND_NONUPLET: // not supported by importer yet
@@ -175,10 +176,6 @@ bool duration2tuplet(const NoteDuration duration)
     case NoteDuration::V_16TH_TRIPLET:
     case NoteDuration::V_32ND_TRIPLET:
         return true;
-    case NoteDuration::V_HALF_DOUBLE_DOTTED: // not supported by importer yet
-    case NoteDuration::V_QUARTER_DOUBLE_DOTTED: // not supported by importer yet
-    case NoteDuration::V_EIGHTH_DOUBLE_DOTTED: // not supported by importer yet
-    case NoteDuration::V_16TH_DOUBLE_DOTTED: // not supported by importer yet
     case NoteDuration::V_16TH_QUINTUPLET: // not supported by importer yet
     case NoteDuration::V_32ND_SEPTUPLET: // not supported by importer yet
     case NoteDuration::V_32ND_NONUPLET: // not supported by importer yet
