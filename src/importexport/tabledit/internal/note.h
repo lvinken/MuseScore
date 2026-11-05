@@ -81,11 +81,16 @@ enum class NoteDuration : uint8_t {
     V_64TH = 18,
     V_HALF_DOUBLE_DOTTED = 19,
     V_16TH_QUINTUPLET = 20,
+    V_RESERVED_1 = 21,
     V_QUARTER_DOUBLE_DOTTED = 22,
     V_32ND_SEPTUPLET = 23,
+    V_RESERVED_2 = 24,
     V_EIGHTH_DOUBLE_DOTTED = 25,
     V_32ND_NONUPLET = 26,
+    V_RESERVED_3 = 27,
     V_16TH_DOUBLE_DOTTED = 28,
+    V_RESERVED_4 = 29,
+    V_RESERVED_5 = 30,
     V_WHOLE_DOTTED = 31
 };
 
