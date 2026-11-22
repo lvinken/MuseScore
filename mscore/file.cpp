@@ -294,6 +294,7 @@ void MuseScore::openFiles(bool switchTab, bool singleFile)
              << tr("Bagpipe Music Writer Files (experimental)") + " (*.bmw *.bww)"
              << tr("Guitar Pro Files") + " (*.gtp *.gp3 *.gp4 *.gp5 *.gpx *.gp)"
              << tr("Power Tab Editor Files (experimental)") + " (*.ptb)"
+             // << tr("TablEdit Files (experimental)") + " (*.tef)"
              << tr("MuseScore Backup Files") + " (*.mscz, *.mscx,)";
 
       doLoadFiles(filter, switchTab, singleFile);
