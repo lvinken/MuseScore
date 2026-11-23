@@ -19,11 +19,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#pragma once
+#ifndef __TUPLETHANDLER_H__
+#define __TUPLETHANDLER_H__
 
 #include "importtef.h"
 
-#include "engraving/dom/chordrest.h"
+#include "libmscore/chordrest.h"
 
 using namespace std;
 namespace mu::iex::tabledit {
@@ -39,3 +40,4 @@ private:
     engraving::Tuplet* tuplet { nullptr };
 };
 } // namespace mu::iex::tabledit
+#endif

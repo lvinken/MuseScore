@@ -34,6 +34,8 @@ Score::FileError importTef(MasterScore* score, const QString& path)
             return Score::FileError::FILE_NOT_FOUND;
       if (!fp.open(QIODevice::ReadOnly))
             return Score::FileError::FILE_OPEN_ERROR;
+      TablEdit tablEdit{ &file, score };
+      Score::FileError err = tablEdit.import();
       qDebug("Score::importTef() done");
       return Score::FileError::FILE_NO_ERROR;      // OK
       }

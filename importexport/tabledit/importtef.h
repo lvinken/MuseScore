@@ -19,19 +19,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#pragma once
+#ifndef __IMPORTTEF_H__
+#define __IMPORTTEF_H__
 
 #include <array>
 #include <string>
 #include <vector>
 
-#include "engraving/dom/masterscore.h"
-#include "engraving/engravingerrors.h"
-#include "io/iodevice.h"
+#include "libmscore/score.h"
 
 #include "voiceallocator.h"
 
-namespace mu::iex::tabledit {
+namespace tabledit {
 // offsets into the file header
 static const uint8_t OFFSET_TBED = 0x38;
 static const uint8_t OFFSET_CONTENTS = 0x3C;
@@ -72,8 +71,9 @@ struct TefNote {
 
 class TablEdit
 {
-    muse::io::IODevice* _file = nullptr;
-    mu::engraving::MasterScore* score = nullptr;
+//    muse::io::IODevice* _file = nullptr;
+    QFile* _file = nullptr;
+    MasterScore* score = nullptr;
 
     int8_t readInt8();
     uint8_t readUInt8();
@@ -170,8 +170,9 @@ class TablEdit
     std::vector<std::string> tefTexts;
 
 public:
-    TablEdit(muse::io::IODevice* f, mu::engraving::MasterScore* s)
+    TablEdit(QFile* f, MasterScore* s)
         : _file(f), score(s) {}
-    mu::engraving::Err import();
+    Ms::Score::FileError import();
 };
-} // namespace mu::iex::tabledit
+} // namespace tabledit
+#endif
