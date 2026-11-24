@@ -39,6 +39,11 @@
 #include "log.h"
 #endif
 
+#include "libmscore/clef.h"
+#include "libmscore/part.h"
+#include "libmscore/staff.h"
+#include "libmscore/stringdata.h"
+
 //using namespace mu::engraving;
 
 namespace tabledit {
@@ -495,22 +500,23 @@ void TablEdit::createNotesFrame()
         tbox->text()->setPlainText(muse::String::fromStdString(tefHeader.notes));
     }
 }
+#endif
 
 void TablEdit::createParts()
 {
     for (const auto& instrument : tefInstruments) {
-        Part* part = new Part(score);
+        Ms::Part* part = new Ms::Part(score);
         score->appendPart(part);
-        muse::String staffName { muse::String::fromStdString(instrument.name) };
+        QString staffName { QString::fromStdString(instrument.name) };
         part->setPartName(staffName);
         part->setPlainLongName(staffName);
 
-        StringData stringData;
+        Ms::StringData stringData;
         stringData.setFrets(25); // reasonable default (?)
         for (int i = 0; i < instrument.stringNumber; ++i) {
             int pitch = 96 - instrument.tuning.at(instrument.stringNumber - i - 1);
             // qDebug("pitch %d", pitch);
-            instrString str { pitch };
+            Ms::instrString str { pitch };
             stringData.stringList().push_back(str);
         }
         part->instrument()->setStringData(stringData);
@@ -518,14 +524,15 @@ void TablEdit::createParts()
         part->setMidiProgram(instrument.midiVoice);
         part->setMidiChannel(instrument.midiBank);
 
-        Staff* staff = Factory::createStaff(part);
-        ClefTypeList clefTypeList { ClefType::G8_VB, ClefType::G8_VB };
+        Ms::Staff* staff = new Ms::Staff(score);
+        Ms::ClefTypeList clefTypeList { Ms::ClefType::G8_VB, Ms::ClefType::G8_VB };
         staff->setDefaultClefType(clefTypeList);
 
-        score->appendStaff(staff);
+        staff->setPart(part);
+        part->insertStaff(staff, 0);
+        score->staves().append(staff);
     }
 }
-#endif
 
 void TablEdit::createProperties()
 {
@@ -577,8 +584,8 @@ void TablEdit::createRepeats()
 void TablEdit::createScore()
 {
     createProperties();
-#if 0
     createParts();
+#if 0
     createTitleFrame();
     createMeasures();
     createNotesFrame();
