@@ -163,6 +163,10 @@ class TablEdit
     void readTefTexts();
 #endif
     void readTefHeader();
+    void readTefInstruments();
+    void readTefMeasures();
+    void readTefReadingList();
+    void readTefTexts();
 
     TefHeader tefHeader;
     std::vector<TefTextMarker> tefTextMarkers;

@@ -38,7 +38,7 @@ Score::FileError importTef(MasterScore* score, const QString& path)
             return Score::FileError::FILE_OPEN_ERROR;
       tabledit::TablEdit tablEdit{ &file, score };
       Score::FileError err = tablEdit.import();
-      qDebug("Score::importTef() done result %d", err);
+      qDebug("Score::importTef() done result %d", static_cast<int>(err));
       return Score::FileError::FILE_NO_ERROR;      // OK
       }
 

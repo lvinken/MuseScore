@@ -818,6 +818,7 @@ void TablEdit::readTefContents()
         offset = readUInt32();
     }
 }
+#endif
 
 // tuning to MIDI: 96 - tuning[string] with string 0 is highest
 // MIDI E2 = 40 E4 = 64
@@ -927,11 +928,9 @@ void TablEdit::readTefTexts()
         tefTexts.push_back(text);
     }
 }
-#endif
 
 void TablEdit::readTefHeader()
 {
-    qDebug("TablEdit::readTefHeader()");
     readUInt16(); // skip private01
     tefHeader.version = readUInt16();
     tefHeader.subVersion = readUInt16();
@@ -957,7 +956,6 @@ void TablEdit::readTefHeader()
     _file->seek(OFFSET_OLDNUM);
     tefHeader.wOldNum = readUInt16();
     tefHeader.wFormat = readUInt16();
-    qDebug("TablEdit::readTefHeader() done");
 }
 
 //---------------------------------------------------------
@@ -992,25 +990,25 @@ Ms::Score::FileError TablEdit::import()
     if (tefHeader.securityCode != 0) {
         return Ms::Score::FileError::FILE_BAD_FORMAT; // todo "file is protected" message ?
     }
-#if 0
     readTefTexts();
     for (const auto& text : tefTexts) {
-        // qDebug("text: '%s'", text.c_str());
+         qDebug("text: '%s'", text.c_str());
     }
     readTefMeasures();
     for (const auto& measure : tefMeasures) {
-        // qDebug("flag %d key %d size %d numerator %d denominator %d",
-        //     measure.flag, measure.key, measure.size, measure.numerator, measure.denominator);
+         qDebug("measure: flag %d key %d size %d numerator %d denominator %d",
+             measure.flag, measure.key, measure.size, measure.numerator, measure.denominator);
     }
     readTefInstruments();
     for (const auto& instrument : tefInstruments) {
-        // qDebug("stringNumber %d firstString %d midiVoice %d midiBank %d",
-        //     instrument.stringNumber, instrument.firstString, instrument.midiVoice, instrument.midiBank);
+         qDebug("instrument: stringNumber %d firstString %d midiVoice %d midiBank %d",
+             instrument.stringNumber, instrument.firstString, instrument.midiVoice, instrument.midiBank);
     }
     readTefReadingList();
     for (const auto& item : tefReadingList) {
-        // qDebug("firstMeasure %d lastMeasure %d", item.firstMeasure, item.lastMeasure);
+         qDebug("reading list item: firstMeasure %d lastMeasure %d", item.firstMeasure, item.lastMeasure);
     }
+#if 0
     readTefContents();
     for (const auto& note : tefContents) {
         // qDebug("position %d rest %d string %d fret %d duration %d length %d dots %d tie %d triplet %d voice %d",
