@@ -525,28 +525,30 @@ void TablEdit::createParts()
         score->appendStaff(staff);
     }
 }
+#endif
 
 void TablEdit::createProperties()
 {
     if (!tefHeader.title.empty()) {
-        score->setMetaTag(u"workTitle", muse::String::fromStdString(tefHeader.title));
+        score->setMetaTag("workTitle", QString::fromStdString(tefHeader.title));
     }
     if (!tefHeader.subTitle.empty()) {
-        score->setMetaTag(u"subtitle", muse::String::fromStdString(tefHeader.subTitle));
+        score->setMetaTag("subtitle", QString::fromStdString(tefHeader.subTitle));
     }
     if (!tefHeader.comment.empty()) {
-        score->setMetaTag(u"comment", muse::String::fromStdString(tefHeader.comment));
+        score->setMetaTag("comment", QString::fromStdString(tefHeader.comment));
     }
     if (!tefHeader.internetLink.empty()) {
-        score->setMetaTag(u"source", muse::String::fromStdString(tefHeader.internetLink));
+        score->setMetaTag("source", QString::fromStdString(tefHeader.internetLink));
     }
     if (!tefHeader.copyright.empty()) {
-        score->setMetaTag(u"copyright", muse::String::fromStdString(tefHeader.copyright));
+        score->setMetaTag("copyright", QString::fromStdString(tefHeader.copyright));
     }
 }
 
 // convert the reading list into repeat and (todo) codas, segnos and voltas
 
+#if 0
 void TablEdit::createRepeats()
 {
     // qDebug("reading list size %zu number of measures %zu", tefReadingList.size(), tefMeasures.size());
@@ -570,10 +572,12 @@ void TablEdit::createRepeats()
         // qDebug("no score repeat");
     }
 }
+#endif
 
 void TablEdit::createScore()
 {
     createProperties();
+#if 0
     createParts();
     createTitleFrame();
     createMeasures();
@@ -582,8 +586,10 @@ void TablEdit::createScore()
     createRepeats();
     createTexts();
     createLinkedTabs();
+#endif
 }
 
+#if 0
 void TablEdit::createTempo()
 {
     mu::engraving::Measure* measure = score->firstMeasure();
@@ -1018,9 +1024,7 @@ Ms::Score::FileError TablEdit::import()
     for (const auto& textMarker : tefTextMarkers) {
         // qDebug("text marker: position %d string %d text marker %d", textMarker.position, textMarker.string, textMarker.index);
     }
-#if 0
     createScore();
-#endif
     qDebug("TablEdit::import() done");
     return Ms::Score::FileError::FILE_NO_ERROR;
 }

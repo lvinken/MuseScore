@@ -162,6 +162,8 @@ class TablEdit
     void readTefReadingList();
     void readTefTexts();
 #endif
+    void createScore();
+    void createProperties();
     void readTefContents();
     void readTefHeader();
     void readTefInstruments();
