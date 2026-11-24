@@ -27,17 +27,17 @@
 #include "libmscore/chordrest.h"
 
 using namespace std;
-namespace mu::iex::tabledit {
+namespace tabledit {
 class TupletHandler
 {
 public:
-    engraving::Fraction doTuplet(const TefNote* const tefNote); // todo rename
-    void addCr(engraving::Measure* measure, engraving::ChordRest* cr);
+    Ms::Fraction doTuplet(const TefNote* const tefNote); // todo rename
+    void addCr(Ms::Measure* measure, Ms::ChordRest* cr);
 private:
     int count { 0 };  // support overly simple algorithm: simply count notes
     bool inTuplet { false };
     int totalLength { 0 }; // sum of note duration in TablEdit units
-    engraving::Tuplet* tuplet { nullptr };
+    Ms::Tuplet* tuplet { nullptr };
 };
 } // namespace mu::iex::tabledit
 #endif

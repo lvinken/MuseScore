@@ -19,6 +19,8 @@
 
 #include "libmscore/score.h"
 
+#include "importtef.h"
+
 namespace Ms {
 
 //---------------------------------------------------------
@@ -29,14 +31,14 @@ Score::FileError importTef(MasterScore* score, const QString& path)
       {
       qDebug("Score::importTef(%s)", qPrintable(path));
 
-      QFile fp(path);
-      if(!fp.exists())
+      QFile file(path);
+      if(!file.exists())
             return Score::FileError::FILE_NOT_FOUND;
-      if (!fp.open(QIODevice::ReadOnly))
+      if (!file.open(QIODevice::ReadOnly))
             return Score::FileError::FILE_OPEN_ERROR;
-      TablEdit tablEdit{ &file, score };
+      tabledit::TablEdit tablEdit{ &file, score };
       Score::FileError err = tablEdit.import();
-      qDebug("Score::importTef() done");
+      qDebug("Score::importTef() done result %d", err);
       return Score::FileError::FILE_NO_ERROR;      // OK
       }
 

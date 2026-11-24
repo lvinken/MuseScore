@@ -44,29 +44,35 @@
 namespace tabledit {
 int8_t TablEdit::readInt8()
 {
-    int8_t result;
-    _file->read((uint8_t*)&result, 1);
-    return result;
+    char result {0};
+    _file->read((char*)&result, 1);
+    //qDebug() << "TablEdit::readInt8() done: " << QString::number(static_cast<int>(result), 16);
+    return static_cast<int>(result);
 }
 
 uint8_t TablEdit::readUInt8()
 {
-    uint8_t result;
-    _file->read((uint8_t*)&result, 1);
-    return result;
+    char result {0};
+    _file->read((char*)&result, 1);
+    //qDebug() << "TablEdit::readUInt8() done: " << QString::number(static_cast<unsigned int>(result), 16);
+    return static_cast<unsigned int>(result);
 }
 
 uint16_t TablEdit::readUInt16()
 {
-    uint16_t result;
-    _file->read((uint8_t*)&result, 2);
+    uint8_t b2 {readUInt8()};
+    uint8_t b1 {readUInt8()};
+    uint16_t result = (static_cast<uint16_t>(b1) << 8) + b2;
+    //qDebug() << "TablEdit::readUInt16() done: " << QString::number(result, 16);
     return result;
 }
 
 uint32_t TablEdit::readUInt32()
 {
-    uint32_t result;
-    _file->read((uint8_t*)&result, 4);
+    uint16_t w2 {readUInt16()};
+    uint16_t w1 {readUInt16()};
+    uint32_t result = (static_cast<uint32_t>(w1) << 16) + w2;
+    //qDebug() << "TablEdit::readUInt32() done: " << QString::number(static_cast<unsigned int>(result), 16);
     return result;
 }
 
@@ -100,6 +106,7 @@ std::string TablEdit::readUtf8TextIndirect(uint32_t positionOfPosition)
     }
 }
 
+#if 0
 // return the part index for the instrument containing stringIdx
 
 engraving::part_idx_t TablEdit::partIdx(size_t stringIdx, bool& ok) const
@@ -138,7 +145,8 @@ int TablEdit::stringNumberPreviousParts(part_idx_t partIdx) const
 
 // debug: use color cr to show voice
 
-#if 0
+/*
+//#if 0
 static muse::draw::Color toColor(const voice_idx_t voice)
 {
     // debug: color notes based on voice number
@@ -158,7 +166,8 @@ static muse::draw::Color toColor(const voice_idx_t)
     return muse::draw::Color::BLACK;
 }
 
-#endif
+//#endif
+*/
 
 // create a VoiceAllocator for every instrument
 
@@ -918,9 +927,11 @@ void TablEdit::readTefTexts()
         tefTexts.push_back(text);
     }
 }
+#endif
 
 void TablEdit::readTefHeader()
 {
+    qDebug("TablEdit::readTefHeader()");
     readUInt16(); // skip private01
     tefHeader.version = readUInt16();
     tefHeader.subVersion = readUInt16();
@@ -946,6 +957,7 @@ void TablEdit::readTefHeader()
     _file->seek(OFFSET_OLDNUM);
     tefHeader.wOldNum = readUInt16();
     tefHeader.wFormat = readUInt16();
+    qDebug("TablEdit::readTefHeader() done");
 }
 
 //---------------------------------------------------------
@@ -957,17 +969,18 @@ void TablEdit::readTefHeader()
 
 Ms::Score::FileError TablEdit::import()
 {
+    qDebug("TablEdit::import()");
     readTefHeader();
-    // qDebug("version %d subversion %d", tefHeader.version, tefHeader.subVersion);
-    // qDebug("tempo %d chorus %d reverb %d", tefHeader.tempo, tefHeader.chorus, tefHeader.reverb);
-    // qDebug("securityCode %d securityFlags %d", tefHeader.securityCode, tefHeader.securityFlags);
-    // qDebug("title '%s'", tefHeader.title.c_str());
-    // qDebug("subTitle '%s'", tefHeader.subTitle.c_str());
-    // qDebug("comment '%s'", tefHeader.comment.c_str());
-    // qDebug("notes '%s'", tefHeader.notes.c_str());
-    // qDebug("internetLink '%s'", tefHeader.internetLink.c_str());
-    // qDebug("copyright '%s'", tefHeader.copyright.c_str());
-    // qDebug("tbed %d wOldNum %d wFormat %d", tefHeader.tbed, tefHeader.wOldNum, tefHeader.wFormat);
+     qDebug() << "version " << Qt::hex << tefHeader.version << " subversion " << tefHeader.subVersion;
+     qDebug("tempo %d chorus %d reverb %d", tefHeader.tempo, tefHeader.chorus, tefHeader.reverb);
+     qDebug("securityCode %d securityFlags %d", tefHeader.securityCode, tefHeader.securityFlags);
+     qDebug("title '%s'", tefHeader.title.c_str());
+     qDebug("subTitle '%s'", tefHeader.subTitle.c_str());
+     qDebug("comment '%s'", tefHeader.comment.c_str());
+     qDebug("notes '%s'", tefHeader.notes.c_str());
+     qDebug("internetLink '%s'", tefHeader.internetLink.c_str());
+     qDebug("copyright '%s'", tefHeader.copyright.c_str());
+     qDebug() << Qt::hex << "tbed " << tefHeader.tbed << " wOldNum " << tefHeader.wOldNum << " wFormat " << tefHeader.wFormat;
     if ((tefHeader.wFormat >> 8) < 10) {
         return Ms::Score::FileError::FILE_BAD_FORMAT;
         //return Err::FileTooOld; // TODO: message is too specific for MuseScore format
@@ -979,6 +992,7 @@ Ms::Score::FileError TablEdit::import()
     if (tefHeader.securityCode != 0) {
         return Ms::Score::FileError::FILE_BAD_FORMAT; // todo "file is protected" message ?
     }
+#if 0
     readTefTexts();
     for (const auto& text : tefTexts) {
         // qDebug("text: '%s'", text.c_str());
@@ -1008,6 +1022,8 @@ Ms::Score::FileError TablEdit::import()
         // qDebug("position %d string %d text marker %d", textMarker.position, textMarker.string, textMarker.index);
     }
     createScore();
+#endif
+    qDebug("TablEdit::import() done");
     return Ms::Score::FileError::FILE_NO_ERROR;
 }
 } // namespace tabledit

@@ -70,7 +70,7 @@ Fraction TupletHandler::doTuplet(const TefNote* const tefNote)
 // add ChordRest to tuplet
 // needs measure, track and ratio
 
-void TupletHandler::addCr(Measure* measure, ChordRest* cr)
+void TupletHandler::addCr(Ms::Measure *measure, Ms::ChordRest *cr)
 {
     if (inTuplet && !tuplet) {
         tuplet = Factory::createTuplet(measure);

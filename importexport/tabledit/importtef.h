@@ -73,7 +73,7 @@ class TablEdit
 {
 //    muse::io::IODevice* _file = nullptr;
     QFile* _file = nullptr;
-    MasterScore* score = nullptr;
+    Ms::MasterScore* score = nullptr;
 
     int8_t readInt8();
     uint8_t readUInt8();
@@ -139,6 +139,7 @@ class TablEdit
         int index { 0 };
     };
 
+#if 0
     void allocateVoices(std::vector<VoiceAllocator>& allocator);
     void createContents();
     void createLinkedTabs();
@@ -152,14 +153,16 @@ class TablEdit
     void createTexts();
     void createTitleFrame();
     void initializeVoiceAllocators(std::vector<VoiceAllocator>& allocators);
-    engraving::part_idx_t partIdx(size_t stringIdx, bool& ok) const;
-    int stringNumberPreviousParts(engraving::part_idx_t partIdx) const;
+    int partIdx(size_t stringIdx, bool& ok) const;
+    int stringNumberPreviousParts(int partIdx) const;
     void readTefContents();
     void readTefHeader();
     void readTefInstruments();
     void readTefMeasures();
     void readTefReadingList();
     void readTefTexts();
+#endif
+    void readTefHeader();
 
     TefHeader tefHeader;
     std::vector<TefTextMarker> tefTextMarkers;
@@ -170,7 +173,7 @@ class TablEdit
     std::vector<std::string> tefTexts;
 
 public:
-    TablEdit(QFile* f, MasterScore* s)
+    TablEdit(QFile* f, Ms::MasterScore* s)
         : _file(f), score(s) {}
     Ms::Score::FileError import();
 };
