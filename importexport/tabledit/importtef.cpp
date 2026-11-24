@@ -650,6 +650,7 @@ void TablEdit::createTitleFrame()
         vbox->add(s);
     }
 }
+#endif
 
 /*
  * encoding of note durations
@@ -818,7 +819,6 @@ void TablEdit::readTefContents()
         offset = readUInt32();
     }
 }
-#endif
 
 // tuning to MIDI: 96 - tuning[string] with string 0 is highest
 // MIDI E2 = 40 E4 = 64
@@ -1008,17 +1008,17 @@ Ms::Score::FileError TablEdit::import()
     for (const auto& item : tefReadingList) {
          qDebug("reading list item: firstMeasure %d lastMeasure %d", item.firstMeasure, item.lastMeasure);
     }
-#if 0
     readTefContents();
     for (const auto& note : tefContents) {
-        // qDebug("position %d rest %d string %d fret %d duration %d length %d dots %d tie %d triplet %d voice %d",
-        //     note.position, note.rest, note.string, note.fret,
-        //     note.duration, note.length, note.dots,
-        //     note.tie, note.triplet, static_cast<int>(note.voice));
+         qDebug("note/rest: position %d rest %d string %d fret %d duration %d length %d dots %d tie %d triplet %d voice %d",
+             note.position, note.rest, note.string, note.fret,
+             note.duration, note.length, note.dots,
+             note.tie, note.triplet, static_cast<int>(note.voice));
     }
     for (const auto& textMarker : tefTextMarkers) {
-        // qDebug("position %d string %d text marker %d", textMarker.position, textMarker.string, textMarker.index);
+        // qDebug("text marker: position %d string %d text marker %d", textMarker.position, textMarker.string, textMarker.index);
     }
+#if 0
     createScore();
 #endif
     qDebug("TablEdit::import() done");

@@ -162,6 +162,7 @@ class TablEdit
     void readTefReadingList();
     void readTefTexts();
 #endif
+    void readTefContents();
     void readTefHeader();
     void readTefInstruments();
     void readTefMeasures();
