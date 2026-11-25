@@ -39,10 +39,18 @@
 #include "log.h"
 #endif
 
+#include "libmscore/box.h"
 #include "libmscore/clef.h"
+#include "libmscore/durationtype.h"
+#include "libmscore/keysig.h"
+#include "libmscore/measure.h"
 #include "libmscore/part.h"
 #include "libmscore/staff.h"
 #include "libmscore/stringdata.h"
+#include "libmscore/tempotext.h"
+#include "libmscore/text.h"
+#include "libmscore/textframe.h"
+#include "libmscore/timesig.h"
 
 //using namespace mu::engraving;
 
@@ -428,35 +436,36 @@ void TablEdit::createLinkedTabs()
         dstStaff->setLines(fr, static_cast<int>(lines));
     }
 }
+#endif
 
 void TablEdit::createMeasures()
 {
     int lastKey { 0 };               // safe default
-    Fraction lastTimeSig { -1, -1 }; // impossible value
-    Fraction tick { 0, 1 };
+    Ms::Fraction lastTimeSig { -1, -1 }; // impossible value
+    Ms::Fraction tick { 0, 1 };
     for (const auto& tefMeasure : tefMeasures) {
         // create measure
-        auto measure = Factory::createMeasure(score->dummy()->system());
+        auto measure = new Ms::Measure(score);
         measure->setTick(tick);
-        Fraction length{ tefMeasure.numerator, tefMeasure.denominator };
+        Ms::Fraction length{ tefMeasure.numerator, tefMeasure.denominator };
         measure->setTimesig(length);
         measure->setTicks(length);
-        measure->setEndBarLineType(BarLineType::NORMAL, 0);
+        measure->setEndBarLineType(Ms::BarLineType::NORMAL, 0);
         score->measures()->add(measure);
 
-        if (tick == Fraction { 0, 1 }) {
-            auto s1 = measure->getSegment(mu::engraving::SegmentType::KeySig, tick);
+        if (tick == Ms::Fraction { 0, 1 }) {
+            auto s1 = measure->getSegment(Ms::SegmentType::KeySig, tick);
             for (size_t i = 0; i < tefInstruments.size(); ++i) {
-                mu::engraving::KeySig* keysig = Factory::createKeySig(s1);
-                keysig->setKey(Key(tefMeasure.key));
+                Ms::KeySig* keysig = new Ms::KeySig(score);
+                keysig->setKey(Ms::Key(tefMeasure.key));
                 keysig->setTrack(i * VOICES);
                 s1->add(keysig);
             }
             lastKey = tefMeasure.key;
 
-            auto s2 = measure->getSegment(mu::engraving::SegmentType::TimeSig, tick);
+            auto s2 = measure->getSegment(Ms::SegmentType::TimeSig, tick);
             for (size_t i = 0; i < tefInstruments.size(); ++i) {
-                mu::engraving::TimeSig* timesig = Factory::createTimeSig(s2);
+                Ms::TimeSig* timesig = new Ms::TimeSig(score);
                 timesig->setSig(length);
                 timesig->setTrack(i * VOICES);
                 s2->add(timesig);
@@ -465,19 +474,19 @@ void TablEdit::createMeasures()
             createTempo();
         } else {
             if (tefMeasure.key != lastKey) {
-                auto s1 = measure->getSegment(mu::engraving::SegmentType::KeySig, tick);
+                auto s1 = measure->getSegment(Ms::SegmentType::KeySig, tick);
                 for (size_t i = 0; i < tefInstruments.size(); ++i) {
-                    mu::engraving::KeySig* keysig = Factory::createKeySig(s1);
-                    keysig->setKey(Key(tefMeasure.key));
+                    Ms::KeySig* keysig = new Ms::KeySig(score);
+                    keysig->setKey(Ms::Key(tefMeasure.key));
                     keysig->setTrack(i * VOICES);
                     s1->add(keysig);
                 }
                 lastKey = tefMeasure.key;
             }
             if (length != lastTimeSig) {
-                auto s2 = measure->getSegment(mu::engraving::SegmentType::TimeSig, tick);
+                auto s2 = measure->getSegment(Ms::SegmentType::TimeSig, tick);
                 for (size_t i = 0; i < tefInstruments.size(); ++i) {
-                    mu::engraving::TimeSig* timesig = Factory::createTimeSig(s2);
+                    Ms::TimeSig* timesig = new Ms::TimeSig(score);
                     timesig->setSig(length);
                     timesig->setTrack(i * VOICES);
                     s2->add(timesig);
@@ -488,19 +497,19 @@ void TablEdit::createMeasures()
 
         tick += length;
     }
-    score->setUpTempoMap();
+    //score->setTempoMap();
+    // todo score->tempomap()->setTempo(...) ???
 }
 
 void TablEdit::createNotesFrame()
 {
     if (!tefHeader.notes.empty()) {
-        TBox* tbox = Factory::createTBox(score->dummy()->system());
+        Ms::TBox* tbox = new Ms::TBox(score);
         tbox->setTick(score->endTick());
         score->measures()->add(tbox);
-        tbox->text()->setPlainText(muse::String::fromStdString(tefHeader.notes));
+        tbox->text()->setPlainText(QString::fromStdString(tefHeader.notes));
     }
 }
-#endif
 
 void TablEdit::createParts()
 {
@@ -585,10 +594,10 @@ void TablEdit::createScore()
 {
     createProperties();
     createParts();
-#if 0
     createTitleFrame();
     createMeasures();
     createNotesFrame();
+#if 0
     createContents();
     createRepeats();
     createTexts();
@@ -596,22 +605,22 @@ void TablEdit::createScore()
 #endif
 }
 
-#if 0
 void TablEdit::createTempo()
 {
-    mu::engraving::Measure* measure = score->firstMeasure();
-    mu::engraving::Segment* segment = measure->getSegment(mu::engraving::SegmentType::ChordRest, mu::engraving::Fraction(0, 1));
-    mu::engraving::TempoText* tt = new mu::engraving::TempoText(segment);
+    Ms::Measure* measure = score->firstMeasure();
+    Ms::Segment* segment = measure->getSegment(Ms::SegmentType::ChordRest, Ms::Fraction(0, 1));
+    Ms::TempoText* tt = new Ms::TempoText(score);
     tt->setTempo(double(tefHeader.tempo) / 60.0);
     tt->setTrack(0);
     tt->setFollowText(true);
-    muse::String tempoText = mu::engraving::TempoText::duration2tempoTextString(mu::engraving::DurationType::V_QUARTER);
+    QString tempoText = Ms::TempoText::duration2tempoTextString(Ms::TDuration::DurationType::V_QUARTER);
     tempoText += u" = ";
-    tempoText += muse::String::number(tefHeader.tempo);
+    tempoText += QString::number(tefHeader.tempo);
     tt->setXmlText(tempoText);
     segment->add(tt);
 }
 
+#if 0
 void TablEdit::createTexts()
 {
     for (const auto& textMarker : tefTextMarkers) {
@@ -646,24 +655,24 @@ void TablEdit::createTexts()
         segment->add(staffText);
     }
 }
+#endif
 
 void TablEdit::createTitleFrame()
 {
-    VBox* vbox = Factory::createTitleVBox(score->dummy()->system());
-    vbox->setTick(mu::engraving::Fraction(0, 1));
+    Ms::VBox* vbox = new Ms::VBox(score);
+    vbox->setTick(Ms::Fraction(0, 1));
     score->measures()->add(vbox);
     if (!tefHeader.title.empty()) {
-        Text* s = Factory::createText(vbox, TextStyleType::TITLE);
-        s->setPlainText(muse::String::fromStdString(tefHeader.title));
+        Ms::Text* s = new Ms::Text(score, Ms::Tid::TITLE);
+        s->setPlainText(QString::fromStdString(tefHeader.title));
         vbox->add(s);
     }
     if (!tefHeader.subTitle.empty()) {
-        Text* s = Factory::createText(vbox, TextStyleType::SUBTITLE);
-        s->setPlainText(muse::String::fromStdString(tefHeader.subTitle));
+        Ms::Text* s = new Ms::Text(score, Ms::Tid::SUBTITLE);
+        s->setPlainText(QString::fromStdString(tefHeader.subTitle));
         vbox->add(s);
     }
 }
-#endif
 
 /*
  * encoding of note durations
