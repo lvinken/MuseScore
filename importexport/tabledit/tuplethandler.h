@@ -26,7 +26,9 @@
 
 #include "libmscore/chordrest.h"
 
+using namespace Ms;
 using namespace std;
+
 namespace tabledit {
 class TupletHandler
 {

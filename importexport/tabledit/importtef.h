@@ -30,6 +30,8 @@
 
 #include "voiceallocator.h"
 
+using namespace Ms;
+
 namespace tabledit {
 // offsets into the file header
 static const uint8_t OFFSET_TBED = 0x38;
@@ -73,7 +75,7 @@ class TablEdit
 {
 //    muse::io::IODevice* _file = nullptr;
     QFile* _file = nullptr;
-    Ms::MasterScore* score = nullptr;
+    MasterScore* score = nullptr;
 
     int8_t readInt8();
     uint8_t readUInt8();
@@ -185,9 +187,9 @@ class TablEdit
     std::vector<std::string> tefTexts;
 
 public:
-    TablEdit(QFile* f, Ms::MasterScore* s)
+    TablEdit(QFile* f, MasterScore* s)
         : _file(f), score(s) {}
-    Ms::Score::FileError import();
+    Score::FileError import();
 };
 } // namespace tabledit
 #endif

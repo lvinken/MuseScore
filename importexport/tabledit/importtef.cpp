@@ -52,7 +52,7 @@
 #include "libmscore/textframe.h"
 #include "libmscore/timesig.h"
 
-//using namespace mu::engraving;
+using namespace Ms;
 
 namespace tabledit {
 int8_t TablEdit::readInt8()
@@ -441,31 +441,31 @@ void TablEdit::createLinkedTabs()
 void TablEdit::createMeasures()
 {
     int lastKey { 0 };               // safe default
-    Ms::Fraction lastTimeSig { -1, -1 }; // impossible value
-    Ms::Fraction tick { 0, 1 };
+    Fraction lastTimeSig { -1, -1 }; // impossible value
+    Fraction tick { 0, 1 };
     for (const auto& tefMeasure : tefMeasures) {
         // create measure
-        auto measure = new Ms::Measure(score);
+        auto measure = new Measure(score);
         measure->setTick(tick);
-        Ms::Fraction length{ tefMeasure.numerator, tefMeasure.denominator };
+        Fraction length{ tefMeasure.numerator, tefMeasure.denominator };
         measure->setTimesig(length);
         measure->setTicks(length);
-        measure->setEndBarLineType(Ms::BarLineType::NORMAL, 0);
+        measure->setEndBarLineType(BarLineType::NORMAL, 0);
         score->measures()->add(measure);
 
-        if (tick == Ms::Fraction { 0, 1 }) {
-            auto s1 = measure->getSegment(Ms::SegmentType::KeySig, tick);
+        if (tick == Fraction { 0, 1 }) {
+            auto s1 = measure->getSegment(SegmentType::KeySig, tick);
             for (size_t i = 0; i < tefInstruments.size(); ++i) {
-                Ms::KeySig* keysig = new Ms::KeySig(score);
-                keysig->setKey(Ms::Key(tefMeasure.key));
+                KeySig* keysig = new KeySig(score);
+                keysig->setKey(Key(tefMeasure.key));
                 keysig->setTrack(i * VOICES);
                 s1->add(keysig);
             }
             lastKey = tefMeasure.key;
 
-            auto s2 = measure->getSegment(Ms::SegmentType::TimeSig, tick);
+            auto s2 = measure->getSegment(SegmentType::TimeSig, tick);
             for (size_t i = 0; i < tefInstruments.size(); ++i) {
-                Ms::TimeSig* timesig = new Ms::TimeSig(score);
+                TimeSig* timesig = new TimeSig(score);
                 timesig->setSig(length);
                 timesig->setTrack(i * VOICES);
                 s2->add(timesig);
@@ -474,19 +474,19 @@ void TablEdit::createMeasures()
             createTempo();
         } else {
             if (tefMeasure.key != lastKey) {
-                auto s1 = measure->getSegment(Ms::SegmentType::KeySig, tick);
+                auto s1 = measure->getSegment(SegmentType::KeySig, tick);
                 for (size_t i = 0; i < tefInstruments.size(); ++i) {
-                    Ms::KeySig* keysig = new Ms::KeySig(score);
-                    keysig->setKey(Ms::Key(tefMeasure.key));
+                    KeySig* keysig = new KeySig(score);
+                    keysig->setKey(Key(tefMeasure.key));
                     keysig->setTrack(i * VOICES);
                     s1->add(keysig);
                 }
                 lastKey = tefMeasure.key;
             }
             if (length != lastTimeSig) {
-                auto s2 = measure->getSegment(Ms::SegmentType::TimeSig, tick);
+                auto s2 = measure->getSegment(SegmentType::TimeSig, tick);
                 for (size_t i = 0; i < tefInstruments.size(); ++i) {
-                    Ms::TimeSig* timesig = new Ms::TimeSig(score);
+                    TimeSig* timesig = new TimeSig(score);
                     timesig->setSig(length);
                     timesig->setTrack(i * VOICES);
                     s2->add(timesig);
@@ -504,7 +504,7 @@ void TablEdit::createMeasures()
 void TablEdit::createNotesFrame()
 {
     if (!tefHeader.notes.empty()) {
-        Ms::TBox* tbox = new Ms::TBox(score);
+        TBox* tbox = new TBox(score);
         tbox->setTick(score->endTick());
         score->measures()->add(tbox);
         tbox->text()->setPlainText(QString::fromStdString(tefHeader.notes));
@@ -514,18 +514,18 @@ void TablEdit::createNotesFrame()
 void TablEdit::createParts()
 {
     for (const auto& instrument : tefInstruments) {
-        Ms::Part* part = new Ms::Part(score);
+        Part* part = new Part(score);
         score->appendPart(part);
         QString staffName { QString::fromStdString(instrument.name) };
         part->setPartName(staffName);
         part->setPlainLongName(staffName);
 
-        Ms::StringData stringData;
+        StringData stringData;
         stringData.setFrets(25); // reasonable default (?)
         for (int i = 0; i < instrument.stringNumber; ++i) {
             int pitch = 96 - instrument.tuning.at(instrument.stringNumber - i - 1);
             // qDebug("pitch %d", pitch);
-            Ms::instrString str { pitch };
+            instrString str { pitch };
             stringData.stringList().push_back(str);
         }
         part->instrument()->setStringData(stringData);
@@ -533,8 +533,8 @@ void TablEdit::createParts()
         part->setMidiProgram(instrument.midiVoice);
         part->setMidiChannel(instrument.midiBank);
 
-        Ms::Staff* staff = new Ms::Staff(score);
-        Ms::ClefTypeList clefTypeList { Ms::ClefType::G8_VB, Ms::ClefType::G8_VB };
+        Staff* staff = new Staff(score);
+        ClefTypeList clefTypeList { ClefType::G8_VB, ClefType::G8_VB };
         staff->setDefaultClefType(clefTypeList);
 
         staff->setPart(part);
@@ -607,13 +607,13 @@ void TablEdit::createScore()
 
 void TablEdit::createTempo()
 {
-    Ms::Measure* measure = score->firstMeasure();
-    Ms::Segment* segment = measure->getSegment(Ms::SegmentType::ChordRest, Ms::Fraction(0, 1));
-    Ms::TempoText* tt = new Ms::TempoText(score);
+    Measure* measure = score->firstMeasure();
+    Segment* segment = measure->getSegment(SegmentType::ChordRest, Fraction(0, 1));
+    TempoText* tt = new TempoText(score);
     tt->setTempo(double(tefHeader.tempo) / 60.0);
     tt->setTrack(0);
     tt->setFollowText(true);
-    QString tempoText = Ms::TempoText::duration2tempoTextString(Ms::TDuration::DurationType::V_QUARTER);
+    QString tempoText = TempoText::duration2tempoTextString(TDuration::DurationType::V_QUARTER);
     tempoText += u" = ";
     tempoText += QString::number(tefHeader.tempo);
     tt->setXmlText(tempoText);
@@ -659,16 +659,16 @@ void TablEdit::createTexts()
 
 void TablEdit::createTitleFrame()
 {
-    Ms::VBox* vbox = new Ms::VBox(score);
-    vbox->setTick(Ms::Fraction(0, 1));
+    VBox* vbox = new VBox(score);
+    vbox->setTick(Fraction(0, 1));
     score->measures()->add(vbox);
     if (!tefHeader.title.empty()) {
-        Ms::Text* s = new Ms::Text(score, Ms::Tid::TITLE);
+        Text* s = new Text(score, Tid::TITLE);
         s->setPlainText(QString::fromStdString(tefHeader.title));
         vbox->add(s);
     }
     if (!tefHeader.subTitle.empty()) {
-        Ms::Text* s = new Ms::Text(score, Ms::Tid::SUBTITLE);
+        Text* s = new Text(score, Tid::SUBTITLE);
         s->setPlainText(QString::fromStdString(tefHeader.subTitle));
         vbox->add(s);
     }
@@ -987,7 +987,7 @@ void TablEdit::readTefHeader()
 //   for linked staves
 //---------------------------------------------------------
 
-Ms::Score::FileError TablEdit::import()
+Score::FileError TablEdit::import()
 {
     qDebug("TablEdit::import()");
     readTefHeader();
@@ -1002,15 +1002,15 @@ Ms::Score::FileError TablEdit::import()
      qDebug("copyright '%s'", tefHeader.copyright.c_str());
      qDebug() << Qt::hex << "tbed " << tefHeader.tbed << " wOldNum " << tefHeader.wOldNum << " wFormat " << tefHeader.wFormat;
     if ((tefHeader.wFormat >> 8) < 10) {
-        return Ms::Score::FileError::FILE_BAD_FORMAT;
+        return Score::FileError::FILE_BAD_FORMAT;
         //return Err::FileTooOld; // TODO: message is too specific for MuseScore format
     }
     if ((tefHeader.wFormat >> 8) > 10) {
-        return Ms::Score::FileError::FILE_BAD_FORMAT;
+        return Score::FileError::FILE_BAD_FORMAT;
         //return Err::FileTooNew;
     }
     if (tefHeader.securityCode != 0) {
-        return Ms::Score::FileError::FILE_BAD_FORMAT; // todo "file is protected" message ?
+        return Score::FileError::FILE_BAD_FORMAT; // todo "file is protected" message ?
     }
     readTefTexts();
     for (const auto& text : tefTexts) {
@@ -1042,6 +1042,6 @@ Ms::Score::FileError TablEdit::import()
     }
     createScore();
     qDebug("TablEdit::import() done");
-    return Ms::Score::FileError::FILE_NO_ERROR;
+    return Score::FileError::FILE_NO_ERROR;
 }
 } // namespace tabledit
