@@ -266,8 +266,6 @@ static void addNoteToChord(Chord* chord, int track, int pitch, int fret, int str
     }
 }
 
-// todo: check score() is initialized everywhere chord->score() etc is used
-
 static void addGraceNotesToChord(Chord* chord, int pitch, int fret, int string, QColor color)
 {
     TDuration durationType(TDuration::DurationType::V_INVALID);
