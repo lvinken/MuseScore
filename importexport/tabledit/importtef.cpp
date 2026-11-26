@@ -48,6 +48,7 @@
 #include "libmscore/part.h"
 #include "libmscore/rest.h"
 #include "libmscore/staff.h"
+#include "libmscore/stafftext.h"
 #include "libmscore/stringdata.h"
 #include "libmscore/tempotext.h"
 #include "libmscore/text.h"
@@ -597,8 +598,8 @@ void TablEdit::createScore()
     createNotesFrame();
     createContents();
     createRepeats();
-#if 0
     createTexts();
+#if 0
     createLinkedTabs();
 #endif
 }
@@ -618,7 +619,6 @@ void TablEdit::createTempo()
     segment->add(tt);
 }
 
-#if 0
 void TablEdit::createTexts()
 {
     for (const auto& textMarker : tefTextMarkers) {
@@ -640,20 +640,19 @@ void TablEdit::createTexts()
         } else {
             // qDebug("measure %p", measure);
         }
-        Segment* segment { measure->getSegment(mu::engraving::SegmentType::ChordRest, tick) };
+        Segment* segment { measure->getSegment(SegmentType::ChordRest, tick) };
         if (!segment) {
             qDebug("error: no segment");
             continue;
         }
 
-        StaffText* staffText = Factory::createStaffText(segment);
-        muse::String text { tefTexts.at(textMarker.index).c_str() };
+        StaffText* staffText = new StaffText(score);
+        QString text { tefTexts.at(textMarker.index).c_str() };
         staffText->setPlainText(text);
         staffText->setTrack(track);
         segment->add(staffText);
     }
 }
-#endif
 
 void TablEdit::createTitleFrame()
 {

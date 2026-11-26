@@ -173,6 +173,8 @@ class TablEdit
     void createRepeats();
     void createScore();
     void createTempo();
+    void createTexts();
+    void createTitleFrame();
     void initializeVoiceAllocators(std::vector<VoiceAllocator>& allocators);
     int partIdx(size_t stringIdx, bool& ok) const;
     int stringNumberPreviousParts(int partIdx) const;
@@ -182,7 +184,6 @@ class TablEdit
     void readTefMeasures();
     void readTefReadingList();
     void readTefTexts();
-    void createTitleFrame();
 
     TefHeader tefHeader;
     std::vector<TefTextMarker> tefTextMarkers;
