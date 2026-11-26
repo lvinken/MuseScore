@@ -564,7 +564,6 @@ void TablEdit::createProperties()
 
 // convert the reading list into repeat and (todo) codas, segnos and voltas
 
-#if 0
 void TablEdit::createRepeats()
 {
     // qDebug("reading list size %zu number of measures %zu", tefReadingList.size(), tefMeasures.size());
@@ -576,7 +575,7 @@ void TablEdit::createRepeats()
         && tefReadingList.at(1).firstMeasure == 1 && tefReadingList.at(1).lastMeasure == static_cast<int>(tefMeasures.size())
         ) {
         // qDebug("do it");
-        if (score->measures()->empty()) {
+        if (!score->measures()->size()) {
             qFatal("no measures in score");
             return;
         }
@@ -588,7 +587,6 @@ void TablEdit::createRepeats()
         // qDebug("no score repeat");
     }
 }
-#endif
 
 void TablEdit::createScore()
 {
@@ -598,8 +596,8 @@ void TablEdit::createScore()
     createMeasures();
     createNotesFrame();
     createContents();
-#if 0
     createRepeats();
+#if 0
     createTexts();
     createLinkedTabs();
 #endif
