@@ -22,23 +22,6 @@
 #include "importtef.h"
 #include "tuplethandler.h"
 
-#if 0
-#include "engraving/dom/box.h"
-#include "engraving/dom/chord.h"
-#include "engraving/dom/excerpt.h"
-#include "engraving/dom/factory.h"
-#include "engraving/dom/keysig.h"
-#include "engraving/dom/measurebase.h"
-#include "engraving/dom/note.h"
-#include "engraving/dom/part.h"
-#include "engraving/dom/rest.h"
-#include "engraving/dom/stafftext.h"
-#include "engraving/dom/tempotext.h"
-#include "engraving/dom/text.h"
-#include "engraving/dom/timesig.h"
-#include "log.h"
-#endif
-
 #include "libmscore/box.h"
 #include "libmscore/chord.h"
 #include "libmscore/clef.h"
