@@ -43,6 +43,7 @@
 #include "libmscore/chord.h"
 #include "libmscore/clef.h"
 #include "libmscore/durationtype.h"
+#include "libmscore/excerpt.h"
 #include "libmscore/keysig.h"
 #include "libmscore/measure.h"
 #include "libmscore/part.h"
@@ -407,7 +408,6 @@ void TablEdit::createContents()
     }
 }
 
-#if 0
 void TablEdit::createLinkedTabs()
 {
     constexpr size_t stavesInPart = 2;
@@ -417,16 +417,18 @@ void TablEdit::createLinkedTabs()
 
         Staff* srcStaff = part->staff(0);
         Staff* dstStaff = part->staff(1);
-        Excerpt::cloneStaff(srcStaff, dstStaff, false);
+        Excerpt::cloneStaff(srcStaff, dstStaff);
 
         static const std::vector<StaffTypes> types {
             StaffTypes::TAB_4SIMPLE,
             StaffTypes::TAB_5SIMPLE,
             StaffTypes::TAB_6SIMPLE,
+        /* MuseScore 3.x does not support the following staff types
             StaffTypes::TAB_7SIMPLE,
             StaffTypes::TAB_8SIMPLE,
             StaffTypes::TAB_9SIMPLE,
             StaffTypes::TAB_10SIMPLE,
+         */
         };
 
         Fraction fr = Fraction(0, 1);
@@ -437,7 +439,6 @@ void TablEdit::createLinkedTabs()
         dstStaff->setLines(fr, static_cast<int>(lines));
     }
 }
-#endif
 
 void TablEdit::createMeasures()
 {
@@ -599,9 +600,7 @@ void TablEdit::createScore()
     createContents();
     createRepeats();
     createTexts();
-#if 0
     createLinkedTabs();
-#endif
 }
 
 void TablEdit::createTempo()
