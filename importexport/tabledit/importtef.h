@@ -164,12 +164,17 @@ class TablEdit
     void readTefReadingList();
     void readTefTexts();
 #endif
+    void allocateVoices(std::vector<VoiceAllocator>& allocator);
+    void createContents();
     void createMeasures();
     void createNotesFrame();
     void createParts();
     void createProperties();
     void createScore();
     void createTempo();
+    void initializeVoiceAllocators(std::vector<VoiceAllocator>& allocators);
+    int partIdx(size_t stringIdx, bool& ok) const;
+    int stringNumberPreviousParts(int partIdx) const;
     void readTefContents();
     void readTefHeader();
     void readTefInstruments();

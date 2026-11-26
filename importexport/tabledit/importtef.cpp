@@ -40,16 +40,19 @@
 #endif
 
 #include "libmscore/box.h"
+#include "libmscore/chord.h"
 #include "libmscore/clef.h"
 #include "libmscore/durationtype.h"
 #include "libmscore/keysig.h"
 #include "libmscore/measure.h"
 #include "libmscore/part.h"
+#include "libmscore/rest.h"
 #include "libmscore/staff.h"
 #include "libmscore/stringdata.h"
 #include "libmscore/tempotext.h"
 #include "libmscore/text.h"
 #include "libmscore/textframe.h"
+#include "libmscore/tie.h"
 #include "libmscore/timesig.h"
 
 using namespace Ms;
@@ -119,15 +122,14 @@ std::string TablEdit::readUtf8TextIndirect(uint32_t positionOfPosition)
     }
 }
 
-#if 0
 // return the part index for the instrument containing stringIdx
 
-engraving::part_idx_t TablEdit::partIdx(size_t stringIdx, bool& ok) const
+int TablEdit::partIdx(size_t stringIdx, bool& ok) const
 {
     ok = true;
-    engraving::part_idx_t result { 0 };
-    engraving::track_idx_t lowerBound { 1 };
-    engraving::track_idx_t upperBound { 0 };
+    int result { 0 };
+    int lowerBound { 1 };
+    int upperBound { 0 };
 
     for (const auto& instrument : tefInstruments) {
         upperBound += instrument.stringNumber;
@@ -146,10 +148,10 @@ engraving::part_idx_t TablEdit::partIdx(size_t stringIdx, bool& ok) const
 
 // return total number of strings in previous parts
 
-int TablEdit::stringNumberPreviousParts(part_idx_t partIdx) const
+int TablEdit::stringNumberPreviousParts(int partIdx) const
 {
     int result { 0 };
-    for (part_idx_t i = 0; i < partIdx; ++i) {
+    for (int i = 0; i < partIdx; ++i) {
         result += tefInstruments.at(i).stringNumber;
     }
     // qDebug("partIdx %zu result %d", partIdx, result);
@@ -158,29 +160,26 @@ int TablEdit::stringNumberPreviousParts(part_idx_t partIdx) const
 
 // debug: use color cr to show voice
 
-/*
-//#if 0
-static muse::draw::Color toColor(const voice_idx_t voice)
+#if 0
+static QColor toColor(const int voice)
 {
     // debug: color notes based on voice number
     switch (voice) {
-    case 0: return muse::draw::Color::BLUE;
-    case 1: return muse::draw::Color::GREEN;
-    case 2: return muse::draw::Color::RED;
+    case 0: return Qt::blue;
+    case 1: return Qt::green;
+    case 2: return Qt::red;
     case 3: return { 150, 150, 0, 255 };
-    default: return muse::draw::Color::BLACK;
+    default: return Qt::black;
     }
 }
 
 #else
-static muse::draw::Color toColor(const voice_idx_t)
+static QColor toColor(const int)
 {
     // no debug: color notes black
-    return muse::draw::Color::BLACK;
+    return Qt::black;
 }
-
-//#endif
-*/
+#endif
 
 // create a VoiceAllocator for every instrument
 
@@ -196,7 +195,7 @@ void TablEdit::allocateVoices(std::vector<VoiceAllocator>& allocators)
 {
     std::vector<const TefNote*> column;
     int currentPosition { -1 };
-    engraving::part_idx_t currentPart { 0 };
+    int currentPart { 0 };
     for (const TefNote& tefNote : tefContents) {
         // a new column is started when either the postion or the part changes
         bool ok { true };
@@ -219,24 +218,24 @@ void TablEdit::allocateVoices(std::vector<VoiceAllocator>& allocators)
     allocators[currentPart].addColumn(column);
 }
 
-static void connectTie(mu::engraving::Chord* chord, Note* note)
+static void connectTie(Chord* chord, Note* note)
 {
     Segment* segment { chord->segment() };
     auto startTrack { VOICES* (chord->track() / VOICES) };
     auto endTrack { startTrack + VOICES - 1 };
     // qDebug("segment %p tick %d string %d startTrack %zu track %zu endTrack %zu",
-         segment, segment->tick().ticks(), note->string(), startTrack, chord->track(), endTrack);
+    //     segment, segment->tick().ticks(), note->string(), startTrack, chord->track(), endTrack);
 
     for (Segment* seg = segment->prev1(); seg; seg = seg->prev1()) {
         for (auto track = startTrack; track <= endTrack; ++track) {
-            EngravingItem* el = seg->element(track);
+            Element* el = seg->element(track);
             if (el && el->isChord()) {
                 Chord* firstChord = toChord(el);
                 // qDebug("firstChord %p tick %d track %zu", firstChord, firstChord->tick().ticks(), track);
                 for (Note* firstNote : firstChord->notes()) {
                     // qDebug("- string %d", firstNote->string());
                     if (firstNote->string() == note->string()) {
-                        Tie* tie = Factory::createTie(firstNote);
+                        Tie* tie = new Tie(chord->score());
                         tie->setEndNote(note);
                         firstNote->add(tie);
                         // qDebug(" -> tie %p", tie);
@@ -248,15 +247,15 @@ static void connectTie(mu::engraving::Chord* chord, Note* note)
     }
 }
 
-static void addNoteToChord(mu::engraving::Chord* chord, track_idx_t track, int pitch, int fret, int string, bool tie,
-                           muse::draw::Color color)
+static void addNoteToChord(Chord* chord, int track, int pitch, int fret, int string, bool tie,
+                           QColor color)
 {
     // qDebug("pitch %d", pitch);
-    mu::engraving::Note* note = Factory::createNote(chord);
+    Note* note = new Note(chord->score());
     if (note) {
         note->setTrack(track);
         note->setPitch(pitch);
-        note->setTpcFromPitch(Prefer::NEAREST);
+        note->setTpcFromPitch();
         note->setFret(fret);
         note->setString(string);
         note->setColor(color);
@@ -267,21 +266,23 @@ static void addNoteToChord(mu::engraving::Chord* chord, track_idx_t track, int p
     }
 }
 
-static void addGraceNotesToChord(mu::engraving::Chord* chord, int pitch, int fret, int string, muse::draw::Color color)
+// todo: check score() is initialized everywhere chord->score() etc is used
+
+static void addGraceNotesToChord(Chord* chord, int pitch, int fret, int string, QColor color)
 {
-    mu::engraving::TDuration durationType(mu::engraving::DurationType::V_INVALID);
+    TDuration durationType(TDuration::DurationType::V_INVALID);
     const int ticks { 240 };
     durationType.setVal(ticks);
-    mu::engraving::Chord* cr = Factory::createChord(chord->score()->dummy()->segment());
+    Chord* cr = new Chord(chord->score());
     cr->setTrack(chord->track());
-    cr->setNoteType(mu::engraving::NoteType::APPOGGIATURA);
-    cr->setDurationType(mu::engraving::DurationType::V_EIGHTH);
+    cr->setNoteType(NoteType::APPOGGIATURA);
+    cr->setDurationType(TDuration::DurationType::V_EIGHTH);
     cr->setTicks(durationType.fraction());
-    mu::engraving::Note* note = Factory::createNote(cr);
+    Note* note = new Note(chord->score());
     note->setTrack(chord->track());
     //xmlSetPitch(note, sao.s.toLatin1(), sao.a, sao.o);
     note->setPitch(pitch);
-    note->setTpcFromPitch(Prefer::NEAREST);
+    note->setTpcFromPitch();
     note->setFret(fret);
     note->setString(string);
     note->setColor(color);
@@ -289,9 +290,9 @@ static void addGraceNotesToChord(mu::engraving::Chord* chord, int pitch, int fre
     chord->add(cr);
 }
 
-static void addRest(Segment* segment, track_idx_t track, TDuration tDuration, Fraction length, muse::draw::Color color)
+static void addRest(Segment* segment, int track, TDuration tDuration, Fraction length, QColor color)
 {
-    mu::engraving::Rest* rest = Factory::createRest(segment);
+    Rest* rest = new Rest(segment->score());
     if (rest) {
         rest->setTrack(track);
         rest->setDurationType(tDuration);
@@ -314,7 +315,7 @@ void TablEdit::createContents()
 
     for (size_t part = 0; part < tefInstruments.size(); ++part) {
         // qDebug("part %zu", part);
-        for (voice_idx_t voice = 0; voice < mu::engraving::VOICES; ++voice) {
+        for (int voice = 0; voice < VOICES; ++voice) {
             // qDebug("- voice %zu", voice);
             auto& voiceContent { voiceAllocators.at(part).voiceContent(voice) };
             TupletHandler tupletHandler;
@@ -344,10 +345,10 @@ void TablEdit::createContents()
                 Fraction tick { firstNote->position, 64 }; // position is in 64th
                 tick += positionCorrection;
                 // qDebug("    positionCorrection %d/%d tick %d/%d length %d/%d",
-                     positionCorrection.numerator(), positionCorrection.denominator(),
-                     tick.numerator(), tick.denominator(),
-                     length.numerator(), length.denominator()
-                     );
+                //     positionCorrection.numerator(), positionCorrection.denominator(),
+                //     tick.numerator(), tick.denominator(),
+                //     length.numerator(), length.denominator()
+                //     );
 
                 Measure* measure { score->tick2measure(tick) };
                 if (!measure) {
@@ -356,7 +357,7 @@ void TablEdit::createContents()
                 } else {
                     // qDebug("measure %p", measure);
                 }
-                Segment* segment { measure->getSegment(mu::engraving::SegmentType::ChordRest, tick) };
+                Segment* segment { measure->getSegment(SegmentType::ChordRest, tick) };
                 if (!segment) {
                     qDebug("error: no segment");
                     continue;
@@ -373,7 +374,7 @@ void TablEdit::createContents()
                     addRest(segment, track, tDuration, length, toColor(voice));
                 } else {
                     // qDebug("    - note(s) position %d string %d fret %d", firstNote->position, firstNote->string, firstNote->fret);
-                    mu::engraving::Chord* chord { Factory::createChord(segment) };
+                    Chord* chord = new Chord(score);
                     if (chord) {
                         chord->setTrack(track);
                         chord->setDurationType(tDuration);
@@ -407,6 +408,7 @@ void TablEdit::createContents()
     }
 }
 
+#if 0
 void TablEdit::createLinkedTabs()
 {
     constexpr size_t stavesInPart = 2;
@@ -597,8 +599,8 @@ void TablEdit::createScore()
     createTitleFrame();
     createMeasures();
     createNotesFrame();
-#if 0
     createContents();
+#if 0
     createRepeats();
     createTexts();
     createLinkedTabs();

@@ -22,9 +22,9 @@
 
 #include "importtef.h"
 #include "voiceallocator.h"
-#include "engraving/dom/mscore.h"
+//#include "engraving/dom/mscore.h"
 
-namespace mu::iex::tabledit {
+namespace tabledit {
 bool VoiceAllocator::canAddTefNoteToVoice(const TefNote* const note, const int voice)
 {
     // is there room after the previous note ?
@@ -91,7 +91,7 @@ static int durationToInt(uint8_t duration) // TODO duplicated code ?
 
 int VoiceAllocator::stopPosition(const size_t voice)
 {
-    if (mu::engraving::VOICES <= voice) {
+    if (VOICES <= voice) {
         qDebug("incorrect voice %zu", voice);
         return -1;
     }
@@ -133,7 +133,7 @@ void VoiceAllocator::appendNoteToVoice(const TefNote* const note, int voice)
 
 void VoiceAllocator::dump()
 {
-    for (size_t i = 0; i < mu::engraving::VOICES; ++i) {
+    for (size_t i = 0; i < VOICES; ++i) {
         // qDebug("- voice %zu", i);
         for (size_t j = 0; j < voiceContents.at(i).size(); ++j) {
             // qDebug("  - chord %zu", j);
@@ -209,4 +209,4 @@ int VoiceAllocator::voice(const TefNote* const note)
     // qDebug("note %p voice %d res %d", note, static_cast<int>(note->voice), res);
     return res;
 }
-} // namespace mu::iex::tabledit
+} // namespace tabledit

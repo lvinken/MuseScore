@@ -41,5 +41,5 @@ private:
     int totalLength { 0 }; // sum of note duration in TablEdit units
     Ms::Tuplet* tuplet { nullptr };
 };
-} // namespace mu::iex::tabledit
+} // namespace tabledit
 #endif

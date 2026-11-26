@@ -22,12 +22,16 @@
 
 #include "tuplethandler.h"
 
+#include "libmscore/tuplet.h"
+
+#if 0
 #include "engraving/dom/factory.h"
 #include "engraving/dom/tuplet.h"
 #include "engraving/types/fraction.h"
+#endif
 
-using namespace mu::engraving;
-namespace mu::iex::tabledit {
+//using namespace mu::engraving;
+namespace tabledit {
 // start/stop tuplet and calculate timing correction
 // for a triplet of quarters, the length of each note is 2/3 * 1/4 = 1/6
 // TablEdit uses 1/8 instead, required next note position correction
@@ -39,7 +43,7 @@ Fraction TupletHandler::doTuplet(const TefNote* const tefNote)
     Fraction correction { tefNote->length, 64 };
     correction *= { 1, 6 };
     // qDebug("position %d string %d fret %d length %d triplet %d",
-         tefNote->position, tefNote->string, tefNote->fret, tefNote->length, tefNote->triplet);
+    //     tefNote->position, tefNote->string, tefNote->fret, tefNote->length, tefNote->triplet);
     // qDebug("before inTuplet %d count %d totalLength %d", inTuplet, count, totalLength);
     if (tefNote->triplet) {
         if (!inTuplet) {
@@ -73,7 +77,7 @@ Fraction TupletHandler::doTuplet(const TefNote* const tefNote)
 void TupletHandler::addCr(Ms::Measure *measure, Ms::ChordRest *cr)
 {
     if (inTuplet && !tuplet) {
-        tuplet = Factory::createTuplet(measure);
+        tuplet = new Tuplet(cr->score());
         // qDebug("new tuplet %p cr ticks %d/%d", tuplet, cr->ticks().numerator(), cr->ticks().denominator());
         tuplet->setParent(measure);
         tuplet->setTrack(cr->track());
