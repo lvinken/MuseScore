@@ -42,9 +42,10 @@ private slots:
       void tefGuitar_bass() { tefReadTest("guitar_bass"); }
       void tefGuitar_drop_D() { tefReadTest("guitar_drop_D"); }
       void tefGuitar_new_standard_tuning() { tefReadTest("guitar_new_standard_tuning"); }
-      void tefKey_signatures() { tefReadTest("key_signatures_2"); }
+      void tefKey_signatures() { tefReadTest("key_signatures"); }
       void tefKey_signatures_2() { tefReadTest("key_signatures_2"); }
       void tefMetadata() { tefReadTest("metadata"); }
+      void tefMulti_track_rests() { tefReadTest("multi_track_rests"); }
       void tefNotes_dotted() { tefReadTest("notes_dotted"); }
       void tefNotes_normal() { tefReadTest("notes_normal"); }
       void tefPositions() { tefReadTest("positions"); }
@@ -55,6 +56,8 @@ private slots:
       void tefStaff_text_2() { tefReadTest("staff_text_2"); }
       void tefTie_1() { tefReadTest("tie_1"); }
       void tefTie_2() { tefReadTest("tie_2"); }
+      void tefTime_signatures() { tefReadTest("time_signatures"); }
+      void tefTime_signatures_2() { tefReadTest("time_signatures_2"); }
       void tefTriplet_eighths() { tefReadTest("triplet_eighths"); }
       void tefTriplet_quarters() { tefReadTest("triplet_quarters"); }
       void tefTriplets_mixed() { tefReadTest("triplets_mixed"); }
