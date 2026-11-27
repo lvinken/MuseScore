@@ -35,12 +35,31 @@ private slots:
       // Currently failing tests are commented out and annotated with the failure reason
 
       void tefBass() { tefReadTest("bass"); }
-#if 0
-      void capTest1() { capReadTest("test1"); }
-      void capTestTuplet2() { capReadTest("testTuplet2"); } // generates different beaming with respect to the original
-      void capxTestVolta1() { capxReadTest("testVolta1"); }
-      void capxTestBarline() { capxReadTest("testBarline"); }
-#endif
+      void tefChord_C_D() { tefReadTest("chord_C_D"); }
+      void tefCmaj_alternatives() { tefReadTest("cmaj_alternatives"); }
+      void tefGrace_1() { tefReadTest("grace_1"); }
+      void tefGuitar() { tefReadTest("guitar"); }
+      void tefGuitar_bass() { tefReadTest("guitar_bass"); }
+      void tefGuitar_drop_D() { tefReadTest("guitar_drop_D"); }
+      void tefGuitar_new_standard_tuning() { tefReadTest("guitar_new_standard_tuning"); }
+      void tefKey_signatures() { tefReadTest("key_signatures_2"); }
+      void tefKey_signatures_2() { tefReadTest("key_signatures_2"); }
+      void tefMetadata() { tefReadTest("metadata"); }
+      void tefNotes_dotted() { tefReadTest("notes_dotted"); }
+      void tefNotes_normal() { tefReadTest("notes_normal"); }
+      void tefPositions() { tefReadTest("positions"); }
+      void tefReading_list_1() { tefReadTest("reading_list_1"); }
+      void tefRests_dotted() { tefReadTest("rests_dotted"); }
+      void tefRests_normal() { tefReadTest("rests_normal"); }
+      void tefStaff_text_1() { tefReadTest("staff_text_1"); }
+      void tefStaff_text_2() { tefReadTest("staff_text_2"); }
+      void tefTie_1() { tefReadTest("tie_1"); }
+      void tefTie_2() { tefReadTest("tie_2"); }
+      void tefTriplet_eighths() { tefReadTest("triplet_eighths"); }
+      void tefTriplet_quarters() { tefReadTest("triplet_quarters"); }
+      void tefTriplets_mixed() { tefReadTest("triplets_mixed"); }
+      void tefVoices() { tefReadTest("voices"); }
+      void tefVoices_multi_part() { tefReadTest("voices_multi_part"); }
       };
 
 //---------------------------------------------------------
